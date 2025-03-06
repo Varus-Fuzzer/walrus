@@ -45,8 +45,8 @@ IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR ${COMPILER_CLANG_CL})
 ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     SET (WALRUS_CXXFLAGS
         ${WALRUS_CXXFLAGS}
-        -std=c++11 -g3
-        -fno-rtti
+        -std=c++14 -g3
+        -frtti
         -fno-math-errno
         -fdata-sections -ffunction-sections
         -fno-omit-frame-pointer
@@ -73,13 +73,13 @@ ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     SET (WALRUS_CXXFLAGS_SHAREDLIB -fPIC)
     SET (WALRUS_LDFLAGS_SHAREDLIB -ldl)
     SET (WALRUS_CXXFLAGS_STATICLIB -fPIC -DWASM_API_EXTERN=)
-    SET (WALRUS_CXXFLAGS_SHELL -DWASM_API_EXTERN= -frtti -std=c++11)
+    SET (WALRUS_CXXFLAGS_SHELL -DWASM_API_EXTERN= -frtti -std=c++14)
 
 ELSEIF ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") # Clang and AppleClang
     SET (WALRUS_CXXFLAGS
         ${WALRUS_CXXFLAGS}
-        -std=c++11 -g3
-        -fno-rtti
+        -std=c++14 -g3
+        -frtti
         -fno-math-errno
         -fdata-sections -ffunction-sections
         -fno-omit-frame-pointer
@@ -107,7 +107,7 @@ ELSEIF ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") # Clang and AppleClang
     SET (WALRUS_CXXFLAGS_SHAREDLIB -fPIC)
     SET (WALRUS_LDFLAGS_SHAREDLIB -ldl)
     SET (WALRUS_CXXFLAGS_STATICLIB -fPIC -DWASM_API_EXTERN=)
-    SET (WALRUS_CXXFLAGS_SHELL -DWASM_API_EXTERN= -frtti -std=c++11)
+    SET (WALRUS_CXXFLAGS_SHELL -DWASM_API_EXTERN= -frtti -std=c++14)
 ELSE()
     MESSAGE (FATAL_ERROR ${CMAKE_CXX_COMPILER_ID} " is Unsupported Compiler")
 ENDIF()

@@ -11,7 +11,7 @@ This project aims to provide a lightweight WebAssembly runtime engine. It now fu
 Clone as normal, but don't forget to get the submodules as well:
 
 ```console
-$ git clone --recursive https://github.com/Samsung/walrus
+$ git clone --recursive https://github.com/Varus-Fuzzer/walrus.git
 $ cd walrus
 $ git submodule update --init
 ```

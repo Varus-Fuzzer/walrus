@@ -1,0 +1,794 @@
+[
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/fuzzer.cpp.o -c /home/p0her/walrus/src/fuzzer.cpp",
+  "file": "/home/p0her/walrus/src/fuzzer.cpp",
+  "output": "CMakeFiles/walrus.dir/src/fuzzer.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/interpreter/ByteCode.cpp.o -c /home/p0her/walrus/src/interpreter/ByteCode.cpp",
+  "file": "/home/p0her/walrus/src/interpreter/ByteCode.cpp",
+  "output": "CMakeFiles/walrus.dir/src/interpreter/ByteCode.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/interpreter/Interpreter.cpp.o -c /home/p0her/walrus/src/interpreter/Interpreter.cpp",
+  "file": "/home/p0her/walrus/src/interpreter/Interpreter.cpp",
+  "output": "CMakeFiles/walrus.dir/src/interpreter/Interpreter.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/jit/Analysis.cpp.o -c /home/p0her/walrus/src/jit/Analysis.cpp",
+  "file": "/home/p0her/walrus/src/jit/Analysis.cpp",
+  "output": "CMakeFiles/walrus.dir/src/jit/Analysis.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/jit/Backend.cpp.o -c /home/p0her/walrus/src/jit/Backend.cpp",
+  "file": "/home/p0her/walrus/src/jit/Backend.cpp",
+  "output": "CMakeFiles/walrus.dir/src/jit/Backend.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/jit/ByteCodeParser.cpp.o -c /home/p0her/walrus/src/jit/ByteCodeParser.cpp",
+  "file": "/home/p0her/walrus/src/jit/ByteCodeParser.cpp",
+  "output": "CMakeFiles/walrus.dir/src/jit/ByteCodeParser.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/jit/InstList.cpp.o -c /home/p0her/walrus/src/jit/InstList.cpp",
+  "file": "/home/p0her/walrus/src/jit/InstList.cpp",
+  "output": "CMakeFiles/walrus.dir/src/jit/InstList.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/jit/PerfDump.cpp.o -c /home/p0her/walrus/src/jit/PerfDump.cpp",
+  "file": "/home/p0her/walrus/src/jit/PerfDump.cpp",
+  "output": "CMakeFiles/walrus.dir/src/jit/PerfDump.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/jit/RegisterAlloc.cpp.o -c /home/p0her/walrus/src/jit/RegisterAlloc.cpp",
+  "file": "/home/p0her/walrus/src/jit/RegisterAlloc.cpp",
+  "output": "CMakeFiles/walrus.dir/src/jit/RegisterAlloc.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/parser/WASMParser.cpp.o -c /home/p0her/walrus/src/parser/WASMParser.cpp",
+  "file": "/home/p0her/walrus/src/parser/WASMParser.cpp",
+  "output": "CMakeFiles/walrus.dir/src/parser/WASMParser.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/runtime/Exception.cpp.o -c /home/p0her/walrus/src/runtime/Exception.cpp",
+  "file": "/home/p0her/walrus/src/runtime/Exception.cpp",
+  "output": "CMakeFiles/walrus.dir/src/runtime/Exception.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/runtime/Function.cpp.o -c /home/p0her/walrus/src/runtime/Function.cpp",
+  "file": "/home/p0her/walrus/src/runtime/Function.cpp",
+  "output": "CMakeFiles/walrus.dir/src/runtime/Function.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/runtime/Instance.cpp.o -c /home/p0her/walrus/src/runtime/Instance.cpp",
+  "file": "/home/p0her/walrus/src/runtime/Instance.cpp",
+  "output": "CMakeFiles/walrus.dir/src/runtime/Instance.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/runtime/JITExec.cpp.o -c /home/p0her/walrus/src/runtime/JITExec.cpp",
+  "file": "/home/p0her/walrus/src/runtime/JITExec.cpp",
+  "output": "CMakeFiles/walrus.dir/src/runtime/JITExec.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/runtime/Memory.cpp.o -c /home/p0her/walrus/src/runtime/Memory.cpp",
+  "file": "/home/p0her/walrus/src/runtime/Memory.cpp",
+  "output": "CMakeFiles/walrus.dir/src/runtime/Memory.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/runtime/Module.cpp.o -c /home/p0her/walrus/src/runtime/Module.cpp",
+  "file": "/home/p0her/walrus/src/runtime/Module.cpp",
+  "output": "CMakeFiles/walrus.dir/src/runtime/Module.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/runtime/ObjectType.cpp.o -c /home/p0her/walrus/src/runtime/ObjectType.cpp",
+  "file": "/home/p0her/walrus/src/runtime/ObjectType.cpp",
+  "output": "CMakeFiles/walrus.dir/src/runtime/ObjectType.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/runtime/Store.cpp.o -c /home/p0her/walrus/src/runtime/Store.cpp",
+  "file": "/home/p0her/walrus/src/runtime/Store.cpp",
+  "output": "CMakeFiles/walrus.dir/src/runtime/Store.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/runtime/Table.cpp.o -c /home/p0her/walrus/src/runtime/Table.cpp",
+  "file": "/home/p0her/walrus/src/runtime/Table.cpp",
+  "output": "CMakeFiles/walrus.dir/src/runtime/Table.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/runtime/Trap.cpp.o -c /home/p0her/walrus/src/runtime/Trap.cpp",
+  "file": "/home/p0her/walrus/src/runtime/Trap.cpp",
+  "output": "CMakeFiles/walrus.dir/src/runtime/Trap.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/util/Vector.cpp.o -c /home/p0her/walrus/src/util/Vector.cpp",
+  "file": "/home/p0her/walrus/src/util/Vector.cpp",
+  "output": "CMakeFiles/walrus.dir/src/util/Vector.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/wasi/WASI.cpp.o -c /home/p0her/walrus/src/wasi/WASI.cpp",
+  "file": "/home/p0her/walrus/src/wasi/WASI.cpp",
+  "output": "CMakeFiles/walrus.dir/src/wasi/WASI.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DENABLE_WASI -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -I/home/p0her/walrus/src -I/home/p0her/walrus/third_party/sljit/sljit_src -I/home/p0her/walrus/src/api -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -O2 -fno-stack-protector -fno-omit-frame-pointer -std=c++14 -g3 -frtti -fno-math-errno -fdata-sections -ffunction-sections -fvisibility=hidden -fno-fast-math -fno-unsafe-math-optimizations -fdenormal-fp-math=ieee -Wno-type-limits -Wno-unused-result -Wno-unused-variable -Wno-invalid-offsetof -Wno-unused-function -Wno-deprecated-declarations -Wno-parentheses-equality -Wno-dynamic-class-memaccess -Wno-deprecated-register -Wno-expansion-to-defined -Wno-return-type -Wno-overloaded-virtual -Wno-unused-private-field -Wno-deprecated-copy -Wno-atomic-alignment -Wno-ambiguous-reversed-operator -Wno-deprecated-enum-enum-conversion -Wno-deprecated-enum-float-conversion -Wno-braced-scalar-init -Wno-unused-parameter -Wno-unsupported-floating-point-opt -fPIC -DWASM_API_EXTERN= -o CMakeFiles/walrus.dir/src/api/wasm.cpp.o -c /home/p0her/walrus/src/api/wasm.cpp",
+  "file": "/home/p0her/walrus/src/api/wasm.cpp",
+  "output": "CMakeFiles/walrus.dir/src/api/wasm.cpp.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/binary-reader-logging.cc.o -c /home/p0her/walrus/third_party/wabt/src/binary-reader-logging.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/binary-reader-logging.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/binary-reader-logging.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/binary-reader.cc.o -c /home/p0her/walrus/third_party/wabt/src/binary-reader.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/binary-reader.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/binary-reader.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/binary.cc.o -c /home/p0her/walrus/third_party/wabt/src/binary.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/binary.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/binary.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/binding-hash.cc.o -c /home/p0her/walrus/third_party/wabt/src/binding-hash.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/binding-hash.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/binding-hash.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/common.cc.o -c /home/p0her/walrus/third_party/wabt/src/common.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/common.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/common.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/config.cc.o -c /home/p0her/walrus/third_party/wabt/src/config.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/config.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/config.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/expr-visitor.cc.o -c /home/p0her/walrus/third_party/wabt/src/expr-visitor.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/expr-visitor.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/expr-visitor.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/feature.cc.o -c /home/p0her/walrus/third_party/wabt/src/feature.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/feature.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/feature.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/leb128.cc.o -c /home/p0her/walrus/third_party/wabt/src/leb128.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/leb128.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/leb128.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include -O3 -DNDEBUG   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/opcode-code-table.c.o -c /home/p0her/walrus/third_party/wabt/src/opcode-code-table.c",
+  "file": "/home/p0her/walrus/third_party/wabt/src/opcode-code-table.c",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/opcode-code-table.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/opcode.cc.o -c /home/p0her/walrus/third_party/wabt/src/opcode.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/opcode.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/opcode.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/option-parser.cc.o -c /home/p0her/walrus/third_party/wabt/src/option-parser.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/option-parser.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/option-parser.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/shared-validator.cc.o -c /home/p0her/walrus/third_party/wabt/src/shared-validator.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/shared-validator.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/shared-validator.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/stream.cc.o -c /home/p0her/walrus/third_party/wabt/src/stream.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/stream.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/stream.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/type-checker.cc.o -c /home/p0her/walrus/third_party/wabt/src/type-checker.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/type-checker.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/type-checker.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/utf8.cc.o -c /home/p0her/walrus/third_party/wabt/src/utf8.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/utf8.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/utf8.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/walrus/binary-reader-walrus.cc.o -c /home/p0her/walrus/third_party/wabt/src/walrus/binary-reader-walrus.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/walrus/binary-reader-walrus.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/walrus/binary-reader-walrus.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/binary-reader-ir.cc.o -c /home/p0her/walrus/third_party/wabt/src/binary-reader-ir.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/binary-reader-ir.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/binary-reader-ir.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/binary-writer.cc.o -c /home/p0her/walrus/third_party/wabt/src/binary-writer.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/binary-writer.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/binary-writer.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/ir.cc.o -c /home/p0her/walrus/third_party/wabt/src/ir.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/ir.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/ir.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/lexer-source.cc.o -c /home/p0her/walrus/third_party/wabt/src/lexer-source.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/lexer-source.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/lexer-source.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/literal.cc.o -c /home/p0her/walrus/third_party/wabt/src/literal.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/literal.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/literal.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/resolve-names.cc.o -c /home/p0her/walrus/third_party/wabt/src/resolve-names.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/resolve-names.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/resolve-names.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/token.cc.o -c /home/p0her/walrus/third_party/wabt/src/token.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/token.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/token.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/wast-lexer.cc.o -c /home/p0her/walrus/third_party/wabt/src/wast-lexer.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/wast-lexer.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/wast-lexer.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang++ -DWALRUS -DWALRUS_64=1 -DWALRUS_ENABLE_JIT -D__STDC_FORMAT_MACROS=1 -D__STDC_LIMIT_MACROS=1 -I/home/p0her/walrus/third_party/wabt -I/home/p0her/walrus/build/third_party/wabt -I/home/p0her/walrus/third_party/wabt/include -I/home/p0her/walrus/build/third_party/wabt/include  -Wold-style-cast -O3 -DNDEBUG -std=c++11   -Wall -Wextra -Wno-unused-parameter -Wpointer-arith -Wuninitialized -w -g3 -fdata-sections -ffunction-sections -fno-omit-frame-pointer -fvisibility=hidden -fPIC -DWASM_API_EXTERN= -O2 -fno-stack-protector -o third_party/wabt/CMakeFiles/wabt.dir/src/wast-parser.cc.o -c /home/p0her/walrus/third_party/wabt/src/wast-parser.cc",
+  "file": "/home/p0her/walrus/third_party/wabt/src/wast-parser.cc",
+  "output": "third_party/wabt/CMakeFiles/wabt.dir/src/wast-parser.cc.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_GNU_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -fvisibility=hidden --std=gnu89 -Wall -Wsign-compare -Wextra -Wstrict-prototypes -Wno-unused-parameter -o third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/clocks.c.o -c /home/p0her/walrus/third_party/uvwasi/uvwasi/src/clocks.c",
+  "file": "/home/p0her/walrus/third_party/uvwasi/uvwasi/src/clocks.c",
+  "output": "third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/clocks.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_GNU_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -fvisibility=hidden --std=gnu89 -Wall -Wsign-compare -Wextra -Wstrict-prototypes -Wno-unused-parameter -o third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/fd_table.c.o -c /home/p0her/walrus/third_party/uvwasi/uvwasi/src/fd_table.c",
+  "file": "/home/p0her/walrus/third_party/uvwasi/uvwasi/src/fd_table.c",
+  "output": "third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/fd_table.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_GNU_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -fvisibility=hidden --std=gnu89 -Wall -Wsign-compare -Wextra -Wstrict-prototypes -Wno-unused-parameter -o third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/path_resolver.c.o -c /home/p0her/walrus/third_party/uvwasi/uvwasi/src/path_resolver.c",
+  "file": "/home/p0her/walrus/third_party/uvwasi/uvwasi/src/path_resolver.c",
+  "output": "third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/path_resolver.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_GNU_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -fvisibility=hidden --std=gnu89 -Wall -Wsign-compare -Wextra -Wstrict-prototypes -Wno-unused-parameter -o third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/poll_oneoff.c.o -c /home/p0her/walrus/third_party/uvwasi/uvwasi/src/poll_oneoff.c",
+  "file": "/home/p0her/walrus/third_party/uvwasi/uvwasi/src/poll_oneoff.c",
+  "output": "third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/poll_oneoff.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_GNU_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -fvisibility=hidden --std=gnu89 -Wall -Wsign-compare -Wextra -Wstrict-prototypes -Wno-unused-parameter -o third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/sync_helpers.c.o -c /home/p0her/walrus/third_party/uvwasi/uvwasi/src/sync_helpers.c",
+  "file": "/home/p0her/walrus/third_party/uvwasi/uvwasi/src/sync_helpers.c",
+  "output": "third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/sync_helpers.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_GNU_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -fvisibility=hidden --std=gnu89 -Wall -Wsign-compare -Wextra -Wstrict-prototypes -Wno-unused-parameter -o third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/uv_mapping.c.o -c /home/p0her/walrus/third_party/uvwasi/uvwasi/src/uv_mapping.c",
+  "file": "/home/p0her/walrus/third_party/uvwasi/uvwasi/src/uv_mapping.c",
+  "output": "third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/uv_mapping.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_GNU_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -fvisibility=hidden --std=gnu89 -Wall -Wsign-compare -Wextra -Wstrict-prototypes -Wno-unused-parameter -o third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/uvwasi.c.o -c /home/p0her/walrus/third_party/uvwasi/uvwasi/src/uvwasi.c",
+  "file": "/home/p0her/walrus/third_party/uvwasi/uvwasi/src/uvwasi.c",
+  "output": "third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/uvwasi.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_GNU_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -fvisibility=hidden --std=gnu89 -Wall -Wsign-compare -Wextra -Wstrict-prototypes -Wno-unused-parameter -o third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/wasi_rights.c.o -c /home/p0her/walrus/third_party/uvwasi/uvwasi/src/wasi_rights.c",
+  "file": "/home/p0her/walrus/third_party/uvwasi/uvwasi/src/wasi_rights.c",
+  "output": "third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/wasi_rights.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_GNU_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/third_party/uvwasi/uvwasi/include -I/home/p0her/walrus/build/_deps/libuv-src/include -O3 -DNDEBUG -fvisibility=hidden --std=gnu89 -Wall -Wsign-compare -Wextra -Wstrict-prototypes -Wno-unused-parameter -o third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/wasi_serdes.c.o -c /home/p0her/walrus/third_party/uvwasi/uvwasi/src/wasi_serdes.c",
+  "file": "/home/p0her/walrus/third_party/uvwasi/uvwasi/src/wasi_serdes.c",
+  "output": "third_party/uvwasi/CMakeFiles/uvwasi_a.dir/uvwasi/src/wasi_serdes.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/fs-poll.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/fs-poll.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/fs-poll.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/fs-poll.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/idna.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/idna.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/idna.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/idna.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/inet.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/inet.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/inet.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/inet.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/random.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/random.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/random.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/random.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/strscpy.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/strscpy.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/strscpy.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/strscpy.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/strtok.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/strtok.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/strtok.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/strtok.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/threadpool.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/threadpool.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/threadpool.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/threadpool.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/timer.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/timer.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/timer.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/timer.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/uv-common.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/uv-common.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/uv-common.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/uv-common.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/uv-data-getter-setters.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/uv-data-getter-setters.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/uv-data-getter-setters.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/uv-data-getter-setters.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/version.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/version.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/version.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/version.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/async.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/async.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/async.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/async.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/core.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/core.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/core.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/core.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/dl.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/dl.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/dl.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/dl.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/fs.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/fs.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/fs.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/fs.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/getaddrinfo.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/getaddrinfo.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/getaddrinfo.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/getaddrinfo.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/getnameinfo.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/getnameinfo.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/getnameinfo.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/getnameinfo.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/loop-watcher.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/loop-watcher.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/loop-watcher.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/loop-watcher.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/loop.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/loop.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/loop.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/loop.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/pipe.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/pipe.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/pipe.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/pipe.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/poll.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/poll.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/poll.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/poll.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/process.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/process.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/process.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/process.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/random-devurandom.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/random-devurandom.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/random-devurandom.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/random-devurandom.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/signal.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/signal.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/signal.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/signal.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/stream.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/stream.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/stream.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/stream.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/tcp.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/tcp.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/tcp.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/tcp.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/thread.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/thread.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/thread.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/thread.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/tty.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/tty.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/tty.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/tty.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/udp.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/udp.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/udp.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/udp.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/proctitle.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/proctitle.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/proctitle.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/proctitle.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/linux-core.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-core.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-core.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/linux-core.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/linux-inotify.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-inotify.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-inotify.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/linux-inotify.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/linux-syscalls.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-syscalls.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-syscalls.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/linux-syscalls.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/procfs-exepath.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/procfs-exepath.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/procfs-exepath.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/procfs-exepath.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/random-getrandom.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/random-getrandom.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/random-getrandom.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/random-getrandom.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/random-sysctl-linux.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/random-sysctl-linux.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/random-sysctl-linux.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/random-sysctl-linux.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -DBUILDING_UV_SHARED=1 -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -Duv_EXPORTS -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fPIC -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv.dir/src/unix/epoll.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/epoll.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/epoll.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv.dir/src/unix/epoll.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/fs-poll.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/fs-poll.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/fs-poll.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/fs-poll.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/idna.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/idna.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/idna.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/idna.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/inet.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/inet.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/inet.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/inet.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/random.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/random.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/random.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/random.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/strscpy.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/strscpy.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/strscpy.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/strscpy.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/strtok.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/strtok.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/strtok.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/strtok.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/threadpool.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/threadpool.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/threadpool.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/threadpool.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/timer.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/timer.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/timer.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/timer.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/uv-common.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/uv-common.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/uv-common.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/uv-common.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/uv-data-getter-setters.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/uv-data-getter-setters.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/uv-data-getter-setters.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/uv-data-getter-setters.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/version.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/version.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/version.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/version.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/async.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/async.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/async.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/async.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/core.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/core.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/core.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/core.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/dl.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/dl.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/dl.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/dl.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/fs.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/fs.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/fs.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/fs.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/getaddrinfo.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/getaddrinfo.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/getaddrinfo.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/getaddrinfo.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/getnameinfo.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/getnameinfo.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/getnameinfo.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/getnameinfo.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/loop-watcher.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/loop-watcher.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/loop-watcher.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/loop-watcher.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/loop.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/loop.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/loop.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/loop.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/pipe.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/pipe.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/pipe.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/pipe.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/poll.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/poll.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/poll.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/poll.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/process.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/process.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/process.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/process.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/random-devurandom.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/random-devurandom.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/random-devurandom.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/random-devurandom.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/signal.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/signal.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/signal.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/signal.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/stream.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/stream.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/stream.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/stream.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/tcp.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/tcp.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/tcp.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/tcp.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/thread.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/thread.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/thread.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/thread.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/tty.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/tty.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/tty.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/tty.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/udp.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/udp.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/udp.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/udp.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/proctitle.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/proctitle.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/proctitle.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/proctitle.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/linux-core.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-core.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-core.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/linux-core.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/linux-inotify.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-inotify.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-inotify.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/linux-inotify.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/linux-syscalls.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-syscalls.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/linux-syscalls.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/linux-syscalls.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/procfs-exepath.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/procfs-exepath.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/procfs-exepath.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/procfs-exepath.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/random-getrandom.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/random-getrandom.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/random-getrandom.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/random-getrandom.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/random-sysctl-linux.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/random-sysctl-linux.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/random-sysctl-linux.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/random-sysctl-linux.c.o"
+},
+{
+  "directory": "/home/p0her/walrus/build",
+  "command": "/usr/bin/clang -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_POSIX_C_SOURCE=200112 -I/home/p0her/walrus/build/_deps/libuv-src/include -I/home/p0her/walrus/build/_deps/libuv-src/src -O3 -DNDEBUG -std=gnu90 -fvisibility=hidden -Wstrict-prototypes -Wextra -Wall -Wno-unused-parameter -fno-strict-aliasing -o _deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/epoll.c.o -c /home/p0her/walrus/build/_deps/libuv-src/src/unix/epoll.c",
+  "file": "/home/p0her/walrus/build/_deps/libuv-src/src/unix/epoll.c",
+  "output": "_deps/libuv-build/CMakeFiles/uv_a.dir/src/unix/epoll.c.o"
+}
+]

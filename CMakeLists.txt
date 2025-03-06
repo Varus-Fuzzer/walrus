@@ -2,6 +2,33 @@ CMAKE_MINIMUM_REQUIRED (VERSION 3.1.0)
 
 PROJECT (WALRUS VERSION 0.0.1)
 
+add_executable(fuzzer
+    src/fuzzer.cpp
+)
+
+target_compile_options(fuzzer PRIVATE
+    -fsanitize=fuzzer,address
+    -fno-omit-frame-pointer
+    -g
+)
+
+target_link_options(fuzzer PRIVATE
+    -fsanitize=fuzzer,address
+    -fno-omit-frame-pointer
+    -g
+)
+
+target_link_libraries(fuzzer PRIVATE
+    wabt           
+    walrus      
+)
+
+target_include_directories(fuzzer PRIVATE
+    "${CMAKE_SOURCE_DIR}/src"          # walrus/src/
+    "${CMAKE_SOURCE_DIR}/third_party/wabt"
+    # etc...
+)
+
 # CONFIGURATION
 SET (CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

@@ -5,7 +5,7 @@
 공통적으로 레포지토리를 clone하고 submodule을 가져와야 한다.
 
 ```sh
-$ git clone --recursive https://github.com/Samsung/walrus
+$ git clone --recursive https://github.com/Varus-Fuzzer/walrus.git
 $ cd walrus
 $ git submodule update --init
 ```
@@ -58,4 +58,15 @@ $ ./out/release/x64/walrus test.wasm // run walrus executable
 $ cmake -H. -Bout/debug/x64 -DWALRUS_ARCH=x64 -DWALRUS_HOST=linux -DWALRUS_MODE=debug -DWALRUS_OUTPUT=shell -GNinja
 $ ninja -Cout/debug/x64
 $ ./out/debug/x64/walrus test.wasm // run walrus executable
+```
+
+## libfuzzer 빌드
+
+간단 하네스용 빌드 방법
+
+```sh
+$ cd build
+$ cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DWALRUS_OUTPUT=static_lib -DCMAKE_BUILD_TYPE=Release -GNinja ..
+$ ninja
+$ ./fuzzer
 ```
