@@ -41,7 +41,7 @@ $ ./out/debug/x64/walrus test.wasm // run walrus executable
 ```sh
 sudo apt-get install camke
 sudo apt-get install pkg-config
-sudo apt-get install ninja
+sudo apt-get install ninja-build
 ```
 
 그 후, clone한 레포지토리에 가서 해당 명령어를 차레대로 수행한다. 퍼징을 수행할 때 디버그 모드를 컴파일 해야할 수도 있어서 밑에 두 방법중 적절한걸 골라서 컴파일을 수행하면 된다.
