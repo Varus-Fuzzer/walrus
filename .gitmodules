@@ -10,3 +10,6 @@
 	path = third_party/uvwasi/uvwasi
 	url = https://github.com/nodejs/uvwasi
 	ignore = untracked
+[submodule "src/custom_mutate/binaryen"]
+	path = src/custom_mutate/binaryen
+	url = https://github.com/WebAssembly/binaryen.git
