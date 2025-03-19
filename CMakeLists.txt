@@ -6,13 +6,30 @@ add_executable(fuzzer
     src/fuzzer.cpp
 )
 
+add_definitions(-DPROJECT_VERSION="${PROJECT_VERSION}")
+
+
+SET (CMAKE_CXX_STANDARD 17)
+SET (CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
+include_directories("${CMAKE_SOURCE_DIR}/src/custom_mutate/binaryen/src")
+include_directories("${CMAKE_SOURCE_DIR}/src/custom_mutate/binaryen/third_party/llvm-project/include/llvm/Config")
+include_directories(/usr/local/include/antlr4-runtime)
+
+
+
 target_compile_options(fuzzer PRIVATE
+    -std=c++17
+    -stdlib=libc++
     -fsanitize=fuzzer,address
     -fno-omit-frame-pointer
     -g
 )
 
 target_link_options(fuzzer PRIVATE
+    -std=c++17
+    -stdlib=libc++
     -fsanitize=fuzzer,address
     -fno-omit-frame-pointer
     -g
@@ -26,6 +43,7 @@ target_link_libraries(fuzzer PRIVATE
 target_include_directories(fuzzer PRIVATE
     "${CMAKE_SOURCE_DIR}/src"          # walrus/src/
     "${CMAKE_SOURCE_DIR}/third_party/wabt"
+    "${CMAKE_SOURCE_DIR}/src/custom_mutate/binaryen/src"
     # etc...
 )
 

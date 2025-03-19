@@ -62,6 +62,17 @@ $ ./out/debug/x64/walrus test.wasm // run walrus executable
 
 ## libfuzzer 빌드
 
+- antlr install
+
+```sh
+git clone https://github.com/antlr/antlr4.git
+cd antlr4/runtime/Cpp
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+sudo make install
+```
+
 간단 하네스용 빌드 방법
 
 ```sh
@@ -71,8 +82,8 @@ $ ninja
 $ ./fuzzer
 ```
 
-- cmake 실패 시 아래 명령어 시도.
+- cmake 실패 시 아래 명령어도 시도.
 
 ```sh
-cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DWALRUS_OUTPUT=static_lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON -GNinja ..
+cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DWALRUS_OUTPUT=static_lib -DWALRUS_WASI=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON -GNinja ..
 ```
