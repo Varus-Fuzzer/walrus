@@ -70,3 +70,9 @@ $ cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DWALRUS_OUTPUT=st
 $ ninja
 $ ./fuzzer
 ```
+
+- cmake 실패 시 아래 명령어 시도.
+
+```sh
+cmake -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DWALRUS_OUTPUT=static_lib -DCMAKE_BUILD_TYPE=Release -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON -GNinja ..
+```
