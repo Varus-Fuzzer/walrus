@@ -31,6 +31,14 @@ $ ./out/release/x64/walrus test.wasm // run walrus executable
 This will produce build files using CMake's default build generator. Read the
 CMake documentation for more information.
 
+## libfuzzer Build
+
+### Dockerfile
+
+```sh
+$ docker buildx build --progress=plain -t walrus-fuzz .
+```
+
 ## Perf
 
 You'll need [Perf](https://perf.wiki.kernel.org/index.php/Main_Page).
