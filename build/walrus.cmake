@@ -108,13 +108,13 @@ ELSEIF (${WALRUS_OUTPUT} MATCHES "fuzzer")
 
     SET_TARGET_PROPERTIES (${FUZZER_TARGET} PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED YES)
     TARGET_COMPILE_OPTIONS (${FUZZER_TARGET} PRIVATE 
-        ${WALRUS_CXXFLAGS} ${WALRUS_CXXFLAGS_SHELL} ${CXXFLAGS_FROM_ENV} ${PROFILER_FLAGS} -fsanitize=fuzzer,address -I/home/p0her/binaryen/src -L/home/p0her/binaryen/build/lib -lbinaryen -fno-omit-frame-pointer -g
+        ${WALRUS_CXXFLAGS} ${WALRUS_CXXFLAGS_SHELL} ${CXXFLAGS_FROM_ENV} ${PROFILER_FLAGS} -fsanitize=fuzzer,address -I/binaryen/src -L/binaryen/build/lib -lbinaryen -fno-omit-frame-pointer -g
     )
     TARGET_LINK_OPTIONS (${FUZZER_TARGET} PRIVATE 
-        -fsanitize=fuzzer,address -I/home/p0her/binaryen/src -L/home/p0her/binaryen/build/lib -fno-omit-frame-pointer -g
+        -fsanitize=fuzzer,address -I/binaryen/src -L/binaryen/build/lib -fno-omit-frame-pointer -g
     )
-    TARGET_LINK_LIBRARIES (${FUZZER_TARGET} PRIVATE ${WALRUS_LIBRARIES} ${WALRUS_LDFLAGS} ${LDFLAGS_FROM_ENV} /home/p0her/binaryen/lib/libbinaryen.so)
-    TARGET_INCLUDE_DIRECTORIES (${FUZZER_TARGET} PRIVATE ${WALRUS_ROOT}/src ${WALRUS_ROOT}/third_party /home/p0her/binaryen/src)
+    TARGET_LINK_LIBRARIES (${FUZZER_TARGET} PRIVATE ${WALRUS_LIBRARIES} ${WALRUS_LDFLAGS} ${LDFLAGS_FROM_ENV} /binaryen/lib/libbinaryen.so)
+    TARGET_INCLUDE_DIRECTORIES (${FUZZER_TARGET} PRIVATE ${WALRUS_ROOT}/src ${WALRUS_ROOT}/third_party /binaryen/src)
     TARGET_COMPILE_DEFINITIONS (${FUZZER_TARGET} PRIVATE ${WALRUS_DEFINITIONS})
 ELSEIF (${WALRUS_OUTPUT} STREQUAL "api_test")
    # BUILD WASM API TESTS
