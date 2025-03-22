@@ -13,3 +13,4 @@
 [submodule "third_party/binaryen"]
 	path = third_party/binaryen
 	url = https://github.com/Varus-Fuzzer/binaryen.git
+	branch = main
