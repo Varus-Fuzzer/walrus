@@ -1141,12 +1141,36 @@ inline Op BinaryenStructNewDefault() { return 0xfb01; }
 // Parse a WASM module from binary data using Binaryen's API.
 BW::Module* parseWasmModuleFromBinary(const uint8_t* data, size_t size)
 {
+    if (size < 8) {
+        std::cerr << "Input size too small for a valid WASM module.\n";
+        return nullptr;
+    }
+
+    if (data[0] != 0x00 || data[1] != 0x61 || data[2] != 0x73 || data[3] != 0x6d) {
+        std::cerr << "Invalid WASM magic number.\n";
+        return nullptr;
+    }
+
+    if (data[4] != 0x01 || data[5] != 0x00 || data[6] != 0x00 || data[7] != 0x00) {
+        std::cerr << "Unsupported WASM version.\n";
+        return nullptr;
+    }
+
+
     BW::Module* module = new BW::Module();
     try {
-        // FeatureSet (필요 기능 설정)
+        // FeatureSet (Set essential functions)
         BW::FeatureSet features = BW::FeatureSet::All;
         std::vector<char> input(data, data + size);
         // 1. Read Binary
+
+        /*
+        std::cerr << "[DEBUG] Input Data (First 8byte): ";
+        for (size_t i = 0; i < std::min(size_t(8), input.size()); i++) {
+            std::cerr << std::hex << (int)(unsigned char)input[i] << " ";
+        }
+        std::cerr << std::dec << "\n";
+        */
         BW::ModuleReader reader; // module is BW::Module*
         reader.readBinaryData(input, *module, "");
     } catch (std::exception& e) {
@@ -1298,6 +1322,7 @@ Op getReplacementForOp(Op opcode, std::mt19937& rng)
 // randomly flip a bit or inject an extreme value.
 void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
 {
+    if (!module || module->functions.empty()) return;
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
@@ -1369,6 +1394,7 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
 // In a full implementation, global and export sections could also be mutated.
 void mutateSection(BW::Module* module, std::mt19937& rng)
 {
+    if (!module || module->functions.empty()) return;
     int option = rng() % 3;
     if (option == 0) {
         // Add a new dummy function.
@@ -1404,6 +1430,7 @@ void mutateSection(BW::Module* module, std::mt19937& rng)
 // For example, insert an if(false){...} block that preserves semantics.
 void mutateSemantic(BW::Module* module, std::mt19937& rng)
 {
+    if (!module || module->functions.empty()) return;
     if (!module->functions.empty()) {
         // Use .get() to obtain Function* from unique_ptr.
         BW::Function* func = module->functions[rng() % module->functions.size()].get();
@@ -1429,6 +1456,7 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
 // For example, either invert the branch condition using i32.eqz or remove the condition.
 void mutateControlFlow(BW::Module* module, std::mt19937& rng)
 {
+    if (!module || module->functions.empty()) return;
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
@@ -1458,6 +1486,7 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
 // 5. Vulnerability Injection: call_indirect의 target은 Expression*이어야 하므로, 상수 표현식을 생성합니다.
 void injectVulnerability(BW::Module* module, std::mt19937& rng)
 {
+    if (!module || module->functions.empty()) return;
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
@@ -1484,6 +1513,7 @@ void injectVulnerability(BW::Module* module, std::mt19937& rng)
 // and Block expressions are added.
 void mutateInstructions(BW::Module* module, std::mt19937& rng)
 {
+    if (!module || module->functions.empty()) return;
     // Iterate over every function in the module.
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
@@ -1618,9 +1648,23 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size)
 // serializes it back to binary.
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t MaxSize, unsigned int Seed)
 {
+    if (Size < 8) {
+        static const uint8_t dummy_module[] = {
+            0x00, 0x61, 0x73, 0x6d, // "\0asm" magic number
+            0x01, 0x00, 0x00, 0x00   // WASM version 1
+        };
+
+        size_t dummySize = sizeof(dummy_module);
+        if (dummySize <= MaxSize) {
+            memcpy(Data, dummy_module, dummySize);
+            return dummySize;
+        }
+        return Size;
+    }
     try {
         std::mt19937 rng(Seed);
         BW::Module* module = parseWasmModuleFromBinary(Data, Size);
+        /*
         if (!module) {
             static const uint8_t dummy_module[] = {
                 // WASM magic & version:
@@ -1636,8 +1680,19 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
             size_t dummySize = sizeof(dummy_module);
             if (dummySize <= MaxSize) {
                 memcpy(Data, dummy_module, dummySize);
+                return dummySize;
             }
-            return dummySize;
+            return Size; // fallback
+        }
+        */
+        if (!module) {
+            // parsing fail -> return original data
+            return Size;
+        }
+
+        if (module->functions.empty()) {
+            delete module;
+            return Size;
         }
 
         int strat = rng() % 6;
@@ -1683,8 +1738,8 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
         fprintf(stderr, "[fuzz] std::exception: %s\n", e.what());
         return Size;
     } catch (...) {
-        // abort(); // fuzzer recognize exception as crash
-        fprintf(stderr, "[fuzz] LLVMFuzzerCustomMutator: unknown exception thrown\n");
+        abort(); // fuzzer recognize exception as crash
+        // fprintf(stderr, "[fuzz] LLVMFuzzerCustomMutator: unknown exception thrown\n");
         return Size;
     }
 }
