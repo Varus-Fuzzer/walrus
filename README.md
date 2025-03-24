@@ -35,8 +35,16 @@ CMake documentation for more information.
 
 ### Dockerfile
 
+- Build
+
 ```sh
 $ docker buildx build --progress=plain -t walrus-fuzz .
+```
+
+- Run
+
+```sh
+$  docker run -it --rm walrus-fuzz:latest 
 ```
 
 ## Perf
