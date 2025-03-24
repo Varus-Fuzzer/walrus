@@ -21,7 +21,8 @@ RUN git submodule init && git submodule update
 RUN CC=clang CXX=clang++ cmake . && make && make install
 
 # walrus build
-RUN git clone --recursive https://github.com/Varus-Fuzzer/walrus.git /opt/Varus/walrus
+# RUN git clone --recursive https://github.com/Varus-Fuzzer/walrus.git /opt/Varus/walrus
+COPY ./walrus /opt/Varus/walrus/
 WORKDIR /opt/Varus/walrus
 RUN git submodule update --init
 RUN cmake -H. -Bout/release/x64 \
@@ -32,4 +33,4 @@ RUN cmake -H. -Bout/release/x64 \
     -DWALRUS_MODE=release \
     -DWALRUS_OUTPUT=fuzzer \
     -GNinja
-RUN ninja -C out/release/x64
+RUN ninja -Cout/release/x64
