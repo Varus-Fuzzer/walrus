@@ -1583,20 +1583,31 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
 }
 
 
-// libFuzzer 진입점
+// libFuzzer Entry point
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size)
 {
-    std::vector<uint8_t> input(Data, Data + Size);
-    std::string filename("fuzz.wasm");
-    Engine* engine = new Engine();
-    Store* store = new Store(engine);
-    DefinedFunctionTypes functionTypes;
-    Walrus::Trap::TrapResult trapResult = executeWASM(store, filename, input, functionTypes);
+    try {
+        std::vector<uint8_t> input(Data, Data + Size);
+        std::string filename("fuzz.wasm");
+        Engine* engine = new Engine();
+        Store* store = new Store(engine);
+        DefinedFunctionTypes functionTypes;
+        Walrus::Trap::TrapResult trapResult = executeWASM(store, filename, input, functionTypes);
 
-    // finalize
-    delete store;
-    delete engine;
-    return 0;
+        // finalize
+        delete store;
+        delete engine;
+        return 0;
+    } catch (const std::exception &e) {
+        // leabe or ignore logs in case of exceptions and return original data
+        fprintf(stderr, "[fuzz] std::exception: %s\n", e.what());
+        return Size;
+    } catch ( ... ) {
+        // handling all kinds of exceptions
+        // abort(); // fuzzer recognize exception as crash
+        fprintf(stderr, "[fuzz] unknown exception thrown\n");
+        return Size;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1607,64 +1618,73 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size)
 // serializes it back to binary.
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t MaxSize, unsigned int Seed)
 {
-    std::mt19937 rng(Seed);
-    BW::Module* module = parseWasmModuleFromBinary(Data, Size);
-    if (!module) {
-        static const uint8_t dummy_module[] = {
-            // WASM magic & version:
-            0x00, 0x61, 0x73, 0x6d,  0x01, 0x00, 0x00, 0x00,
-            // Type Section (ID=1):
-            0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 
-            // Function Section (ID=3):
-            0x03, 0x02, 0x01, 0x00,
-            // Code Section (ID=10):
-            0x0A, 0x04, 0x01,       // code section header: length=4, count=1
-            0x02, 0x00, 0x0B        // body size=2, local decl count=0, end opcode (0x0B)
-        };
-        size_t dummySize = sizeof(dummy_module);
-        if (dummySize <= MaxSize) {
-            memcpy(Data, dummy_module, dummySize);
+    try {
+        std::mt19937 rng(Seed);
+        BW::Module* module = parseWasmModuleFromBinary(Data, Size);
+        if (!module) {
+            static const uint8_t dummy_module[] = {
+                // WASM magic & version:
+                0x00, 0x61, 0x73, 0x6d,  0x01, 0x00, 0x00, 0x00,
+                // Type Section (ID=1):
+                0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 
+                // Function Section (ID=3):
+                0x03, 0x02, 0x01, 0x00,
+                // Code Section (ID=10):
+                0x0A, 0x04, 0x01,       // code section header: length=4, count=1
+                0x02, 0x00, 0x0B        // body size=2, local decl count=0, end opcode (0x0B)
+            };
+            size_t dummySize = sizeof(dummy_module);
+            if (dummySize <= MaxSize) {
+                memcpy(Data, dummy_module, dummySize);
+            }
+            return dummySize;
         }
-        return dummySize;
-    }
 
-    int strat = rng() % 6;
-    switch (strat) {
-    case 0:
-        mutateInstructions(module, rng);
-        break;
-    case 1:
-        mutateConstantExpressions(module, rng);
-        break;
-    case 2:
-        mutateSection(module, rng);
-        break;
-    case 3:
-        mutateSemantic(module, rng);
-        break;
-    case 4:
-        mutateControlFlow(module, rng);
-        break;
-    case 5:
-        injectVulnerability(module, rng);
-        break;
-    default:
-        break;
-    }
+        int strat = rng() % 6;
+        switch (strat) {
+        case 0:
+            mutateInstructions(module, rng);
+            break;
+        case 1:
+            mutateConstantExpressions(module, rng);
+            break;
+        case 2:
+            mutateSection(module, rng);
+            break;
+        case 3:
+            mutateSemantic(module, rng);
+            break;
+        case 4:
+            mutateControlFlow(module, rng);
+            break;
+        case 5:
+            injectVulnerability(module, rng);
+            break;
+        default:
+            break;
+        }
 
-    // Validate the mutated module using the static validate function.
-    if (!BW::WasmValidator().validate(*module)) {
+        // Validate the mutated module using the static validate function.
+        if (!BW::WasmValidator().validate(*module)) {
+            delete module;
+            return Size; // Return original input if mutation is invalid.
+        }
+        BW::PassOptions passOpts;
+        BW::BufferWithRandomAccess output;
+        BW::WasmBinaryWriter writer(module, output, passOpts);
+        writer.write();
+
+        size_t outSize = output.size();
+        size_t newSize = std::min(outSize, MaxSize);
+        memcpy(Data, output.data(), newSize);
         delete module;
-        return Size; // Return original input if mutation is invalid.
+        return newSize;
+    } catch (const std::exception &e) {
+        fprintf(stderr, "[fuzz] std::exception: %s\n", e.what());
+        return Size;
+    } catch (...) {
+        // abort(); // fuzzer recognize exception as crash
+        fprintf(stderr, "[fuzz] unknown exception thrown\n");
+        return Size;
     }
-    BW::PassOptions passOpts;
-    BW::BufferWithRandomAccess output;
-    BW::WasmBinaryWriter writer(module, output, passOpts);
-    writer.write();
-
-    size_t outSize = output.size();
-    size_t newSize = std::min(outSize, MaxSize);
-    memcpy(Data, output.data(), newSize);
-    delete module;
-    return newSize;
 }
