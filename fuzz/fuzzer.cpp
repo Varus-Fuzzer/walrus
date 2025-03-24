@@ -1605,7 +1605,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size)
     } catch ( ... ) {
         // handling all kinds of exceptions
         // abort(); // fuzzer recognize exception as crash
-        fprintf(stderr, "[fuzz] unknown exception thrown\n");
+        fprintf(stderr, "[fuzz] LLVMFuzzerTestOneInput: unknown exception thrown\n");
         return Size;
     }
 }
@@ -1684,7 +1684,7 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
         return Size;
     } catch (...) {
         // abort(); // fuzzer recognize exception as crash
-        fprintf(stderr, "[fuzz] unknown exception thrown\n");
+        fprintf(stderr, "[fuzz] LLVMFuzzerCustomMutator: unknown exception thrown\n");
         return Size;
     }
 }
