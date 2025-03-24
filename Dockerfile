@@ -15,14 +15,14 @@ RUN ln -s /usr/bin/clang-18 /usr/bin/clang && \
 RUN mkdir -p /opt/Varus
 
 # binaryen build
-RUN git clone https://github.com/Varus-Fuzzer/binaryen.git /opt/Varus/binaryen
-WORKDIR /opt/Varus/binaryen
+RUN git clone https://github.com/Varus-Fuzzer/binaryen.git /binaryen
+WORKDIR /binaryen
 RUN git submodule init && git submodule update
 RUN CC=clang CXX=clang++ cmake . && make && make install
 
 # walrus build
 # RUN git clone --recursive https://github.com/Varus-Fuzzer/walrus.git /opt/Varus/walrus
-COPY ./walrus /opt/Varus/walrus/
+COPY . /opt/Varus/walrus/
 WORKDIR /opt/Varus/walrus
 RUN git submodule update --init
 RUN cmake -H. -Bout/release/x64 \
