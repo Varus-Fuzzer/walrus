@@ -1611,10 +1611,15 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
     BW::Module* module = parseWasmModuleFromBinary(Data, Size);
     if (!module) {
         static const uint8_t dummy_module[] = {
-            0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00,
-            0x01, 0x04, 0x01, 0x60, 0x00, 0x00,
+            // WASM magic & version:
+            0x00, 0x61, 0x73, 0x6d,  0x01, 0x00, 0x00, 0x00,
+            // Type Section (ID=1):
+            0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 
+            // Function Section (ID=3):
             0x03, 0x02, 0x01, 0x00,
-            0x0A, 0x04, 0x01, 0x02, 0x00, 0x0B
+            // Code Section (ID=10):
+            0x0A, 0x04, 0x01,       // code section header: length=4, count=1
+            0x02, 0x00, 0x0B        // body size=2, local decl count=0, end opcode (0x0B)
         };
         size_t dummySize = sizeof(dummy_module);
         if (dummySize <= MaxSize) {
