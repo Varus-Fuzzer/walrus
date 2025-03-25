@@ -1425,14 +1425,21 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
 void mutateSection(BW::Module* module, std::mt19937& rng)
 {
     if (!module || module->functions.empty()) return;
+
     int option = rng() % 3;
     if (option == 0) {
         std::cout << "[Custom Mutator] Section mutation: Adding new dummy function.\n";
+        
         // Add a new dummy function.
         BW::Builder builder(*module);
         BW::Function* newFunc = new BW::Function();
         newFunc->name = BW::Name("fuzz_dummy");
-        newFunc->type = BW::HeapType::none;
+        
+        // newFunc->type = BW::HeapType::none;
+        // fuzzer: /binaryen/src/wasm/wasm-type.cpp:915: Signature wasm::HeapType::getSignature() const: Assertion `isSignature()' failed.
+        // Instead of setting type to BW::HeapType::none, assgin a valid function signature.
+        // e.g. copy the type from an existing function.
+        newFunc->type = module->functions[0]->type;
         BW::Expression* constExpr = builder.makeConst(BW::Literal(int32_t(0)));
         BW::Expression* dropExpr = builder.makeDrop(constExpr);
         newFunc->body = dropExpr;
@@ -1828,9 +1835,11 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
 
         // Validate the mutated module using the static validate function.
         if (!BW::WasmValidator().validate(*module)) {
+            fprintf(stderr, "[Validator] Warning: mutated module did not pass validation, but returning it anyway.\n");
             delete module;
             return Size; // Return original input if mutation is invalid.
         }
+
         BW::PassOptions passOpts;
         BW::BufferWithRandomAccess output;
         BW::WasmBinaryWriter writer(module, output, passOpts);
