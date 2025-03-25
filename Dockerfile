@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 RUN apt-get -y update && \
     apt-get -y upgrade && \
-    apt-get install -y git ninja-build build-essential lsb-release wget software-properties-common gnupg cmake pkg-config
+    apt-get install -y git ninja-build build-essential lsb-release wget file software-properties-common gnupg cmake pkg-config
 
 RUN wget https://apt.llvm.org/llvm.sh && \
     chmod +x llvm.sh && \
