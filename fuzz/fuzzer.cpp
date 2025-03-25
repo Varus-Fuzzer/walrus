@@ -1323,8 +1323,10 @@ Op getReplacementForOp(Op opcode, std::mt19937& rng)
 void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
 {
     if (!module || module->functions.empty()) return;
+    std::cout << "[Custom Mutator] mutateConstantExpressions module with " << module->functions.size() << " functions\n";
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
+        std::cout << "[Custom Mutator] Processing functions: " << func->name.str << "\n";
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
         for (auto* expr : exprs) {
             if (auto* c = expr->dynCast<BW::Const>()) {
@@ -1335,10 +1337,17 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
                         int bit = rng() % 32;
                         int32_t newVal = oldVal ^ (1 << bit);
                         c->value = BW::Literal(newVal);
+                        std::cout << "[Custom Mutator] Function " << func->name.str
+                            << ": i32 constant bit flip mutation - old value: " << oldVal
+                            << ", flipped bit: " << bit
+                            << ", new value: " << newVal << ".\n";
                     } else {
                         std::vector<int32_t> candidates = { 0, -1,
                                                             std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::min() };
-                        c->value = BW::Literal(candidates[rng() % candidates.size()]);
+                        int32_t chosen = candidates[rng() % candidates.size()];
+                        c->value = BW::Literal(chosen);
+                        std::cout << "[Custom Mutator] Function " << func->name.str
+                                  << ": i32 constant extreme value injection - new value: " << chosen << ".\n";
                     }
                 } else if (c->type == BW::Type::i64) {
                     if (choice == 0) {
@@ -1346,10 +1355,17 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
                         int bit = rng() % 64;
                         int64_t newVal = oldVal ^ (1LL << bit);
                         c->value = BW::Literal(newVal);
+                        std::cout << "[Custom Mutator] Function " << func->name.str 
+                            << ": i64 constant bit flip mutation - old value: " << oldVal 
+                            << ", flipped bit: " << bit 
+                            << ", new value: " << newVal << ".\n";
                     } else {
                         std::vector<int64_t> candidates = { 0LL, -1LL,
                                                             std::numeric_limits<int64_t>::max(), std::numeric_limits<int64_t>::min() };
-                        c->value = BW::Literal(candidates[rng() % candidates.size()]);
+                        int64_t chosen = candidates[rng() % candidates.size()];
+                        c->value = BW::Literal(chosen);
+                        std::cout << "[Custom Mutator] Function " << func->name.str 
+                                  << ": i64 constant extreme value injection - new value: " << chosen << ".\n";
                     }
                 } else if (c->type == BW::Type::f32) {
                     if (choice == 0) {
@@ -1361,11 +1377,18 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
                         float newVal;
                         memcpy(&newVal, &bits, sizeof(newVal));
                         c->value = BW::Literal(newVal);
+                        std::cout << "[Custom Mutator] Function " << func->name.str 
+                            << ": f32 constant bit flip mutation - old value: " << oldVal 
+                            << ", flipped bit: " << bit 
+                            << ", new value: " << newVal << ".\n";
                     } else {
                         std::vector<float> candidates = { 0.0f, -0.0f,
                                                           std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(),
                                                           std::numeric_limits<float>::quiet_NaN() };
-                        c->value = BW::Literal(candidates[rng() % candidates.size()]);
+                        float chosen = candidates[rng() % candidates.size()];
+                        c->value = BW::Literal(chosen);
+                        std::cout << "[Custom Mutator] Function " << func->name.str 
+                                  << ": f32 constant extreme value injection - new value: " << chosen << ".\n";
                     }
                 } else if (c->type == BW::Type::f64) {
                     if (choice == 0) {
@@ -1377,11 +1400,18 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
                         double newVal;
                         memcpy(&newVal, &bits, sizeof(newVal));
                         c->value = BW::Literal(newVal);
+                        std::cout << "[Custom Mutator] Function " << func->name.str 
+                            << ": f64 constant bit flip mutation - old value: " << oldVal 
+                            << ", flipped bit: " << bit 
+                            << ", new value: " << newVal << ".\n";
                     } else {
                         std::vector<double> candidates = { 0.0, -0.0,
                                                            std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(),
                                                            std::numeric_limits<double>::quiet_NaN() };
-                        c->value = BW::Literal(candidates[rng() % candidates.size()]);
+                        double chosen = candidates[rng() % candidates.size()];
+                        c->value = BW::Literal(chosen);
+                        std::cout << "[LOG] Function " << func->name.str 
+                                  << ": f64 constant extreme value injection - new value: " << chosen << ".\n";
                     }
                 }
             }
@@ -1397,6 +1427,7 @@ void mutateSection(BW::Module* module, std::mt19937& rng)
     if (!module || module->functions.empty()) return;
     int option = rng() % 3;
     if (option == 0) {
+        std::cout << "[Custom Mutator] Section mutation: Adding new dummy function.\n";
         // Add a new dummy function.
         BW::Builder builder(*module);
         BW::Function* newFunc = new BW::Function();
@@ -1406,6 +1437,7 @@ void mutateSection(BW::Module* module, std::mt19937& rng)
         BW::Expression* dropExpr = builder.makeDrop(constExpr);
         newFunc->body = dropExpr;
         module->addFunction(newFunc);
+        std::cout << "[Custom Mutator] Section mutation: New function '" << newFunc->name.str << "' added.\n";
     } else if (option == 1) {
         // Clone a random function.
         if (!module->functions.empty()) {
@@ -1415,12 +1447,15 @@ void mutateSection(BW::Module* module, std::mt19937& rng)
             // Concatenate the original name with "_clone" to form a new name.
             clone->name = BW::Name(std::string(orig->name.str) + "_clone");
             module->addFunction(clone);
+            std::cout << "[Custom Mutator] Section mutation: Cloned function '" << orig->name.str 
+                      << "' to '" << clone->name.str << "'.\n";
         }
     } else {
         // Remove the last function if possible.
         if (!module->functions.empty()) {
             std::string name = std::string(module->functions.back()->name.str);
             module->removeFunction(name);
+            std::cout << "[Custom Mutator] Section mutation: Removed function '" << name << "'.\n";
         }
     }
 }
@@ -1431,24 +1466,30 @@ void mutateSection(BW::Module* module, std::mt19937& rng)
 void mutateSemantic(BW::Module* module, std::mt19937& rng)
 {
     if (!module || module->functions.empty()) return;
-    if (!module->functions.empty()) {
-        // Use .get() to obtain Function* from unique_ptr.
-        BW::Function* func = module->functions[rng() % module->functions.size()].get();
-        BW::Builder builder(*module);
-        // Create an if-block with condition "false" (i32 0).
-        BW::Expression* falseConst = builder.makeConst(BW::Literal(int32_t(0)));
-        std::vector<BW::Expression*> ifList;
-        ifList.push_back(builder.makeNop());
-        BW::Expression* ifBlock = builder.makeBlock(ifList);
-        BW::Expression* ifExpr = builder.makeIf(falseConst, ifBlock);
-        // If the function body is a Block, insert the if-block.
-        if (auto* block = func->body->dynCast<BW::Block>()) {
-            // ArenaVector may not support insert(), so use push_back() instead.
-            block->list.push_back(ifExpr);
-        } else {
-            func->body = builder.makeBlock({ func->body, ifExpr });
-        }
+
+    // Use .get() to obtain Function* from unique_ptr.
+    BW::Function* func = module->functions[rng() % module->functions.size()].get();
+    std::cout << "[Custom Mutator] Semantic mutation: Inserting dead code into function '" 
+                << func->name.str << "'.\n";
+
+    BW::Builder builder(*module);
+    // Create an if-block with condition "false" (i32 0).
+    BW::Expression* falseConst = builder.makeConst(BW::Literal(int32_t(0)));
+    std::vector<BW::Expression*> ifList;
+    ifList.push_back(builder.makeNop());
+    BW::Expression* ifBlock = builder.makeBlock(ifList);
+    BW::Expression* ifExpr = builder.makeIf(falseConst, ifBlock);
+
+    // If the function body is a Block, insert the if-block.
+    if (auto* block = func->body->dynCast<BW::Block>()) {
+        // ArenaVector may not support insert(), so use push_back() instead.
+        block->list.push_back(ifExpr);
+    } else {
+        func->body = builder.makeBlock({ func->body, ifExpr });
     }
+
+    std::cout << "[Custom Mutator] Semantic mutation: Dead code inserted into function '" 
+                << func->name.str << "'.\n";
 }
 
 //-----------------------------------------------------------------------------
@@ -1457,21 +1498,28 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
 void mutateControlFlow(BW::Module* module, std::mt19937& rng)
 {
     if (!module || module->functions.empty()) return;
+    
+    // Iterate through each function.
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
+        // Iterate through collected expressions.
         for (auto* expr : exprs) {
             // In Binaryen, conditional branches are represented by Break with a condition.
             if (auto* br = expr->dynCast<BW::Break>()) {
                 if (br->condition) {
                     int option = rng() % 2; // 0: invert condition, 1: remove condition
+                    std::cout << "[Custom Mutator] Control-Flow mutation in function '"
+                              << func->name.str << "'. ";
                     if (option == 0) {
-                        BW::Expression* oldCond = br->condition;
                         // Expression* newCond = Builder(*module).makeUnary(BinaryenI32Eqz(), oldCond);
+                        BW::Expression* oldCond = br->condition;
                         BW::Expression* newCond = BW::Builder(*module).makeUnary(static_cast<BW::UnaryOp>(BinaryenI32Eqz()), oldCond);
                         br->condition = newCond;
+                        std::cout << "Inverted branch condition.\n";
                     } else {
                         br->condition = BW::Builder(*module).makeNop();
+                        std::cout << "Removed branch condition.\n";
                     }
                     return; // Apply one control-flow mutation per call.
                 }
@@ -1483,22 +1531,29 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
 //-----------------------------------------------------------------------------
 // Vulnerability Injection: Modify memory access offsets to huge values,
 // and inject an invalid type index in call_indirect if possible.
-// 5. Vulnerability Injection: call_indirect의 target은 Expression*이어야 하므로, 상수 표현식을 생성합니다.
+// 5. Vulnerability Injection: Because the target of call_indirect must be Expression*, it generates a constant expression.
 void injectVulnerability(BW::Module* module, std::mt19937& rng)
 {
     if (!module || module->functions.empty()) return;
+    std::cout << "[Custom Mutator] Starting vulnerability injection.\n";
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
         for (auto* expr : exprs) {
             if (auto* load = expr->dynCast<BW::Load>()) {
                 load->offset = 0xFFFFFFF0;
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Set load offset to 0xFFFFFFF0.\n";
             } else if (auto* store = expr->dynCast<BW::Store>()) {
                 store->offset = 0xFFFFFFF0;
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Set store offset to 0xFFFFFFF0.\n";
             }
             // For CallIndirect, inject an invalid target by creating a constant 0.
             else if (auto* callIndirect = expr->dynCast<BW::CallIndirect>()) {
                 callIndirect->target = BW::Builder(*module).makeConst(BW::Literal((uint32_t)0));
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Injected vulnerability in call_indirect with target 0.\n";
             }
         }
     }
@@ -1517,35 +1572,54 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
     // Iterate over every function in the module.
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
+        std::cout << "[Custom Mutator] Mutating instructions in function '" << func->name.str << "'.\n";
         // Collect all expressions in the function body.
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
+        std::cout << "[Custom Mutator] Collected " << exprs.size() << " expressions.\n";
         // Process each expression.
         for (auto* expr : exprs) {
             // ----- Binary Expressions -----
             if (auto* binary = expr->dynCast<BW::Binary>()) {
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Found Binary expression with opcode " << binary->op << ".\n";
                 // Replace opcode using candidate list based on its category.
                 Op newOp = getReplacementForOp(binary->op, rng);
                 // Determine if the operation is commutative.
                 bool commutative = false;
-                if (binary->op == BinaryenI32Add() || binary->op == BinaryenI32Mul() || binary->op == BinaryenI32And() || binary->op == BinaryenI32Or() || binary->op == BinaryenI32Xor() || binary->op == BinaryenF32Add() || binary->op == BinaryenF32Mul() || binary->op == BinaryenF64Add() || binary->op == BinaryenF64Mul()) {
+                if (binary->op == BinaryenI32Add() || binary->op == BinaryenI32Mul() ||
+                    binary->op == BinaryenI32And() || binary->op == BinaryenI32Or()  ||
+                    binary->op == BinaryenI32Xor() || binary->op == BinaryenF32Add() ||
+                    binary->op == BinaryenF32Mul() || binary->op == BinaryenF64Add() ||
+                    binary->op == BinaryenF64Mul()) {
                     commutative = true;
                 }
                 // Randomly swap operands for commutative operations.
                 if (commutative && (rng() % 2 == 0)) {
                     std::swap(binary->left, binary->right);
+                    std::cout << "[Custom Mutator] Function '" << func->name.str 
+                              << "': Swapped operands in Binary expression.\n";
                 }
-                // Cast newOp (Op) to BinaryOp.
+                // Cast newOp (Op) to BinaryOp and log the change.
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Replacing opcode " << binary->op << " with " << newOp << ".\n";
                 binary->op = static_cast<BW::BinaryOp>(newOp);
             }
             // ----- Unary Expressions -----
             else if (auto* unary = expr->dynCast<BW::Unary>()) {
                 if (unary->op == static_cast<BW::UnaryOp>(BinaryenI32Eqz())) {
+                    std::cout << "[Custom Mutator] Function '" << func->name.str 
+                              << "': Found Unary expression with i32.eqz opcode.\n";
                     std::vector<Op> candidates = { BinaryenNop() };
-                    unary->op = static_cast<BW::UnaryOp>(candidates[rng() % candidates.size()]);
+                    Op chosen = candidates[rng() % candidates.size()];
+                    unary->op = static_cast<BW::UnaryOp>(chosen);
+                    std::cout << "[Custom Mutator] Function '" << func->name.str 
+                              << "': Replaced Unary opcode with " << chosen << ".\n";
                 }
             }
             // ----- Call Expressions -----
             else if (auto* call = expr->dynCast<BW::Call>()) {
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Found Call expression targeting '" << call->target.str << "'.\n";
                 if (!module->functions.empty()) {
                     std::vector<std::string> candidateTargets;
                     for (auto& fPtr : module->functions) {
@@ -1556,46 +1630,66 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                     }
                     if (!candidateTargets.empty()) {
                         std::uniform_int_distribution<size_t> dist(0, candidateTargets.size() - 1);
-                        call->target = BW::Name(candidateTargets[dist(rng)]);
+                        std::string newTarget = candidateTargets[dist(rng)];
+                        call->target = BW::Name(newTarget);
+                        std::cout << "[Custom Mutator] Function '" << func->name.str 
+                                  << "': Changed Call target to '" << newTarget << "'.\n";
                     }
                 }
             }
             // ----- CallIndirect Expressions -----
             else if (auto* callIndirect = expr->dynCast<BW::CallIndirect>()) {
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Found CallIndirect expression. Setting target to 0.\n";
                 // Instead of using module->types (which is unavailable), choose a fixed value.
                 callIndirect->target = BW::Builder(*module).makeConst(BW::Literal((uint32_t)0));
             }
             // ----- Memory Load Expressions -----
             else if (auto* load = expr->dynCast<BW::Load>()) {
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Found Memory Load expression. ";
                 // Adjust the 'bytes' field to a candidate value and update alignment.
                 std::vector<unsigned> candidateBytes = { 1, 2, 4, 8 };
-                load->bytes = candidateBytes[rng() % candidateBytes.size()];
-                load->align = load->bytes;
+                unsigned chosenBytes = candidateBytes[rng() % candidateBytes.size()];
+                load->bytes = chosenBytes;
+                load->align = chosenBytes;
+                std::cout << "Set bytes to " << chosenBytes << " and alignment to " << chosenBytes << ".\n";
             }
             // ----- Memory Store Expressions -----
             else if (auto* store = expr->dynCast<BW::Store>()) {
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Found Memory Store expression. ";
                 // Adjust the 'bytes' field for store expressions similarly.
                 std::vector<unsigned> candidateBytes = { 1, 2, 4, 8 };
-                store->bytes = candidateBytes[rng() % candidateBytes.size()];
-                store->align = store->bytes;
+                unsigned chosenBytes = candidateBytes[rng() % candidateBytes.size()];
+                store->bytes = chosenBytes;
+                store->align = chosenBytes;
+                std::cout << "Set bytes to " << chosenBytes << " and alignment to " << chosenBytes << ".\n";
             }
             // ----- Select Expressions -----
             else if (auto* sel = expr->dynCast<BW::Select>()) {
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Found Select expression. ";
                 if (rng() % 2 == 0) {
                     std::swap(sel->ifTrue, sel->ifFalse);
+                    std::cout << "Swapped ifTrue and ifFalse operands.\n";
                 } else {
                     if (sel->condition && sel->condition->type == BW::Type::i32) {
                         BW::Expression* newCond = BW::Builder(*module).makeUnary(static_cast<BW::UnaryOp>(BinaryenI32Eqz()), sel->condition);
                         sel->condition = newCond;
+                        std::cout << "Modified condition using i32.eqz.\n";
                     }
                 }
             }
             // ----- Drop Expressions -----
             else if (auto* drop = expr->dynCast<BW::Drop>()) {
+                std::cout << "[Custom Mutator] Function '" << func->name.str 
+                          << "': Found Drop expression. ";
                 // Optionally, wrap the drop's value with a block that inserts a Nop.
                 if (rng() % 2 == 0) {
                     BW::Expression* nopExpr = BW::Builder(*module).makeNop();
                     drop->value = BW::Builder(*module).makeBlock({ nopExpr, drop->value });
+                    std::cout << "Wrapped value in a block with a Nop.\n";
                 }
             }
             // ----- Block Expressions -----
@@ -1605,12 +1699,15 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                     BW::Expression* duplicate = block->list[idx]; // shallow copy; deep clone is preferable
                     // ArenaVector may not support insert; use push_back to duplicate the statement.
                     block->list.push_back(duplicate);
+                    std::cout << "[Custom Mutator] Function '" << func->name.str 
+                              << "': Duplicated a statement in Block expression.\n";
                 }
             }
             // Additional cases for other expression types (e.g. Loop, If, etc.) can be added here.
         }
     }
 }
+
 
 
 // libFuzzer Entry point
@@ -1649,17 +1746,26 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size)
 extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t MaxSize, unsigned int Seed)
 {
     if (Size < 8) {
+        // fprintf(stderr, "custom mutator cov test Size: %ld", Size);
         static const uint8_t dummy_module[] = {
             0x00, 0x61, 0x73, 0x6d, // "\0asm" magic number
-            0x01, 0x00, 0x00, 0x00   // WASM version 1
+            0x01, 0x00, 0x00, 0x00,   // WASM version 1
+            // Type Section (ID=1):
+            0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 
+            // Function Section (ID=3):
+            0x03, 0x02, 0x01, 0x00,
+            // Code Section (ID=10):
+            0x0A, 0x04, 0x01,       // code section header: length=4, count=1
+            0x02, 0x00, 0x0B        // body size=2, local decl count=0, end opcode (0x0B)
         };
 
         size_t dummySize = sizeof(dummy_module);
         if (dummySize <= MaxSize) {
             memcpy(Data, dummy_module, dummySize);
-            return dummySize;
+            Size = dummySize; // size update -> go try block
+        } else {
+            return Size;
         }
-        return Size;
     }
     try {
         std::mt19937 rng(Seed);
@@ -1696,6 +1802,7 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
         }
 
         int strat = rng() % 6;
+        // fprintf(stderr, "custom mutator cov test strat: %d", strat);
         switch (strat) {
         case 0:
             mutateInstructions(module, rng);
