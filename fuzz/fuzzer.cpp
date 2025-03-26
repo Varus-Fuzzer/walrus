@@ -1467,36 +1467,141 @@ void mutateSection(BW::Module* module, std::mt19937& rng)
     }
 }
 
+// Helper function: Find a block in the AST that contains the target expression.
+BW::Block* findParentBlock(BW::Expression* target, const std::vector<BW::Expression*>& exprs) {
+    for (auto* expr : exprs) {
+        if (auto* block = expr->dynCast<BW::Block>()) {
+            for (auto* child : block->list) {
+                if (child == target) {
+                    return block;
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
 //-----------------------------------------------------------------------------
-// Semantic Mutation: Insert dead code into a function's body.
-// For example, insert an if(false){...} block that preserves semantics.
+// Semantic Mutation: Insert dead code into a function's body or apply equivalent 
+// transformations without changing the program semantics. This increases the 
+// coverage by generating diverse code structures.
+// Strategies include:
+// - Inserting an if(false){...} block (dead code)
+// - Inserting a drop of a no-op arithmetic expression
+// - Transforming an i32.add into an equivalent form (x + y -> (x+0) + y)
+// - Duplicating an instruction in its parent block
+// - Inserting an if(false){unreachable} block
 void mutateSemantic(BW::Module* module, std::mt19937& rng)
 {
     if (!module || module->functions.empty()) return;
 
-    // Use .get() to obtain Function* from unique_ptr.
+    // Select a random function from the module.
     BW::Function* func = module->functions[rng() % module->functions.size()].get();
-    std::cout << "[Custom Mutator] Semantic mutation: Inserting dead code into function '" 
-                << func->name.str << "'.\n";
+    std::cout << "[Custom Mutator] Semantic mutation: Processing function '"
+              << func->name.str << "'.\n";
 
     BW::Builder builder(*module);
-    // Create an if-block with condition "false" (i32 0).
-    BW::Expression* falseConst = builder.makeConst(BW::Literal(int32_t(0)));
-    std::vector<BW::Expression*> ifList;
-    ifList.push_back(builder.makeNop());
-    BW::Expression* ifBlock = builder.makeBlock(ifList);
-    BW::Expression* ifExpr = builder.makeIf(falseConst, ifBlock);
 
-    // If the function body is a Block, insert the if-block.
-    if (auto* block = func->body->dynCast<BW::Block>()) {
-        // ArenaVector may not support insert(), so use push_back() instead.
-        block->list.push_back(ifExpr);
-    } else {
-        func->body = builder.makeBlock({ func->body, ifExpr });
+    // Choose among 5 semantic-preserving mutation strategies.
+    int option = rng() % 5;
+    switch (option) {
+        case 0: {
+            // Option 0: Insert dead code with an if(false){...} block.
+            BW::Expression* falseConst = builder.makeConst(BW::Literal(int32_t(0)));
+            BW::Expression* nopExpr = builder.makeNop();
+            BW::Expression* ifBlock = builder.makeBlock({ nopExpr });
+            BW::Expression* ifExpr = builder.makeIf(falseConst, ifBlock);
+            // Insert the if-block at the beginning of the function body.
+            if (auto* block = func->body->dynCast<BW::Block>()) {
+                block->list.push_back(ifExpr);
+                if (block->list.size() > 1) {
+                    std::swap(block->list[0], block->list.back());
+                }
+            } else {
+                func->body = builder.makeBlock({ ifExpr, func->body });
+            }
+            std::cout << "[Custom Mutator] Inserted if(false) dead code block.\n";
+            break;
+        }
+        case 1: {
+            // Option 1: Insert a drop instruction wrapping a no-op arithmetic expression.
+            BW::Expression* zero = builder.makeConst(BW::Literal(int32_t(0)));
+            BW::Expression* addExpr = builder.makeBinary(static_cast<BW::BinaryOp>(BinaryenI32Add()), zero, zero);
+            BW::Expression* dropExpr = builder.makeDrop(addExpr);
+            if (auto* block = func->body->dynCast<BW::Block>()) {
+                block->list.push_back(dropExpr);
+                if (block->list.size() > 1) {
+                    std::swap(block->list[0], block->list.back());
+                }
+            } else {
+                func->body = builder.makeBlock({ dropExpr, func->body });
+            }
+            std::cout << "[Custom Mutator] Inserted drop of no-op arithmetic expression.\n";
+            break;
+        }
+        case 2: {
+            // Option 2: Transform an i32.add into an equivalent form: (x + 0) + y.
+            std::vector<BW::Expression*> binExprs = collectExpressions(func->body);
+            bool transformed = false;
+            for (auto* expr : binExprs) {
+                if (auto* binary = expr->dynCast<BW::Binary>()) {
+                    if (binary->op == BinaryenI32Add()) {
+                        BW::Expression* zero = builder.makeConst(BW::Literal(int32_t(0)));
+                        BW::Expression* newLeft = builder.makeBinary(static_cast<BW::BinaryOp>(BinaryenI32Add()), binary->left, zero);
+                        binary->left = newLeft;
+                        std::cout << "[Custom Mutator] Transformed i32.add to equivalent form (x+0+y).\n";
+                        transformed = true;
+                        break; // Apply transformation once per function.
+                    }
+                }
+            }
+            if (!transformed)
+                std::cout << "[Custom Mutator] No suitable binary arithmetic expression found for transformation.\n";
+            break;
+        }
+        case 3: {
+            // Option 3: Duplicate an instruction to alter internal structure.
+            std::vector<BW::Expression*> allExprs = collectExpressions(func->body);
+            bool duplicated = false;
+            for (auto* expr : allExprs) {
+                if (auto* binary = expr->dynCast<BW::Binary>()) {
+                    BW::Block* parentBlock = findParentBlock(binary, allExprs);
+                    if (parentBlock) {
+                        parentBlock->list.push_back(binary);
+                        std::cout << "[Custom Mutator] Duplicated a binary expression in function '"
+                                  << func->name.str << "'.\n";
+                        duplicated = true;
+                        break;
+                    }
+                }
+            }
+            if (!duplicated)
+                std::cout << "[Custom Mutator] No expression found for duplication in function '"
+                          << func->name.str << "'.\n";
+            break;
+        }
+        case 4: {
+            // Option 4: Insert an unreachable instruction inside an if(false){...} block.
+            BW::Expression* falseConst = builder.makeConst(BW::Literal(int32_t(0)));
+            BW::Expression* unreachableExpr = builder.makeUnreachable();
+            BW::Expression* ifBlock = builder.makeBlock({ unreachableExpr });
+            BW::Expression* ifExpr = builder.makeIf(falseConst, ifBlock);
+            if (auto* block = func->body->dynCast<BW::Block>()) {
+                block->list.push_back(ifExpr);
+                if (block->list.size() > 1) {
+                    std::swap(block->list[0], block->list.back());
+                }
+            } else {
+                func->body = builder.makeBlock({ ifExpr, func->body });
+            }
+            std::cout << "[Custom Mutator] Inserted if(false) block containing unreachable code.\n";
+            break;
+        }
+        default:
+            break;
     }
-
-    std::cout << "[Custom Mutator] Semantic mutation: Dead code inserted into function '" 
-                << func->name.str << "'.\n";
+    std::cout << "[Custom Mutator] Semantic mutation: Completed processing function '"
+              << func->name.str << "'.\n";
 }
 
 //-----------------------------------------------------------------------------
