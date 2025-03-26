@@ -1501,7 +1501,6 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
 
 //-----------------------------------------------------------------------------
 // Control-Flow Mutation: Modify branch conditions in control expressions.
-// For example, either invert the branch condition using i32.eqz or remove the condition.
 void mutateControlFlow(BW::Module* module, std::mt19937& rng)
 {
     if (!module || module->functions.empty()) return;
@@ -1510,30 +1509,79 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
-        // Iterate through collected expressions.
+        bool mutated = false;
+        
+        // Process each expression.
         for (auto* expr : exprs) {
-            // In Binaryen, conditional branches are represented by Break with a condition.
+            // --- Option 1: Mutate conditional branch (Break) instructions ---
             if (auto* br = expr->dynCast<BW::Break>()) {
                 if (br->condition) {
-                    int option = rng() % 2; // 0: invert condition, 1: remove condition
+                    // Choose among three mutation strategies:
+                    // 0: Toggle the condition (wrap with i32.eqz)
+                    // 1: Remove the condition (set to Nop)
+                    // 2: Replace the condition with a constant (true or false)
+                    int option = rng() % 3;
                     std::cout << "[Custom Mutator] Control-Flow mutation in function '"
-                              << func->name.str << "'. ";
+                              << func->name.str << "': ";
                     if (option == 0) {
-                        // Expression* newCond = Builder(*module).makeUnary(BinaryenI32Eqz(), oldCond);
                         BW::Expression* oldCond = br->condition;
-                        BW::Expression* newCond = BW::Builder(*module).makeUnary(static_cast<BW::UnaryOp>(BinaryenI32Eqz()), oldCond);
+                        BW::Expression* newCond = BW::Builder(*module).makeUnary(
+                            static_cast<BW::UnaryOp>(BinaryenI32Eqz()), oldCond);
                         br->condition = newCond;
-                        std::cout << "Inverted branch condition.\n";
-                    } else {
+                        std::cout << "Toggled branch condition.\n";
+                    } else if (option == 1) {
                         br->condition = BW::Builder(*module).makeNop();
                         std::cout << "Removed branch condition.\n";
+                    } else {
+                        int boolVal = rng() % 2; // 0: false, 1: true
+                        BW::Expression* constCond = BW::Builder(*module).makeConst(
+                            BW::Literal(int32_t(boolVal ? 1 : 0)));
+                        br->condition = constCond;
+                        std::cout << "Replaced branch condition with constant "
+                                  << (boolVal ? "true" : "false") << ".\n";
                     }
-                    return; // Apply one control-flow mutation per call.
+                    mutated = true;
+                }
+                // --- Option 2: Mutate branch target labels ---
+                if (!(br->name == BW::Name()) && (rng() % 2 == 0)) {
+                    std::string oldLabel = std::string(br->name.str);
+                    std::string newLabel = oldLabel + "_mut";
+                    br->name = BW::Name(newLabel);
+                    std::cout << "[Custom Mutator] Changed branch target label from '"
+                              << oldLabel << "' to '" << newLabel << "'.\n";
+                    mutated = true;
                 }
             }
+            // --- Option 3: Mutate loop constructs ---
+            else if (auto* loop = expr->dynCast<BW::Loop>()) {
+                // Example mutation: force an early exit from the loop by inserting a break at the beginning.
+                std::cout << "[Custom Mutator] Found Loop in function '" << func->name.str << "'.\n";
+                BW::Builder builder(*module);
+                BW::Expression* breakExpr = builder.makeBreak(
+                    BW::Name("break_mut"), nullptr, builder.makeConst(BW::Literal(int32_t(1))));
+
+                if (auto* block = loop->body->dynCast<BW::Block>()) {
+                    // push_back and then rotate the bolck's list
+                    block->list.push_back(breakExpr);
+                    std::rotate(block->list.begin(), block->list.end() - 1, block->list.end());
+                    std::cout << "[Custom Mutator] Inserted break at beginning of loop.\n";
+                } else {
+                    // If the loop body is not a block, wrap it in a block and insert the break.
+                    BW::Expression* newBody = builder.makeBlock({ breakExpr, loop->body });
+                    loop->body = newBody;
+                    std::cout << "[Custom Mutator] Wrapped loop body in block with an inserted break.\n";
+                }
+                mutated = true;
+            }
+        }
+        
+        if (!mutated) {
+            std::cout << "[Custom Mutator] No control-flow mutations applied in function '"
+                      << func->name.str << "'.\n";
         }
     }
 }
+
 
 //-----------------------------------------------------------------------------
 // Vulnerability Injection: Modify memory access offsets to huge values,
