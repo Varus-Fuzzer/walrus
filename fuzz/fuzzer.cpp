@@ -1591,24 +1591,81 @@ void injectVulnerability(BW::Module* module, std::mt19937& rng)
 {
     if (!module || module->functions.empty()) return;
     std::cout << "[Custom Mutator] Starting vulnerability injection.\n";
+
+    // Iterate over each function.
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
-        for (auto* expr : exprs) {
-            if (auto* load = expr->dynCast<BW::Load>()) {
-                load->offset = 0xFFFFFFF0;
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Set load offset to 0xFFFFFFF0.\n";
-            } else if (auto* store = expr->dynCast<BW::Store>()) {
-                store->offset = 0xFFFFFFF0;
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Set store offset to 0xFFFFFFF0.\n";
+
+        // Optionally inject a recursive call to provoke a stack overflow (50% chance).
+        if (rng() % 2 == 0) {
+            BW::Builder builder(*module);
+            // Use a void type for the recursive call.
+            // In Binaryen, void is typically represented as BinaryenTypeNone(),
+            // but if that's unavailable, we cast 0 to BW::Type.
+            BW::Type noneType = static_cast<BW::Type>(0);
+            // Create a call to itself.
+            BW::Expression* recCall = builder.makeCall(func->name, std::vector<BW::Expression*>(), noneType, false);
+            // Insert the recursive call at the beginning of the function body.
+            if (auto* block = func->body->dynCast<BW::Block>()) {
+                // Since ArenaVector may not support insert(), push_back then swap with the first element.
+                block->list.push_back(recCall);
+                if (block->list.size() > 1) {
+                    std::swap(block->list[0], block->list.back());
+                }
+            } else {
+                func->body = builder.makeBlock({ recCall, func->body });
             }
-            // For CallIndirect, inject an invalid target by creating a constant 0.
+            std::cout << "[Custom Mutator] Function '" << func->name.str
+                      << "': Inserted recursive call to provoke stack overflow.\n";
+        }
+
+        // Process each expression in the function.
+        for (auto* expr : exprs) {
+            // --- Memory Load/Store Vulnerability ---
+            if (auto* load = expr->dynCast<BW::Load>()) {
+                int option = rng() % 2;
+                if (option == 0) {
+                    load->offset = 0xFFFFFFFF;
+                    std::cout << "[Custom Mutator] Function '" << func->name.str
+                              << "': Set memory load offset to 0xFFFFFFFF.\n";
+                } else {
+                    load->offset = 0xFFFFFFF0;
+                    std::cout << "[Custom Mutator] Function '" << func->name.str
+                              << "': Set memory load offset to 0xFFFFFFF0.\n";
+                }
+            } else if (auto* store = expr->dynCast<BW::Store>()) {
+                int option = rng() % 2;
+                if (option == 0) {
+                    store->offset = 0xFFFFFFFF;
+                    std::cout << "[Custom Mutator] Function '" << func->name.str
+                              << "': Set memory store offset to 0xFFFFFFFF.\n";
+                } else {
+                    store->offset = 0xFFFFFFF0;
+                    std::cout << "[Custom Mutator] Function '" << func->name.str
+                              << "': Set memory store offset to 0xFFFFFFF0.\n";
+                }
+            }
+            // --- CallIndirect Vulnerability ---
             else if (auto* callIndirect = expr->dynCast<BW::CallIndirect>()) {
-                callIndirect->target = BW::Builder(*module).makeConst(BW::Literal((uint32_t)0));
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Injected vulnerability in call_indirect with target 0.\n";
+                int option = rng() % 3;
+                if (option == 0) {
+                    // Use an out-of-bound index.
+                    callIndirect->target = BW::Builder(*module).makeConst(
+                        BW::Literal((uint32_t)0xFFFFFFFF));
+                    std::cout << "[Custom Mutator] Function '" << func->name.str
+                              << "': Set call_indirect target to 0xFFFFFFFF (invalid index).\n";
+                } else if (option == 1) {
+                    // Use zero as target.
+                    callIndirect->target = BW::Builder(*module).makeConst(
+                        BW::Literal((uint32_t)0));
+                    std::cout << "[Custom Mutator] Function '" << func->name.str
+                              << "': Set call_indirect target to 0.\n";
+                } else {
+                    // Leave it unchanged.
+                    std::cout << "[Custom Mutator] Function '" << func->name.str
+                              << "': Left call_indirect target unchanged.\n";
+                }
             }
         }
     }
