@@ -1483,6 +1483,7 @@ void mutateSection(BW::Module* module, Store* store, std::mt19937& rng) {
       // Option 3: Insert a new global variable.
       std::cout << "[Custom Mutator] Section mutation: Adding new global variable.\n";
       
+      /*
       // Generate a random int32 value.
       int32_t randVal = static_cast<int32_t>(rng());
       
@@ -1506,6 +1507,16 @@ void mutateSection(BW::Module* module, Store* store, std::mt19937& rng) {
       
       // Add the new global to the module.
       module->addGlobal(std::move(newGlobal));
+      */
+
+      int32_t randVal = static_cast<int32_t>(rng());
+
+      auto* newGlobal = new wasm::Global();
+      newGlobal->name = BW::Name("fuzz_global");
+      newGlobal->mutable_ = true;
+      newGlobal->init = builder.makeConst(BW::Literal(static_cast<int32_t>(rng())));
+      module->addGlobal(newGlobal);    
+
       std::cout << "[Custom Mutator] Section mutation: New global variable 'fuzz_global' added with initial value "
                 << randVal << ".\n";
     } else if (option == 4) {
