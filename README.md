@@ -69,3 +69,17 @@ You'll need [Perf](https://perf.wiki.kernel.org/index.php/Main_Page).
     It'll generate many shared object files, and `perf.data.jitted`
 
 4. View the report with `perf report -i perf.data.jitted`
+
+## How to Run HybridFuzzer
+```python
+python3 HybridFuzzer.py \
+    --target /opt/Varus/walrus/out/release/x64/fuzzer \
+    --corpus /opt/Varus/walrus/test/basic \
+    --time 3600 \
+    --libfuzzer-cycles 2 \
+    --llm-cycles 1 \
+    --llm-model llama3.2:latest \
+    --ollama-host http://host.docker.internal:11434 \
+    --libfuzzer-options '{"fork":1,"jobs":4}' \
+    --verbose
+```
