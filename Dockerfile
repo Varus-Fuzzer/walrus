@@ -2,13 +2,30 @@ FROM ubuntu:22.04
 
 RUN apt-get -y update && \
     apt-get -y upgrade && \
-    apt-get install -y git ninja-build build-essential lsb-release wget file software-properties-common gnupg cmake pkg-config
+    apt-get install -y \
+        git \
+        ninja-build \
+        build-essential \
+        lsb-release \
+        wget \
+        file \
+        software-properties-common \
+        gnupg \
+        cmake \
+        pkg-config \
+        python3 \
+        python3-pip \
+        wabt \
+        vim \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --no-cache-dir requests
 
 RUN wget https://apt.llvm.org/llvm.sh && \
     chmod +x llvm.sh && \
-    ./llvm.sh 18
-
-RUN ln -s /usr/bin/clang-18 /usr/bin/clang && \
+    ./llvm.sh 18 && \
+    ln -s /usr/bin/clang-18 /usr/bin/clang && \
     ln -s /usr/bin/clang++-18 /usr/bin/clang++
 
 # create workdir
