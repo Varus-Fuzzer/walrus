@@ -1058,6 +1058,9 @@ using Op = uint32_t;
 
 
 // Provide inline definitions for opcodes used in candidate lists.
+// Type
+inline uint32_t BinaryenTypeInt32() { return 0x7F; }
+
 // Arithmetic (i32)
 inline Op BinaryenI32Add() { return 0x6A; }
 inline Op BinaryenI32Sub() { return 0x6B; }
@@ -1486,8 +1489,11 @@ void mutateSection(BW::Module* module, Store* store, std::mt19937& rng) {
       // Create a new global by constructing a unique_ptr to Global.
       auto newGlobal = std::make_unique<BW::Global>();
       
-      // Set the type for the global (here we assume an i32 global).
-      newGlobal->type = BW::Type::i32;
+      // Create a Type object from the uint32_t returned by BinaryenTypeInt32();
+      BW::Type int32Type(BinaryenTypeInt32());
+
+      // Set the global's tyype.      
+      newGlobal->type = int32Type;
       
       // Mark the global as mutable.
       newGlobal->mutable_ = true;
