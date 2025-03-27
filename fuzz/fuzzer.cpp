@@ -1420,52 +1420,102 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
 }
 
 //-----------------------------------------------------------------------------
-// Section Mutation: Modify the module's sections by either adding, cloning, or removing functions.
-// In a full implementation, global and export sections could also be mutated.
-void mutateSection(BW::Module* module, std::mt19937& rng)
-{
+// Section Mutation: Apply various structural transformations on the module
+// to increase code diversity while preserving overall semantics as much as possible.
+// This includes:
+//   - Function addition: Insert a new dummy function with a valid signature.
+//   - Function cloning: Duplicate an existing function (with a modified name).
+//   - Function removal: Remove an existing function (preferably one that is unreferenced).
+//   - Global variable insertion: Add a new global variable with a random initial value.
+//   - Data section manipulation: Insert or modify a data segment.
+// The extra options (global and data section mutations) are optional; remove them if not applicable.
+// Revised mutateSection: Adds/clones/removes module sections.
+// Note: This version now takes an extra parameter: a pointer to the Store.
+// Revised mutateSection: Performs several section-level mutations on the module.
+// Strategies include: adding a new dummy function, cloning an existing function,
+// removing the last function, inserting a new global variable, and modifying a data segment.
+void mutateSection(BW::Module* module, Store* store, std::mt19937& rng) {
     if (!module || module->functions.empty()) return;
-
-    int option = rng() % 3;
+  
+    int option = rng() % 5;
+    BW::Builder builder(*module);
+  
     if (option == 0) {
-        std::cout << "[Custom Mutator] Section mutation: Adding new dummy function.\n";
-        
-        // Add a new dummy function.
-        BW::Builder builder(*module);
-        BW::Function* newFunc = new BW::Function();
-        newFunc->name = BW::Name("fuzz_dummy");
-        
-        // newFunc->type = BW::HeapType::none;
-        // fuzzer: /binaryen/src/wasm/wasm-type.cpp:915: Signature wasm::HeapType::getSignature() const: Assertion `isSignature()' failed.
-        // Instead of setting type to BW::HeapType::none, assgin a valid function signature.
-        // e.g. copy the type from an existing function.
-        newFunc->type = module->functions[0]->type;
-        BW::Expression* constExpr = builder.makeConst(BW::Literal(int32_t(0)));
-        BW::Expression* dropExpr = builder.makeDrop(constExpr);
-        newFunc->body = dropExpr;
-        module->addFunction(newFunc);
-        std::cout << "[Custom Mutator] Section mutation: New function '" << newFunc->name.str << "' added.\n";
+      // Option 0: Add a new dummy function.
+      std::cout << "[Custom Mutator] Section mutation: Adding new dummy function.\n";
+      BW::Function* newFunc = new BW::Function();
+      newFunc->name = BW::Name("fuzz_dummy");
+
+      // Copy the function type from an existing function.
+      newFunc->type = module->functions[0]->type;
+      
+      // Create a simple function body: drop a constant.
+      BW::Expression* constExpr = builder.makeConst(BW::Literal(int32_t(0)));
+      BW::Expression* dropExpr = builder.makeDrop(constExpr);
+      newFunc->body = dropExpr;
+      module->addFunction(newFunc);
+      std::cout << "[Custom Mutator] Section mutation: New function '"
+                << newFunc->name.str << "' added.\n";
     } else if (option == 1) {
-        // Clone a random function.
-        if (!module->functions.empty()) {
-            size_t idx = rng() % module->functions.size();
-            BW::Function* orig = module->functions[idx].get();
-            BW::Function* clone = new BW::Function(*orig);
-            // Concatenate the original name with "_clone" to form a new name.
-            clone->name = BW::Name(std::string(orig->name.str) + "_clone");
-            module->addFunction(clone);
-            std::cout << "[Custom Mutator] Section mutation: Cloned function '" << orig->name.str 
-                      << "' to '" << clone->name.str << "'.\n";
-        }
-    } else {
-        // Remove the last function if possible.
-        if (!module->functions.empty()) {
-            std::string name = std::string(module->functions.back()->name.str);
-            module->removeFunction(name);
-            std::cout << "[Custom Mutator] Section mutation: Removed function '" << name << "'.\n";
-        }
+      // Option 1: Clone an existing function.
+      if (!module->functions.empty()) {
+        size_t idx = rng() % module->functions.size();
+        BW::Function* orig = module->functions[idx].get();
+        BW::Function* clone = new BW::Function(*orig);
+
+        // Append "_clone" to the original function's name.
+        clone->name = BW::Name(std::string(orig->name.str) + "_clone");
+        module->addFunction(clone);
+        std::cout << "[Custom Mutator] Section mutation: Cloned function '"
+                  << orig->name.str << "' to '" << clone->name.str << "'.\n";
+      }
+    } else if (option == 2) {
+      // Option 2: Remove the last function.
+      if (!module->functions.empty()) {
+        std::string name = std::string(module->functions.back()->name.str);
+        module->removeFunction(name);
+        std::cout << "[Custom Mutator] Section mutation: Removed function '" << name << "'.\n";
+      }
+    } else if (option == 3) {
+      // Option 3: Insert a new global variable.
+      std::cout << "[Custom Mutator] Section mutation: Adding new global variable.\n";
+      
+      // Generate a random int32 value.
+      int32_t randVal = static_cast<int32_t>(rng());
+      
+      // Create a new global by constructing a unique_ptr to Global.
+      auto newGlobal = std::make_unique<BW::Global>();
+      
+      // Set the type for the global (here we assume an i32 global).
+      newGlobal->type = BW::Type::i32;
+      
+      // Mark the global as mutable.
+      newGlobal->mutable_ = true;
+      
+      // Initialize the global's value with a constant.
+      newGlobal->init = builder.makeConst(BW::Literal(int32_t(randVal)));
+      
+      // Set an export name for tracking.
+      newGlobal->name = BW::Name("fuzz_global");
+      
+      // Add the new global to the module.
+      module->addGlobal(std::move(newGlobal));
+      std::cout << "[Custom Mutator] Section mutation: New global variable 'fuzz_global' added with initial value "
+                << randVal << ".\n";
+    } else if (option == 4) {
+      // Option 4: Modify the data section.
+      if (!module->dataSegments.empty()) {
+        std::cout << "[Custom Mutator] Section mutation: Modifying a data segment.\n";
+        size_t idx = rng() % module->dataSegments.size();
+        auto& dataSeg = module->dataSegments[idx];
+        const char extra[] = "FUZZ";
+        dataSeg->data.insert(dataSeg->data.end(), extra, extra + sizeof(extra) - 1);
+        std::cout << "[Custom Mutator] Section mutation: Appended 'FUZZ' to data segment " << idx << ".\n";
+      } else {
+        std::cout << "[Custom Mutator] Section mutation: No data segments available to modify.\n";
+      }
     }
-}
+  }
 
 // Helper function: Find a block in the AST that contains the target expression.
 BW::Block* findParentBlock(BW::Expression* target, const std::vector<BW::Expression*>& exprs) {
@@ -2018,6 +2068,9 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
             return Size;
         }
 
+        Engine* dummyEngine = new Engine();
+        Store* dummyStore = new Store(dummyEngine);
+
         int strat = rng() % 6;
         // fprintf(stderr, "custom mutator cov test strat: %d", strat);
         switch (strat) {
@@ -2028,7 +2081,7 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
             mutateConstantExpressions(module, rng);
             break;
         case 2:
-            mutateSection(module, rng);
+            mutateSection(module, dummyStore, rng);
             break;
         case 3:
             mutateSemantic(module, rng);
@@ -2058,7 +2111,10 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
         size_t outSize = output.size();
         size_t newSize = std::min(outSize, MaxSize);
         memcpy(Data, output.data(), newSize);
+
         delete module;
+        delete dummyStore;
+        delete dummyEngine;
         return newSize;
     } catch (const std::exception &e) {
         fprintf(stderr, "[fuzz] std::exception: %s\n", e.what());
