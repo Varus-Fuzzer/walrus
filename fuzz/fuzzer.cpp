@@ -1584,14 +1584,21 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
             BW::Expression* zero = builder.makeConst(BW::Literal(int32_t(0)));
             BW::Expression* addExpr = builder.makeBinary(static_cast<BW::BinaryOp>(BinaryenI32Add()), zero, zero);
             BW::Expression* dropExpr = builder.makeDrop(addExpr);
-            if (auto* block = func->body->dynCast<BW::Block>()) {
-                block->list.push_back(dropExpr);
-                if (block->list.size() > 1) {
-                    std::swap(block->list[0], block->list.back());
+            
+            BW::Type bodyType = func->body->type;
+            bool isSafeToInsertDrop = (bodyType == BW::Type::none);
+
+            if (isSafeToInsertDrop) {
+                if (auto* block = func->body->dynCast<BW::Block>()) {
+                    block->list.push_back(dropExpr);
+                    if (block->list.size() > 1) {
+                        std::swap(block->list[0], block->list.back());
+                    }
+                } else {
+                    func->body = builder.makeBlock({ dropExpr, func->body });
                 }
-            } else {
-                func->body = builder.makeBlock({ dropExpr, func->body });
             }
+
             std::cout << "[Custom Mutator] Inserted drop of no-op arithmetic expression.\n";
             break;
         }
