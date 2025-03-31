@@ -49,7 +49,8 @@ RUN cmake -H. -Bout/release/x64 \
     -DWALRUS_HOST=linux \
     -DWALRUS_MODE=release \
     -DWALRUS_OUTPUT=fuzzer \
-    -GNinja
+    -GNinja \
+    -DENABLE_PRINT_LOG=OFF
 RUN ninja -Cout/release/x64
 
 # WORKDIR out/release/x64
