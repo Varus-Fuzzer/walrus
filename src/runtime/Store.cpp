@@ -50,6 +50,7 @@ void Store::finalize()
     for (size_t i = 0; i < Value::Type::NUM; i++) {
         if (g_defaultFunctionTypes[i]) {
             delete g_defaultFunctionTypes[i];
+            g_defaultFunctionTypes[i] = nullptr;
         }
     }
 

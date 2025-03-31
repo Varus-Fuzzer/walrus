@@ -1544,7 +1544,8 @@ void mutateSection(BW::Module* module, Store* store, std::mt19937& rng) {
       auto* newGlobal = new wasm::Global();
       newGlobal->name = BW::Name("fuzz_global");
       newGlobal->mutable_ = true;
-      newGlobal->init = builder.makeConst(BW::Literal(static_cast<int32_t>(rng())));
+      newGlobal->type = wasm::Type::i32;
+      newGlobal->init = builder.makeConst(BW::Literal(randVal));
       module->addGlobal(newGlobal);    
       #ifdef PRINT_LOG
       std::cout << "[Custom Mutator] Section mutation: New global variable 'fuzz_global' added with initial value "
