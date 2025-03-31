@@ -1609,7 +1609,7 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
     BW::Builder builder(*module);
 
     // Choose among 5 semantic-preserving mutation strategies.
-    int option = rng() % 5;
+    int option = rng() % 4;
     switch (option) {
         case 0: {
             // Option 0: Insert dead code with an if(false){...} block.
@@ -1631,9 +1631,12 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
             #endif
             break;
         }
+        /*
         case 1: {
             // Option 1: Insert a drop instruction wrapping a no-op arithmetic expression.
-            BW::Expression* zero = builder.makeConst(BW::Literal(int32_t(0)));
+            // BW::Expression* zero = builder.makeConst(BW::Literal(int32_t(0)));
+            const uint8_t simdZeros[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+            BW::Expression* zero = builder.makeConst(BW::Literal(simdZeros));
             BW::Expression* addExpr = builder.makeBinary(static_cast<BW::BinaryOp>(BinaryenI32Add()), zero, zero);
             BW::Expression* dropExpr = builder.makeDrop(addExpr);
             
@@ -1650,12 +1653,13 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
                     func->body = builder.makeBlock({ dropExpr, func->body });
                 }
             }
-            #ifdef PRINT_LOG
+            // #ifdef PRINT_LOG
             std::cout << "[Custom Mutator] Inserted drop of no-op arithmetic expression.\n";
-            #endif
+            // #endif
             break;
         }
-        case 2: {
+        */
+        case 1: {
             // Option 2: Transform an i32.add into an equivalent form: (x + 0) + y.
             std::vector<BW::Expression*> binExprs = collectExpressions(func->body);
             bool transformed = false;
@@ -1680,7 +1684,7 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
             }
             break;
         }
-        case 3: {
+        case 2: {
             // Option 3: Duplicate an instruction to alter internal structure.
             std::vector<BW::Expression*> allExprs = collectExpressions(func->body);
             bool duplicated = false;
@@ -1706,7 +1710,7 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
             }
             break;
         }
-        case 4: {
+        case 3: {
             // Option 4: Insert an unreachable instruction inside an if(false){...} block.
             BW::Expression* falseConst = builder.makeConst(BW::Literal(int32_t(0)));
             BW::Expression* unreachableExpr = builder.makeUnreachable();
@@ -1966,35 +1970,56 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
         for (auto* expr : exprs) {
             // ----- Binary Expressions -----
             if (auto* binary = expr->dynCast<BW::Binary>()) {
-                #ifdef PRINT_LOG
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Found Binary expression with opcode " << binary->op << ".\n";
-                #endif
-                // Replace opcode using candidate list based on its category.
-                Op newOp = getReplacementForOp(binary->op, rng);
-                // Determine if the operation is commutative.
-                bool commutative = false;
-                if (binary->op == BinaryenI32Add() || binary->op == BinaryenI32Mul() ||
-                    binary->op == BinaryenI32And() || binary->op == BinaryenI32Or()  ||
-                    binary->op == BinaryenI32Xor() || binary->op == BinaryenF32Add() ||
-                    binary->op == BinaryenF32Mul() || binary->op == BinaryenF64Add() ||
-                    binary->op == BinaryenF64Mul()) {
-                    commutative = true;
-                }
-                // Randomly swap operands for commutative operations.
-                if (commutative && (rng() % 2 == 0)) {
-                    std::swap(binary->left, binary->right);
+                if (binary->left->type == BW::Type::i32 && binary->right->type == BW::Type::i32) {
                     #ifdef PRINT_LOG
                     std::cout << "[Custom Mutator] Function '" << func->name.str 
-                              << "': Swapped operands in Binary expression.\n";
+                              << "': Found Binary expression with opcode " << binary->op << ".\n";
                     #endif
+
+                    // Define i32 operator
+                    std::vector<Op> validI32Ops = { 
+                        BinaryenI32Add(), BinaryenI32Sub(), BinaryenI32Mul(),
+                        BinaryenI32DivS(), BinaryenI32DivU(),
+                        BinaryenI32And(), BinaryenI32Or(), BinaryenI32Xor() 
+                    };
+
+                    // Replace opcode using candidate list based on its category.
+                    Op newOp = getReplacementForOp(binary->op, rng);
+
+                    if (std::find(validI32Ops.begin(), validI32Ops.end(), newOp) == validI32Ops.end()) {
+                        #ifdef PRINT_LOG
+                        std::cout << "[Custom Mutator] Function '" << func->name.str 
+                                  << "': Candidate opcode " << newOp << " is not valid for i32, skipping mutation.\n";
+                        #endif
+                        continue;
+                    }
+
+                    // Determine if the operation is commutative.
+                    bool commutative = false;
+                    if (binary->op == BinaryenI32Add() || binary->op == BinaryenI32Mul() ||
+                        binary->op == BinaryenI32And() || binary->op == BinaryenI32Or()  ||
+                        binary->op == BinaryenI32Xor() || binary->op == BinaryenF32Add() ||
+                        binary->op == BinaryenF32Mul() || binary->op == BinaryenF64Add() ||
+                        binary->op == BinaryenF64Mul()) {
+                        commutative = true;
+                    }
+
+                    // Randomly swap operands for commutative operations.
+                    if (commutative && (rng() % 2 == 0)) {
+                        std::swap(binary->left, binary->right);
+                        #ifdef PRINT_LOG
+                        std::cout << "[Custom Mutator] Function '" << func->name.str 
+                                << "': Swapped operands in Binary expression.\n";
+                        #endif
+                    }
+
+                    // Cast newOp (Op) to BinaryOp and log the change.
+                    #ifdef PRINT_LOG
+                    std::cout << "[Custom Mutator] Function '" << func->name.str 
+                            << "': Replacing opcode " << binary->op << " with " << newOp << ".\n";
+                    #endif
+                    binary->op = static_cast<BW::BinaryOp>(newOp);
                 }
-                // Cast newOp (Op) to BinaryOp and log the change.
-                #ifdef PRINT_LOG
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Replacing opcode " << binary->op << " with " << newOp << ".\n";
-                #endif
-                binary->op = static_cast<BW::BinaryOp>(newOp);
             }
             // ----- Unary Expressions -----
             else if (auto* unary = expr->dynCast<BW::Unary>()) {
