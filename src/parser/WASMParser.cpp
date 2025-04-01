@@ -1010,6 +1010,8 @@ public:
     virtual void OnLocalDecl(Index decl_index, Index count, Type type) override
     {
         while (count) {
+            if (count >= 100000)
+                count = 100000;
             auto wType = toValueKind(type);
             m_currentFunction->m_local.push_back(wType);
             m_localInfo.push_back(LocalInfo(wType, m_functionStackSizeSoFar));
