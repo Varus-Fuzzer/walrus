@@ -74,11 +74,11 @@ You'll need [Perf](https://perf.wiki.kernel.org/index.php/Main_Page).
 ```python
 python3 HybridFuzzer.py \
     --target /opt/Varus/walrus/out/release/x64/fuzzer \
-    --corpus /opt/Varus/walrus/test/basic \
+    --corpus /opt/Varus/walrus/test/corpus \
     --time 3600 \
     --libfuzzer-cycles 2 \
     --llm-cycles 1 \
-    --llm-model llama3.2:latest \
+    --llm-model gemma2:latest \
     --ollama-host http://host.docker.internal:11434 \
     --libfuzzer-options '{"fork":1,"jobs":4}' \
     --verbose
