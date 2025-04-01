@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class HybridFuzzer:
     """
     Hybrid Fuzzer that uses LibFuzzer + LLM to generate WAT (WebAssembly Text) inputs.
-    The prompt has been modified to produce valid WAT.
+    The prompt has been modified to produce valid WAT and filter out invalid ones.
     """
 
     def __init__(
@@ -48,7 +48,7 @@ class HybridFuzzer:
         os.makedirs(self.corpus_dir, exist_ok=True)
         os.makedirs(self.crashes_dir, exist_ok=True)
 
-        self.ollama_host = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+        self.ollama_host = os.environ.get("OLLAMA_HOST", "http://host.docker.internal:11434")
         logger.info(f"[INIT] Ollama API host: {self.ollama_host}")
 
         # Check Ollama model
@@ -146,6 +146,7 @@ class HybridFuzzer:
                 logger.info(f"[Thread] LibFuzzer cycle #{cycle_count} started")
                 self.run_libfuzzer(time_limit=cycle_time)
 
+                # Drain the corpus queue so LibFuzzer sees new inputs
                 while not self.corpus_queue.empty():
                     try:
                         new_input = self.corpus_queue.get_nowait()
@@ -193,46 +194,78 @@ class HybridFuzzer:
     def generate_llm_inputs(self, prompt_inputs: list) -> list:
         logger.info("[LLM] Requesting new inputs from Ollama")
 
-        # The system prompt focuses on producing VALID WAT code
         system_prompt = """
-You are a WASM text format (WAT) generator. Always produce valid WAT code that can be compiled by 'wat2wasm'.
+You are a WASM text format (WAT) generator.
+Your job is to ONLY produce valid WebAssembly Text Format (WAT) modules
+that can be compiled by 'wat2wasm' without errors.
 
-Follow these rules:
-1. Each module must begin with '(module' and end with ')'.
-2. Use only standard WAT instructions and structures: (func ...) (export ...) (global ...) (memory ...) (table ...) etc.
-3. Comments can be ';;' for line comments or '(; ... ;)' for block comments.
-4. Example of a valid WAT module:
+**RULES**:
+1. Each module must start with (module and end with ).
+2. Inside the module, only use standard W3C WebAssembly instructions 
+   and declarations:
+   - (func (export "name") (param $p i32) (result i32) ...)
+   - (global $g (mut i32) (i32.const 0))
+   - (memory (export "mem") 1)
+   - (data (i32.const 0) "some string")
+   - (table (export "tab") 1 10 funcref)
+   - (type ...)
+   - (elem ...)
+   - instructions like local.get, local.set, i32.const, i32.add, i32.load, call, call_indirect, block, if, etc.
+3. DO NOT use assembly directives (.text, .data, .globl, db, etc.).
+4. DO NOT use Lisp-like syntax (define, lambda, define-export, define-adder, etc.).
+5. DO NOT invent or introduce new tokens like ":", "=>", "[...]", or "()", or random punctuation.
+6. If you add data segments, it must be in the form: (data (i32.const offset) "string").
+   Also ensure (memory ...) is declared if you're storing data.
+7. Comments must be either ";; single line" or "(; block comment ;)". 
+   A single semicolon alone ";" is not valid WAT syntax.
+8. (global) or (local) must not be empty. Example:
+     (global $g i32 (i32.const 10))
+     (func (param $x i32) (local i32 i32) ...)
+9. Only produce a single module per code block and do not produce anything outside (module ...).
 
+**EXAMPLES**:
+
+;; Example 1
 (module
   (global $g (mut i32) (i32.const 0))
-  (func (export "foo") (param $x i32) (result i32)
-    local.get $x
-    i32.const 5
-    i32.add
-  )
   (memory (export "mem") 1)
+  (data (i32.const 0) "Hello")
+  (func (export "double") (param $x i32) (result i32)
+    local.get $x
+    i32.const 2
+    i32.mul
+  )
 )
 
-Be sure that each module is self-contained and does not contain invalid or LLVM IR style syntax.
+;; Example 2
+(module
+  (func (export "sum")(param $a i32)(param $b i32)(result i32)
+    local.get $a
+    local.get $b
+    i32.add
+  )
+)
+
+Never produce anything else besides a self-contained (module ...).
 """
 
-        # The user prompt references sample modules for context
+
         user_prompt = f"""
-Here are some existing WAT samples (in JSON):
+We already have some WAT samples for reference, such as:
 {json.dumps(prompt_inputs, indent=2)}
 
-Please generate at least 3 new valid WAT modules following the rules above. 
-Each module must be enclosed with:
+**Now generate at least 3 new valid WAT modules** that follow the above system rules EXACTLY.
 
+Wrap each module with:
 @MODULE_START
 (module
   ...
 )
 @MODULE_END
 
-Use standard instructions like i32.const, i32.add, (func), etc. 
-Avoid "define i32 @foo", "global @var", or any LLVM IR syntax.
+Do not include any invalid or extra tokens.
 """
+
 
         request_data = {
             "model": self.llm_model,
@@ -259,59 +292,80 @@ Avoid "define i32 @foo", "global @var", or any LLVM IR syntax.
             if not generated_text.strip():
                 return []
 
+            # 디버깅: LLM이 생성한 원시 텍스트 출력
+            logger.debug(f"[LLM Debug] Raw generated text:\n{generated_text}")
+
+            # 모듈 추출
             pattern = r'@MODULE_START\s*(.*?)\s*@MODULE_END'
             matches = re.findall(pattern, generated_text, flags=re.DOTALL)
-            if matches:
-                return [m.strip() for m in matches]
+            if not matches:
+                # fallback
+                module_pattern = r'(\(module.*?\))'
+                matches = re.findall(module_pattern, generated_text, flags=re.DOTALL)
 
-            # fallback: search (module ... )
-            module_pattern = r'(\(module.*?\))'
-            fallback = re.findall(module_pattern, generated_text, flags=re.DOTALL)
-            return [m.strip() for m in fallback] if fallback else []
+            # 필터링
+            invalid_tokens = [".text", ".globl", " db ", "`", "define", "lambda", "=>", ":[", ": ["]
+            valid_results = []
+            for mod_text in matches:
+                lower_text = mod_text.lower()
+                if any(tok in lower_text for tok in invalid_tokens):
+                    logger.warning("[LLM] Discarding invalid code with forbidden tokens.")
+                    continue
+                # (module으로 시작
+                if not mod_text.strip().startswith("(module"):
+                    logger.warning("[LLM] Discarding text that doesn't start with (module.")
+                    continue
+
+                valid_results.append(mod_text.strip())
+
+            return valid_results
 
         except Exception as e:
             logger.error(f"[LLM] Request error: {e}")
             return []
 
     def save_inputs_to_corpus(self, wat_modules: list) -> int:
+        """
+        Save the LLM-generated WAT modules to the corpus directory.
+        If wat2wasm is available, attempt to compile them to .wasm.
+        Only keep them if the compilation succeeds.
+        """
         saved = 0
         wat2wasm_available = self._check_wat2wasm()
 
         for idx, wat_text in enumerate(wat_modules):
             timestamp = int(time.time() * 1000)
             base_name = f"llm_generated_{timestamp}_{idx}"
-            corpus_path = os.path.join(self.corpus_dir, base_name)
+            wat_file = f"{os.path.join(self.corpus_dir, base_name)}.wat"
+
+            with open(wat_file, "w") as f:
+                f.write(wat_text)
 
             if wat2wasm_available:
                 try:
-                    wat_file = f"{corpus_path}.wat"
-                    with open(wat_file, "w") as f:
-                        f.write(wat_text)
-
-                    cmd = ["wat2wasm", wat_file, "-o", corpus_path, "--no-check"]
+                    wasm_file = os.path.join(self.corpus_dir, base_name)
+                    cmd = ["wat2wasm", wat_file, "-o", wasm_file, "--no-check"]
                     proc = subprocess.run(cmd, capture_output=True, timeout=5)
                     if proc.returncode == 0:
+                        # 성공 -> wat 파일 삭제
                         os.remove(wat_file)
-                        self.corpus_queue.put(corpus_path)
+                        self.corpus_queue.put(wasm_file)
                         saved += 1
                     else:
-                        logger.warning(f"[LLM] wat2wasm failed, stderr: {proc.stderr.decode('utf-8','replace')}")
-                        self.corpus_queue.put(wat_file)
-                        saved += 1
+                        logger.warning(f"[LLM] wat2wasm failed => discarding. stderr:\n{proc.stderr.decode('utf-8','replace')}")
+                        os.remove(wat_file)
 
                 except Exception as e:
                     logger.error(f"[LLM] wat2wasm conversion error: {e}")
-                    with open(corpus_path, "w") as f:
-                        f.write(wat_text)
-                    self.corpus_queue.put(corpus_path)
-                    saved += 1
+                    os.remove(wat_file)
+
             else:
-                with open(corpus_path, "w") as f:
-                    f.write(wat_text)
-                self.corpus_queue.put(corpus_path)
-                saved += 1
+                # wat2wasm가 없으면 그냥 버림
+                logger.warning("[LLM] wat2wasm not installed => discarding .wat")
+                os.remove(wat_file)
 
         return saved
+
 
     def _check_wat2wasm(self) -> bool:
         try:
@@ -323,12 +377,18 @@ Avoid "define i32 @foo", "global @var", or any LLVM IR syntax.
             return False
 
     def get_interesting_inputs(self, limit: int = 5) -> list:
+        """
+        Fetch some sample inputs from the existing corpus to feed into the LLM as context.
+        """
         paths = [os.path.join(self.corpus_dir, f) for f in os.listdir(self.corpus_dir)]
         if not paths:
             return []
 
+        # 가장 최근 수정된 파일 일부
         paths = sorted(paths, key=os.path.getmtime, reverse=True)[:max(1, limit // 2)]
         remaining = limit - len(paths)
+
+        # 추가로 나머지 무작위
         all_files = [os.path.join(self.corpus_dir, f) for f in os.listdir(self.corpus_dir)]
         extra_candidates = [p for p in all_files if p not in paths]
         if remaining > 0 and extra_candidates:
@@ -347,6 +407,11 @@ Avoid "define i32 @foo", "global @var", or any LLVM IR syntax.
         return results
 
     def binary_to_wat(self, binary_data: bytes) -> str:
+        """
+        Convert a given binary data into a trivial WAT string. 
+        If it's WASM, produce minimal (module ...) 
+        otherwise treat it as i32.const segments.
+        """
         wat_lines = ["(module"]
         if len(binary_data) < 8 or binary_data[0:4] != b"\0asm":
             wat_lines.append("  ;; Not a standard .wasm => treat as i32.const")
@@ -370,10 +435,12 @@ Avoid "define i32 @foo", "global @var", or any LLVM IR syntax.
         logger.info(f"[RUN] Starting hybrid fuzzing (total time: {total_time}s)")
 
         start_time = time.time()
+        # cycle_time: libfuzzer 한 번 실행할 시간
         cycle_time = min(60, total_time // (self.libfuzzer_cycles * 2) or 30)
 
         threads = []
 
+        # libfuzzer 스레드 시작
         for i in range(self.libfuzzer_cycles):
             th = threading.Thread(
                 target=self.libfuzzer_worker_thread,
@@ -385,6 +452,7 @@ Avoid "define i32 @foo", "global @var", or any LLVM IR syntax.
             th.start()
             logger.info(f"[RUN] LibFuzzer worker #{i+1} started")
 
+        # llm 스레드 시작
         if self.llm_cycles > 0:
             for i in range(self.llm_cycles):
                 th = threading.Thread(
@@ -406,6 +474,7 @@ Avoid "define i32 @foo", "global @var", or any LLVM IR syntax.
                 elapsed = now - start_time
                 remaining = end_time - now
 
+                # 10초마다 상태 출력
                 if int(elapsed) % 10 == 0:
                     with self.stats_lock:
                         corpus_size = len(os.listdir(self.corpus_dir))
@@ -440,6 +509,7 @@ Avoid "define i32 @foo", "global @var", or any LLVM IR syntax.
 
             return self.stats
 
+
 def main():
     parser = argparse.ArgumentParser(description='LibFuzzer+LLM Hybrid Fuzzer (thread-based) with improved WAT prompt.')
     parser.add_argument('--target', '-t', required=True, help='Path to the Walrus fuzzing target')
@@ -448,7 +518,7 @@ def main():
     parser.add_argument('--libfuzzer-cycles', type=int, default=2, help='Number of parallel LibFuzzer workers')
     parser.add_argument('--llm-cycles', type=int, default=1, help='Number of parallel LLM workers')
     parser.add_argument('--llm-model', default='llama3', help='Name of the Ollama model')
-    parser.add_argument('--ollama-host', help='Ollama API host (default: http://localhost:11434)')
+    parser.add_argument('--ollama-host', help='Ollama API host (default: http://host.docker.internal:11434)')
     parser.add_argument('--libfuzzer-options', help='LibFuzzer options (JSON)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable debug output')
 
@@ -468,6 +538,7 @@ def main():
             logger.error("Error parsing LibFuzzer options - must be valid JSON.")
             sys.exit(1)
 
+    # wat2wasm 설치 여부 확인
     try:
         subprocess.run(["wat2wasm", "--version"], capture_output=True)
         logger.info("[INIT] Found wat2wasm tool")
