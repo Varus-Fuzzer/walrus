@@ -35,7 +35,7 @@ RUN mkdir -p /opt/Varus
 RUN git clone https://github.com/Varus-Fuzzer/binaryen.git /binaryen
 WORKDIR /binaryen
 RUN git submodule init && git submodule update
-RUN CC=clang CXX=clang++ cmake -DCMAKE_CXX_FLAGS="-DPRINT_LOG" . && make && make install
+RUN CC=clang CXX=clang++ cmake . && make && make install
 
 # walrus build
 # RUN git clone --recursive https://github.com/Varus-Fuzzer/walrus.git /opt/Varus/walrus
