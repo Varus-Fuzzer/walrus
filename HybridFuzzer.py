@@ -12,6 +12,7 @@ import logging
 import requests
 import struct
 import re
+import hashlib
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -199,10 +200,11 @@ You are a WASM text format (WAT) generator.
 Your job is to ONLY produce valid WebAssembly Text Format (WAT) modules
 that can be compiled by 'wat2wasm' without errors.
 
-**RULES**:
+---------------------------
+[ CORE RULES ]
 1. Each module must start with (module and end with ).
 2. Inside the module, only use standard W3C WebAssembly instructions 
-   and declarations:
+   and declarations, such as:
    - (func (export "name") (param $p i32) (result i32) ...)
    - (global $g (mut i32) (i32.const 0))
    - (memory (export "mem") 1)
@@ -210,43 +212,115 @@ that can be compiled by 'wat2wasm' without errors.
    - (table (export "tab") 1 10 funcref)
    - (type ...)
    - (elem ...)
-   - instructions like local.get, local.set, i32.const, i32.add, i32.load, call, call_indirect, block, if, etc.
+   - instructions like local.get, local.set, i32.const, i32.add, i32.load, i32.store, call, call_indirect, block, loop, if, end, br, etc.
+
 3. DO NOT use assembly directives (.text, .data, .globl, db, etc.).
 4. DO NOT use Lisp-like syntax (define, lambda, define-export, define-adder, etc.).
 5. DO NOT invent or introduce new tokens like ":", "=>", "[...]", or "()", or random punctuation.
 6. If you add data segments, it must be in the form: (data (i32.const offset) "string").
    Also ensure (memory ...) is declared if you're storing data.
-7. Comments must be either ";; single line" or "(; block comment ;)". 
-   A single semicolon alone ";" is not valid WAT syntax.
-8. (global) or (local) must not be empty. Example:
-     (global $g i32 (i32.const 10))
-     (func (param $x i32) (local i32 i32) ...)
-9. Only produce a single module per code block and do not produce anything outside (module ...).
+7. (global) or (local) must not be empty. Example:
+   (global $g i32 (i32.const 10))
+   (func (param $x i32) (local i32 i32) ...)
+8. Only produce a single module per code block and do not produce anything outside (module ...).
+9. No comments allowed at all.
 
-**EXAMPLES**:
+---------------------------
+[ AVOID COMMON ERRORS ]
+10. NEVER use expressions like (i32.const 0) inside parameter or result definitions.
+    ❌ Wrong: (param $x (i32.const 0))
+    ❌ Wrong: (result (i32.const 1))
+    ✅ Correct: (param $x i32)
+    ✅ Correct: (result i32)
 
-;; Example 1
+11. Only use (i32.const N) inside function bodies or global initializers, never in param/result type declarations.
+
+12. (local $var i32) must NOT have immediate initialization like (local $var i32 (i32.const N)).
+    To initialize a local variable, do:
+      (local $var i32)
+      i32.const N
+      local.set $var
+
+13. DO NOT use keywords like (age), (shareable), or random tokens for memory:
+    The correct form is (memory (export "mem") 1 2) or (memory 1), etc. 
+    (memory) must have numeric arguments or an export declaration with min/max pages.
+
+14. (call $someLocalVar) is invalid. 'call' must reference a function name declared by (func $someFunc).
+    Similarly, (call_indirect) uses a (table ...) and (type ...). 
+    You cannot directly call local variables.
+
+15. For tables, the correct minimal form is something like:
+    (table (export "tab") 1 10 funcref)
+    (elem (i32.const 0) $func1 $func2)
+    (type $t (func (param i32) (result i32)))
+    (call_indirect (type $t) (local.get $someIndex))
+
+16. Double-check that every ( has a matching ), no extra or missing parentheses.
+17. The output must be compileable by wat2wasm with no errors.
+
+---------------------------
+[ DIVERSITY & UNIQUENESS RULES ]
+18. Do not copy function names, exports, memory sizes, or global names exactly from the examples.
+19. Each module must include at least 2 instructions from { i32.load, i32.store, block, loop, if, local.set, i32.eq, i32.lt, i32.gt } that are NOT used in the example modules.
+20. If you use tables or call_indirect, you must define and reference matching types and function(s) properly (no undefined function references).
+
+---------------------------
+[ NEW ADDITIONAL RULES ]
+21. If you declare (elem (i32.const N) $f1 $f2 ...), you MUST define each of those functions in the same module:
+    (func $f1 (param ...) (result ...) ...)
+    (func $f2 ...)
+    etc.
+
+22. Standard W3C WebAssembly does not support tokens like local.add, local.sub, then, or endif.
+    - You must use i32.add, i32.sub, etc. instead of local.add/local.sub.
+    - If statement must use 'if'...'end' (and optional 'else'...'end'), not 'then' or 'endif'.
+    - Compare instructions like i32.eq, i32.gt, etc. must use values from the stack, e.g.:
+        i32.const 0
+        i32.eq
+      rather than i32.eq (i32.const 0).
+
+---------------------------
+[ EXAMPLES OF CORRECT MODULES (NO COMMENTS) ]
+
 (module
   (global $g (mut i32) (i32.const 0))
   (memory (export "mem") 1)
   (data (i32.const 0) "Hello")
-  (func (export "double") (param $x i32) (result i32)
+  (func (export "doubleX") (param $x i32) (result i32)
     local.get $x
     i32.const 2
     i32.mul
   )
 )
 
-;; Example 2
 (module
-  (func (export "sum")(param $a i32)(param $b i32)(result i32)
+  (func (export "sumX") (param $a i32) (param $b i32) (result i32)
     local.get $a
     local.get $b
     i32.add
   )
 )
 
-Never produce anything else besides a self-contained (module ...).
+(module
+  (table (export "myTableX") 2 10 funcref)
+  (type $t (func (param i32) (result i32)))
+  (elem (i32.const 0) $f1 $f2)
+  (func $f1 (param $p i32) (result i32)
+    local.get $p
+    i32.const 42
+    i32.add
+  )
+  (func $f2 (param $p i32) (result i32)
+    local.get $p
+    i32.const 1
+    i32.sub
+  )
+  (func (export "testIndirectX") (param $index i32) (result i32)
+    local.get $index
+    call_indirect (type $t)
+  )
+)
+
 """
 
 
@@ -254,7 +328,18 @@ Never produce anything else besides a self-contained (module ...).
 We already have some WAT samples for reference, such as:
 {json.dumps(prompt_inputs, indent=2)}
 
-**Now generate at least 3 new valid WAT modules** that follow the above system rules EXACTLY.
+Now generate at least 3 NEW and DIVERSE valid WAT modules that strictly follow all rules, 
+including the DIVERSITY & UNIQUENESS RULES.
+
+- You must use at least 2 instructions from the set {{ i32.load, i32.store, block, loop, if, local.set, i32.eq, i32.lt, i32.gt }} 
+  in each module, different from the examples.
+- Use different memory sizes, export names, function names, or table names than in the examples.
+- Do not replicate the same structure or name from the provided examples.
+
+Remember:
+- No comments at all.
+- Double-check parentheses matching.
+- All forms must be allowed by wat2wasm.
 
 Wrap each module with:
 @MODULE_START
@@ -263,7 +348,7 @@ Wrap each module with:
 )
 @MODULE_END
 
-Do not include any invalid or extra tokens.
+No invalid or extra tokens, and no duplication of example names.
 """
 
 
@@ -328,12 +413,28 @@ Do not include any invalid or extra tokens.
         """
         Save the LLM-generated WAT modules to the corpus directory.
         If wat2wasm is available, attempt to compile them to .wasm.
-        Only keep them if the compilation succeeds.
+        Only keep them if the compilation succeeds and is not duplicate.
         """
         saved = 0
         wat2wasm_available = self._check_wat2wasm()
 
+        # 기존 corpus 파일의 해시 목록 수집 (중복 방지용)
+        existing_hashes = set()
+        for fname in os.listdir(self.corpus_dir):
+            path = os.path.join(self.corpus_dir, fname)
+            try:
+                with open(path, "rb") as f:
+                    data = f.read()
+                existing_hashes.add(hashlib.sha256(data).hexdigest())
+            except Exception as e:
+                logger.warning(f"[Corpus] Failed to hash existing file: {path}, error: {e}")
+
         for idx, wat_text in enumerate(wat_modules):
+            wat_hash = hashlib.sha256(wat_text.encode('utf-8')).hexdigest()
+            if wat_hash in existing_hashes:
+                logger.debug("[LLM] Skipping duplicate WAT input (hash match with corpus).")
+                continue
+
             timestamp = int(time.time() * 1000)
             base_name = f"llm_generated_{timestamp}_{idx}"
             wat_file = f"{os.path.join(self.corpus_dir, base_name)}.wat"
@@ -347,20 +448,20 @@ Do not include any invalid or extra tokens.
                     cmd = ["wat2wasm", wat_file, "-o", wasm_file, "--no-check"]
                     proc = subprocess.run(cmd, capture_output=True, timeout=5)
                     if proc.returncode == 0:
-                        # 성공 -> wat 파일 삭제
                         os.remove(wat_file)
                         self.corpus_queue.put(wasm_file)
                         saved += 1
+                        # 새롭게 저장된 바이너리 파일도 해시에 추가
+                        with open(wasm_file, "rb") as f:
+                            new_hash = hashlib.sha256(f.read()).hexdigest()
+                            existing_hashes.add(new_hash)
                     else:
                         logger.warning(f"[LLM] wat2wasm failed => discarding. stderr:\n{proc.stderr.decode('utf-8','replace')}")
                         os.remove(wat_file)
-
                 except Exception as e:
                     logger.error(f"[LLM] wat2wasm conversion error: {e}")
                     os.remove(wat_file)
-
             else:
-                # wat2wasm가 없으면 그냥 버림
                 logger.warning("[LLM] wat2wasm not installed => discarding .wat")
                 os.remove(wat_file)
 
@@ -508,6 +609,8 @@ Do not include any invalid or extra tokens.
             logger.info(f"Total run time   : {self.stats['total_time']:.2f}s")
 
             return self.stats
+    
+    
 
 
 def main():
@@ -538,7 +641,7 @@ def main():
             logger.error("Error parsing LibFuzzer options - must be valid JSON.")
             sys.exit(1)
 
-    # wat2wasm 설치 여부 확인
+
     try:
         subprocess.run(["wat2wasm", "--version"], capture_output=True)
         logger.info("[INIT] Found wat2wasm tool")
