@@ -41,7 +41,7 @@ class HybridFuzzer:
         self.llm_model = llm_model
         self.llm_temperature = llm_temperature
         self.llm_cycles = llm_cycles
-        
+
         # 지속적인 퍼징을 위한 변수들
         self.libfuzzer_process = None
         self.libfuzzer_process_lock = threading.Lock()
@@ -94,19 +94,19 @@ class HybridFuzzer:
             if self.libfuzzer_process is not None:
                 logger.warning("[LibFuzzer] Process already running, terminating it first")
                 self.stop_libfuzzer()
-            
+
             logger.info("[LibFuzzer] Starting continuous fuzzing process")
-            
+
             options = [
                 f"-artifact_prefix={self.crashes_dir}{os.sep}",
                 "-print_final_stats=1",
                 "-print_pcs=1",          # 커버리지 추적을 위해 PC 출력
                 "-print_corpus_stats=1"  # 코퍼스 상태 출력
             ]
-            
+
             # 시간 제한 제거 (지속적 실행을 위해)
             # max_total_time 옵션은 추가하지 않음
-            
+
             for k, v in self.libfuzzer_options.items():
                 if k != "max_total_time":  # 시간 제한 옵션은 건너뜀
                     options.append(f"-{k}={v}")
@@ -122,7 +122,7 @@ class HybridFuzzer:
                 universal_newlines=True,
                 bufsize=1  # 라인 버퍼링 활성화
             )
-            
+
             # 출력을 비차단 방식으로 처리하는 스레드 시작
             self.stdout_thread = threading.Thread(
                 target=self._monitor_libfuzzer_output,
@@ -134,13 +134,13 @@ class HybridFuzzer:
                 args=(self.libfuzzer_process.stderr,),
                 daemon=True
             )
-            
+
             self.stdout_thread.start()
             self.stderr_thread.start()
-            
+
             with self.stats_lock:
                 self.stats["libfuzzer_runs"] += 1
-                
+
             logger.info(f"[LibFuzzer] Continuous process started with PID: {self.libfuzzer_process.pid}")
             return self.libfuzzer_process.pid
 
@@ -151,7 +151,7 @@ class HybridFuzzer:
         for line in iter(pipe.readline, ''):
             if not line:
                 break
-                
+
             # 크래시 발견 시 통계 업데이트
             if "stat::found_crash" in line:
                 try:
@@ -161,7 +161,7 @@ class HybridFuzzer:
                         logger.info(f"[LibFuzzer] New crash found! Total: {self.stats['crashes_found']}")
                 except ValueError:
                     pass
-                    
+
             # 실행 수 업데이트
             elif "stat::number_of_executed_units" in line:
                 try:
@@ -170,7 +170,7 @@ class HybridFuzzer:
                         self.stats["total_execs"] = val
                 except ValueError:
                     pass
-                    
+
             # 코퍼스 크기 업데이트
             elif "stat::corpus_size" in line:
                 try:
@@ -179,7 +179,7 @@ class HybridFuzzer:
                         self.stats["corpus_size"] = val
                 except ValueError:
                     pass
-                    
+
             # 커버리지 관련 정보 (Covered PCs)
             elif "cov:" in line:
                 try:
@@ -189,7 +189,7 @@ class HybridFuzzer:
                         self.stats["coverage"] = val
                 except (ValueError, IndexError):
                     pass
-                    
+
             # 기타 중요 메시지 로깅
             elif any(x in line for x in ["CRASH", "ERROR", "WARNING", "NEW_FUNC", "NEW_PC"]):
                 logger.info(f"[LibFuzzer] {line.strip()}")
@@ -204,26 +204,26 @@ class HybridFuzzer:
             if self.libfuzzer_process is None or self.libfuzzer_process.poll() is not None:
                 logger.info("[LibFuzzer] No running process to stop")
                 return False
-                
+
             logger.info(f"[LibFuzzer] Stopping process (PID: {self.libfuzzer_process.pid})")
-            
+
             try:
                 # 프로세스를 안전하게 종료 (SIGTERM)
                 self.libfuzzer_process.terminate()
-                
+
                 # 5초 대기 후 여전히 실행 중이면 강제 종료 (SIGKILL)
                 for _ in range(5):
                     if self.libfuzzer_process.poll() is not None:
                         break
                     time.sleep(1)
-                    
+
                 if self.libfuzzer_process.poll() is None:
                     logger.warning("[LibFuzzer] Process not responding to SIGTERM, sending SIGKILL")
                     self.libfuzzer_process.kill()
-                    
+
                 self.libfuzzer_process = None
                 return True
-                
+
             except Exception as e:
                 logger.error(f"[LibFuzzer] Error stopping process: {e}")
                 return False
@@ -252,7 +252,7 @@ class HybridFuzzer:
                 items_processed += 1
             except queue.Empty:
                 break
-        
+
         if items_processed > 0:
             logger.info(f"[LibFuzzer] Processed {items_processed} new testcases")
         return items_processed
@@ -262,32 +262,32 @@ class HybridFuzzer:
         지속적인 LibFuzzer 실행을 관리하는 워커 스레드
         """
         logger.info("[Thread] LibFuzzer worker started")
-        
+
         try:
             # 초기 프로세스 시작
             self.start_continuous_libfuzzer()
-            
+
             while not self.stop_event.is_set():
                 # 테스트케이스 큐 처리
                 self.process_queue_testcases()
-                
+
                 # 프로세스 상태 확인
                 with self.libfuzzer_process_lock:
                     if self.libfuzzer_process is None or self.libfuzzer_process.poll() is not None:
                         # 프로세스가 종료된 경우 재시작
                         logger.warning("[Thread] LibFuzzer process exited unexpectedly, restarting...")
                         self.start_continuous_libfuzzer()
-                
+
                 # 통계 업데이트 및 출력
                 with self.stats_lock:
                     corpus_size = len(os.listdir(self.corpus_dir))
                     crashes_count = len(os.listdir(self.crashes_dir))
                     self.stats["corpus_size"] = corpus_size
                     self.stats["crashes_count"] = crashes_count
-                
+
                 # 주기적인 상태 체크 간격
                 time.sleep(5)
-                
+
         except Exception as e:
             logger.error(f"[Thread] LibFuzzer worker error: {e}")
         finally:
@@ -341,7 +341,7 @@ that can be compiled by 'wat2wasm' without errors.
 ---------------------------
 [ CORE RULES ]
 1. Each module must start with (module and end with ).
-2. Inside the module, only use standard W3C WebAssembly instructions 
+2. Inside the module, only use standard W3C WebAssembly instructions
    and declarations, such as:
    - (func (export "name") (param $p i32) (result i32) ...)
    - (global $g (mut i32) (i32.const 0))
@@ -380,11 +380,11 @@ that can be compiled by 'wat2wasm' without errors.
       local.set $var
 
 13. DO NOT use keywords like (age), (shareable), or random tokens for memory:
-    The correct form is (memory (export "mem") 1 2) or (memory 1), etc. 
+    The correct form is (memory (export "mem") 1 2) or (memory 1), etc.
     (memory) must have numeric arguments or an export declaration with min/max pages.
 
 14. (call $someLocalVar) is invalid. 'call' must reference a function name declared by (func $someFunc).
-    Similarly, (call_indirect) uses a (table ...) and (type ...). 
+    Similarly, (call_indirect) uses a (table ...) and (type ...).
     You cannot directly call local variables.
 
 15. For tables, the correct minimal form is something like:
@@ -466,10 +466,10 @@ that can be compiled by 'wat2wasm' without errors.
 We already have some WAT samples for reference, such as:
 {json.dumps(prompt_inputs, indent=2)}
 
-Now generate at least 3 NEW and DIVERSE valid WAT modules that strictly follow all rules, 
+Now generate at least 3 NEW and DIVERSE valid WAT modules that strictly follow all rules,
 including the DIVERSITY & UNIQUENESS RULES.
 
-- You must use at least 2 instructions from the set {{ i32.load, i32.store, block, loop, if, local.set, i32.eq, i32.lt, i32.gt }} 
+- You must use at least 2 instructions from the set {{ i32.load, i32.store, block, loop, if, local.set, i32.eq, i32.lt, i32.gt }}
   in each module, different from the examples.
 - Use different memory sizes, export names, function names, or table names than in the examples.
 - Do not replicate the same structure or name from the provided examples.
@@ -676,10 +676,10 @@ No invalid or extra tokens, and no duplication of example names.
         지속적인 커버리지 축적을 위해 수정된 실행 메서드
         """
         logger.info(f"[RUN] Starting hybrid fuzzing (total time: {total_time}s)")
-        
+
         start_time = time.time()
         threads = []
-        
+
         # LibFuzzer 워커 스레드 (1개로 통합)
         libfuzzer_thread = threading.Thread(
             target=self.libfuzzer_worker_thread,
@@ -689,7 +689,7 @@ No invalid or extra tokens, and no duplication of example names.
         threads.append(libfuzzer_thread)
         libfuzzer_thread.start()
         logger.info("[RUN] LibFuzzer main worker started")
-        
+
         # LLM 워커 스레드
         if self.llm_cycles > 0:
             for i in range(self.llm_cycles):
@@ -701,19 +701,19 @@ No invalid or extra tokens, and no duplication of example names.
                 threads.append(th)
                 th.start()
                 logger.info(f"[RUN] LLM worker #{i+1} started")
-        
+
         try:
             end_time = start_time + total_time
             last_stats_time = 0
-            
+
             while True:
                 now = time.time()
                 if now >= end_time:
                     break
-                
+
                 elapsed = now - start_time
                 remaining = end_time - now
-                
+
                 # 10초마다 상태 출력
                 if int(elapsed) % 10 == 0 and int(elapsed) != last_stats_time:
                     last_stats_time = int(elapsed)
@@ -721,45 +721,45 @@ No invalid or extra tokens, and no duplication of example names.
                         # 현재 상태 업데이트 (스레드에서 이미 업데이트하고 있지만 보험으로)
                         corpus_size = len(os.listdir(self.corpus_dir))
                         crashes_count = len(os.listdir(self.crashes_dir))
-                        
+
                         logger.info(f"[RUN] {elapsed:.1f}s elapsed (remaining {remaining:.1f}s), "
                                     f"Executions: {self.stats['total_execs']}, "
                                     f"Coverage: {self.stats['coverage']}, "
                                     f"Crashes: {self.stats['crashes_found']}, "
                                     f"Corpus size: {corpus_size}")
-                
+
                 time.sleep(1)
-                
+
         except KeyboardInterrupt:
             logger.info("[RUN] Stopped by user (Ctrl+C)")
-            
+
         finally:
             logger.info("[RUN] Sending stop signal to all threads...")
             self.stop_event.set()
-            
+
             # 안전하게 LibFuzzer 중지
             self.stop_libfuzzer()
-            
+
             # 스레드 종료 대기
             for th in threads:
                 logger.info(f"[RUN] Waiting for thread {th.name} to exit...")
                 th.join(timeout=5)
                 if th.is_alive():
                     logger.warning(f"[RUN] Thread {th.name} did not exit in time.")
-            
+
             # 최종 통계 수집
             with self.stats_lock:
                 self.stats["total_time"] = time.time() - start_time
                 self.stats["corpus_size"] = len(os.listdir(self.corpus_dir))
                 self.stats["crashes_count"] = len(os.listdir(self.crashes_dir))
-            
+
             logger.info("=== Fuzzing finished ===")
             logger.info(f"Total executions : {self.stats['total_execs']}")
             logger.info(f"Total coverage   : {self.stats['coverage']} PCs")
             logger.info(f"Total crashes    : {self.stats['crashes_found']}")
             logger.info(f"Corpus size      : {self.stats['corpus_size']}")
             logger.info(f"Total run time   : {self.stats['total_time']:.2f}s")
-            
+
             return self.stats
 
 def main():
@@ -830,7 +830,7 @@ def main():
 
     logger.info("[MAIN] Starting HybridFuzzer with continuous LibFuzzer execution")
     stats = fuzzer.run(total_time=args.time)
-    
+
     # 최종 결과 출력
     print(json.dumps(stats, indent=2))
 
