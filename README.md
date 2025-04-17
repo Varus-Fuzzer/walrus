@@ -73,13 +73,12 @@ You'll need [Perf](https://perf.wiki.kernel.org/index.php/Main_Page).
 ## How to Run HybridFuzzer
 ```python
 python3 HybridFuzzer.py \
-    --target /opt/Varus/walrus/out/release/x64/fuzzer \
-    --corpus /opt/Varus/walrus/test/corpus \
-    --time 3600 \
-    --libfuzzer-cycles 2 \
-    --llm-cycles 1 \
-    --llm-model gemma2:latest \
-    --ollama-host http://host.docker.internal:11434 \
-    --libfuzzer-options '{"fork":1,"jobs":4}' \
-    --verbose
+  --target /opt/Varus/walrus/out/release/x64/fuzzer \
+  --corpus /opt/Varus/walrus/test/corpus \
+  --time 7200 \
+  --llm-cycles 2 \
+  --llm-model gemma3:latest \
+  --ollama-host http://host.docker.internal:11434 \
+  --libfuzzer-options '{"detect_leaks": 0, "rss_limit_mb": 2048}' \
+  --verbose
 ```
