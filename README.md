@@ -38,14 +38,21 @@ CMake documentation for more information.
 - Build
 
 ```sh
-$ docker buildx build --progress=plain -t walrus-fuzz .
+docker buildx build --progress=plain -t walrus-fuzz .
 ```
 
 - Run
 
 ```sh
-$  docker run -it --rm walrus-fuzz:latest 
+docker run -it -v ~/walrus/out:/opt/Varus/walrus/out/release/x64/crashes walrus-fuzz:latest 
+
+$ cd out/release/x64
+$ ./fuzzer -artifact_prefix=./crashes [ The rest of options e.g. -max_len, -print_final_stats, -seed_inputs etc.. ]
 ```
+
+&nbsp;
+
+You should ensure that the directory ( walrus/out/ ) where tests are saved is mounted outside the docker container.
 
 ## Perf
 
