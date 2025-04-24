@@ -71,6 +71,7 @@ You'll need [Perf](https://perf.wiki.kernel.org/index.php/Main_Page).
 4. View the report with `perf report -i perf.data.jitted`
 
 ## How to Run HybridFuzzer
+HybridFuzzer.py
 ```python
 python3 HybridFuzzer.py \
   --target /opt/Varus/walrus/out/release/x64/fuzzer \
@@ -81,4 +82,21 @@ python3 HybridFuzzer.py \
   --ollama-host http://host.docker.internal:11434 \
   --libfuzzer-options '{"detect_leaks": 0, "rss_limit_mb": 2048}' \
   --verbose
+```
+
+API_HybridFuzzer.py
+```python
+export GOOGLE_API_KEY="API_KEY"
+
+python3 API_HybridFuzzer.py \
+  --target /opt/Varus/walrus/out/release/x64/fuzzer \
+  --corpus /opt/Varus/walrus/test/corpus \
+  --time 7200 \
+  --llm-cycles 1 \
+  --llm-model gemini-1.5-pro \
+  --gemini-api-key $GOOGLE_API_KEY \
+  --libfuzzer-options '{"max_len": 10240, "print_pcs": 1}' \
+  --verbose \
+  --confirm-requests \
+  --llm-test
 ```
