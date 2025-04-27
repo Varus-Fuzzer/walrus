@@ -1454,6 +1454,9 @@ inline Op getReplacementForOp(Op opcode, std::mt19937& rng)
     return opcode;
 }
 
+
+inline bool hasBody(const wasm::Function* f) { return f && f->body; }
+
 using Index = uint32_t;                             // missing typedef on old Binaryen
 
 static inline void mutateSingleConst(BW::Const* c, std::mt19937& rng)
@@ -1740,13 +1743,17 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
         BW::WasmValidator v;
         if (!v.validate(*module)) {
             for (auto& fnPtr : module->functions) {
+                if (!fnPtr->body)
+                    continue;
+
                 if (auto* blk = fnPtr->body->dynCast<BW::Block>()) {
-                    if (!blk->list.empty() && !blk->list[0]->dynCast<BW::Nop>()) {
-                        blk->list[0] = builder.makeNop();
-                    }
-                }
-            }
-        }
+                         if (!blk->list.empty() &&
+                             !blk->list[0]->dynCast<BW::Nop>()) {
+                             blk->list[0] = builder.makeNop();
+                         }
+                     }
+                 }
+             }
 }
 
 //-----------------------------------------------------------------------------
@@ -1760,6 +1767,11 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
     #endif
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
+
+        if (!hasBody(func))     
+            continue;
+
+        
         #ifdef PRINT_LOG
         std::cout << "[Custom Mutator] Processing functions: " << func->name.str << "\n";
         #endif
@@ -2015,6 +2027,23 @@ BW::Block* findParentBlock(BW::Expression* target, const std::vector<BW::Express
     return nullptr;
 }
 
+static BW::Function* pickRandomFunctionWithBody(BW::Module* module, std::mt19937& rng)
+{
+    if (!module || module->functions.empty()) return nullptr;
+
+    /* Randomize up to 8 attempts, then search linearly with fallback */
+    for (int tries = 0; tries < 8; ++tries) {
+        BW::Function* cand = module->functions[rng() % module->functions.size()].get();
+        if (cand && cand->body) return cand;
+    }
+    
+    for (auto& f : module->functions)
+        if (f->body) return f.get();
+    
+    return nullptr;
+}
+
+
 //-----------------------------------------------------------------------------
 // Semantic Mutation: Insert dead code into a function's body or apply equivalent 
 // transformations without changing the program semantics. This increases the 
@@ -2029,12 +2058,15 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
 {
     if (!module || module->functions.empty()) return;
 
-    // Select a random function from the module.
-    BW::Function* func = module->functions[rng() % module->functions.size()].get();
+    BW::Function* func = pickRandomFunctionWithBody(module, rng);
+    if (!func) return;   
+
+    
     #ifdef PRINT_LOG
-    std::cout << "[Custom Mutator] Semantic mutation: Processing function '"
+        std::cout << "[Custom Mutator] Semantic mutation: Processing function '"
               << func->name.str << "'.\n";
     #endif
+
     BW::Builder builder(*module);
 
     // Choose among 5 semantic-preserving mutation strategies.
@@ -2167,6 +2199,18 @@ void mutateSemantic(BW::Module* module, std::mt19937& rng)
     #endif
 }
 
+static BW::Block* ensureBlock(BW::Builder& B, BW::Expression*& body) {
+    if (auto* blk = body->dynCast<BW::Block>()) return blk;
+    body = B.makeBlock({ body });
+    return body->dynCast<BW::Block>();   // now definitely a block
+}
+
+static inline void prepend(ArenaVector<BW::Expression*>& vec, BW::Expression* expr)
+{
+    vec.push_back(expr);                      // 1. append
+    std::rotate(vec.begin(), vec.end() - 1, vec.end()); // 2. rotate last → front
+}
+
 //-----------------------------------------------------------------------------
 // Control-Flow Mutation: Modify branch conditions in control expressions.
 void mutateControlFlow(BW::Module* module, std::mt19937& rng)
@@ -2176,6 +2220,10 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
     // Iterate through each function.
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
+
+        if (!hasBody(func))     
+            continue;
+
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
         bool mutated = false;
         
@@ -2239,22 +2287,10 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
                 BW::Builder builder(*module);
                 BW::Expression* breakExpr = builder.makeBreak(
                     BW::Name("break_mut"), nullptr, builder.makeConst(BW::Literal(int32_t(1))));
+                
+                BW::Block* blk = ensureBlock(builder, loop->body);
+                prepend(blk->list, breakExpr);     
 
-                if (auto* block = loop->body->dynCast<BW::Block>()) {
-                    // push_back and then rotate the bolck's list
-                    block->list.push_back(breakExpr);
-                    std::rotate(block->list.begin(), block->list.end() - 1, block->list.end());
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Inserted break at beginning of loop.\n";
-                    #endif
-                } else {
-                    // If the loop body is not a block, wrap it in a block and insert the break.
-                    BW::Expression* newBody = builder.makeBlock({ breakExpr, loop->body });
-                    loop->body = newBody;
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Wrapped loop body in block with an inserted break.\n";
-                    #endif
-                }
                 mutated = true;
             }
         }
@@ -2282,6 +2318,10 @@ void injectVulnerability(BW::Module* module, std::mt19937& rng)
     // Iterate over each function.
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
+        
+        if (!hasBody(func))     
+            continue;
+
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
 
         // Optionally inject a recursive call to provoke a stack overflow (50% chance).
@@ -2293,6 +2333,10 @@ void injectVulnerability(BW::Module* module, std::mt19937& rng)
             BW::Type noneType = static_cast<BW::Type>(0);
             // Create a call to itself.
             BW::Expression* recCall = builder.makeCall(func->name, std::vector<BW::Expression*>(), noneType, false);
+
+            BW::Block* blk = ensureBlock(builder, func->body);
+            prepend(blk->list, recCall);   
+        
             // Insert the recursive call at the beginning of the function body.
             if (auto* block = func->body->dynCast<BW::Block>()) {
                 // Since ArenaVector may not support insert(), push_back then swap with the first element.
