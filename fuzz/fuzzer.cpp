@@ -1484,6 +1484,11 @@ static inline void mutateSingleConst(BW::Const* c, std::mt19937& rng)
     }
 }
 
+// Return the (first) memory name or the default “memory”.
+static wasm::Name firstMemoryName(const wasm::Module& m) {
+    return m.memories.empty() ? wasm::Name("memory") : m.memories[0]->name;
+}
+
 // mutateInstructions  –  module-wide flat walker
 void mutateInstructions(BW::Module* module, std::mt19937& rng)
 {
@@ -1653,6 +1658,95 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
             }
         }
     }
+
+    for (auto& fnPtr : module->functions) {
+        BW::Function* fn = fnPtr.get();
+        if (!fn->body) continue;
+
+        if (rng()%5) continue;
+
+        BW::Block* targetBlock = fn->body->dynCast<BW::Block>();
+        if (!targetBlock) {
+            targetBlock = builder.makeBlock({fn->body});
+            fn->body    = targetBlock;
+        }
+        int pick = rng() % 6;
+        BW::Expression* newInstr = nullptr;
+
+        if (module->memories.empty()) {
+            auto mem = std::make_unique<wasm::Memory>();
+            mem->name     = "memory";
+            mem->initial  = 1;          // one page is enough for fuzzing
+            module->addMemory(std::move(mem));
+        }
+
+        switch (pick) {
+            case 0: { // memory.grow
+                auto* pages  = builder.makeConst(wasm::Literal(int32_t(1 + rng()%3)));
+                newInstr     = builder.makeMemoryGrow(pages, firstMemoryName(*module));
+                break;
+            }
+            case 1: { // memory.size
+                newInstr = builder.makeMemorySize(firstMemoryName(*module));
+                break;
+            }
+            case 2: { // memory.fill
+                auto* dest = builder.makeConst(wasm::Literal(int32_t(rng()%64)));
+                auto* val  = builder.makeConst(wasm::Literal(int32_t(rng()%256)));
+                auto* len  = builder.makeConst(wasm::Literal(int32_t(8)));
+                newInstr   = builder.makeMemoryFill(dest, val, len,
+                firstMemoryName(*module));
+                break;
+            }
+            case 3: { // ref.null + ref.is_null
+                using namespace wasm;
+                Type nullExtRef(HeapType::noext, Nullable, Exact);   // null-externref
+                auto* refNull = builder.makeRefNull(nullExtRef);
+                newInstr      = builder.makeRefIsNull(refNull);
+                break;
+            }
+            case 4: { // typed select (externref)
+                using namespace wasm;
+                Type nullExtRef(HeapType::noext, Nullable, Exact);  // null-externref
+                Type extRef   (HeapType::ext,   Nullable, Inexact); // normal externref
+                
+                auto* cond = builder.makeConst(Literal(int32_t(0)));
+                auto* r1   = builder.makeRefNull(nullExtRef);
+                auto* r2   = builder.makeRefNull(nullExtRef);
+                auto* sel  = builder.makeSelect(cond, r1, r2);
+                sel->type  = extRef;   // result is a *regular* externref
+                break;
+            }
+            case 5: { // formerly “SIMD demo” – disabled on current Binaryen
+                newInstr = builder.makeNop();
+                break;
+            }
+        }
+
+        if (!newInstr) continue;
+
+        // Insert at the top of the block
+        targetBlock->list.push_back(newInstr);
+        std::rotate(targetBlock->list.begin(),
+                    targetBlock->list.end() - 1,
+                    targetBlock->list.end());   // move to front        
+    }
+
+    if (!module->features.has(wasm::FeatureSet::SIMD)) {
+        module->features.set(wasm::FeatureSet::SIMD);
+    }
+
+    /* --------- Step 3: Verification of module type after mutation --------- */
+        BW::WasmValidator v;
+        if (!v.validate(*module)) {
+            for (auto& fnPtr : module->functions) {
+                if (auto* blk = fnPtr->body->dynCast<BW::Block>()) {
+                    if (!blk->list.empty() && !blk->list[0]->dynCast<BW::Nop>()) {
+                        blk->list[0] = builder.makeNop();
+                    }
+                }
+            }
+        }
 }
 
 //-----------------------------------------------------------------------------
