@@ -2375,25 +2375,24 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
         Engine* dummyEngine = new Engine();
         Store* dummyStore = new Store(dummyEngine);
 
-        int strat = rng() % 6;
+        mutateInstructions(module, rng);
+
+        int strat = rng() % 5;
         // fprintf(stderr, "custom mutator cov test strat: %d", strat);
         switch (strat) {
         case 0:
-            mutateInstructions(module, rng);
-            break;
-        case 1:
             mutateConstantExpressions(module, rng);
             break;
-        case 2:
+        case 1:
             mutateSection(module, dummyStore, rng);
             break;
-        case 3:
+        case 2:
             mutateSemantic(module, rng);
             break;
-        case 4:
+        case 3:
             mutateControlFlow(module, rng);
             break;
-        case 5:
+        case 4:
             injectVulnerability(module, rng);
             break;
         default:
