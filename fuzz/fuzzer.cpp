@@ -1055,90 +1055,194 @@ namespace BW = wasm; // Binaryen Wasm
                      // Define Op as an alias for uint32_t.
 
 using Op = uint32_t;
-
+#define DEFINE_OP(name, value)  constexpr Op name = value
 
 // Provide inline definitions for opcodes used in candidate lists.
-// Type
-inline uint32_t BinaryenTypeInt32() { return 0x7F; }
 
-// Arithmetic (i32)
-inline Op BinaryenI32Add() { return 0x6A; }
-inline Op BinaryenI32Sub() { return 0x6B; }
-inline Op BinaryenI32Mul() { return 0x6C; }
-inline Op BinaryenI32DivS() { return 0x6D; }
-inline Op BinaryenI32DivU() { return 0x6E; }
-inline Op BinaryenI32And() { return 0x71; }
-inline Op BinaryenI32Or() { return 0x72; }
-inline Op BinaryenI32Xor() { return 0x73; }
+// ── Value Types ──────────────────────────────────────────────────────
+inline Op BinaryenTypeInt32()      { return 0x7F; }
+inline Op BinaryenTypeInt64()      { return 0x7E; }
+inline Op BinaryenTypeFloat32()    { return 0x7D; }
+inline Op BinaryenTypeFloat64()    { return 0x7C; }
 
-// Arithmetic (i64)
-inline Op BinaryenI64Add() { return 0x7C; }
-inline Op BinaryenI64Sub() { return 0x7D; }
-inline Op BinaryenI64Mul() { return 0x7E; }
+// ── Integer unary (i32) ─────────────────────────────────────────────
+inline Op BinaryenI32Clz()         { return 0x67; }
+inline Op BinaryenI32Ctz()         { return 0x68; }
+inline Op BinaryenI32Popcnt()      { return 0x69; }
+inline Op BinaryenI32Eqz()         { return 0x45; }   // (control group)
 
-// Floating-point (f32)
-inline Op BinaryenF32Add() { return 0x92; }
-inline Op BinaryenF32Sub() { return 0x93; }
-inline Op BinaryenF32Mul() { return 0x94; }
-inline Op BinaryenF32Div() { return 0x95; }
+// ── Integer binary (i32) ────────────────────────────────────────────
+inline Op BinaryenI32Add()         { return 0x6A; }
+inline Op BinaryenI32Sub()         { return 0x6B; }
+inline Op BinaryenI32Mul()         { return 0x6C; }
+inline Op BinaryenI32DivS()        { return 0x6D; }
+inline Op BinaryenI32DivU()        { return 0x6E; }
+inline Op BinaryenI32RemS()        { return 0x6F; }
+inline Op BinaryenI32RemU()        { return 0x70; }
+inline Op BinaryenI32And()         { return 0x71; }
+inline Op BinaryenI32Or()          { return 0x72; }
+inline Op BinaryenI32Xor()         { return 0x73; }
+inline Op BinaryenI32Shl()         { return 0x74; }
+inline Op BinaryenI32ShrS()        { return 0x75; }
+inline Op BinaryenI32ShrU()        { return 0x76; }
+inline Op BinaryenI32Rotl()        { return 0x77; }
+inline Op BinaryenI32Rotr()        { return 0x78; }
 
-// Floating-point (f64)
-inline Op BinaryenF64Add() { return 0xA0; }
-inline Op BinaryenF64Sub() { return 0xA1; }
-inline Op BinaryenF64Mul() { return 0xA2; }
-inline Op BinaryenF64Div() { return 0xA3; }
+// ── Integer compare (i32) ───────────────────────────────────────────
+inline Op BinaryenI32Eq()          { return 0x46; }
+inline Op BinaryenI32Ne()          { return 0x47; }
+inline Op BinaryenI32LtS()         { return 0x48; }
+inline Op BinaryenI32LtU()         { return 0x49; }
+inline Op BinaryenI32GtS()         { return 0x4A; }
+inline Op BinaryenI32GtU()         { return 0x4B; }
+inline Op BinaryenI32LeS()         { return 0x4C; }
+inline Op BinaryenI32LeU()         { return 0x4D; }
+inline Op BinaryenI32GeS()         { return 0x4E; }
+inline Op BinaryenI32GeU()         { return 0x4F; }
 
-// Control opcodes
-inline Op BinaryenBrIf() { return 0x0D; }
-inline Op BinaryenBr() { return 0x0C; }
-inline Op BinaryenNop() { return 0x01; }
-inline Op BinaryenIf() { return 0x04; }
-inline Op BinaryenI32Eqz() { return 0x45; }
+// ── Integer unary (i64) ─────────────────────────────────────────────
+inline Op BinaryenI64Clz()         { return 0x79; }
+inline Op BinaryenI64Ctz()         { return 0x7A; }
+inline Op BinaryenI64Popcnt()      { return 0x7B; }
 
-// Local variable opcodes
-inline Op BinaryenLocalGet() { return 0x20; }
-inline Op BinaryenLocalSet() { return 0x21; }
-inline Op BinaryenLocalTee() { return 0x22; }
+// ── Integer binary (i64) ────────────────────────────────────────────
+inline Op BinaryenI64Add()         { return 0x7C; }
+inline Op BinaryenI64Sub()         { return 0x7D; }
+inline Op BinaryenI64Mul()         { return 0x7E; }
+inline Op BinaryenI64DivS()        { return 0x7F; }
+inline Op BinaryenI64DivU()        { return 0x80; }
+inline Op BinaryenI64RemS()        { return 0x81; }
+inline Op BinaryenI64RemU()        { return 0x82; }
+inline Op BinaryenI64And()         { return 0x83; }
+inline Op BinaryenI64Or()          { return 0x84; }
+inline Op BinaryenI64Xor()         { return 0x85; }
+inline Op BinaryenI64Shl()         { return 0x86; }
+inline Op BinaryenI64ShrS()        { return 0x87; }
+inline Op BinaryenI64ShrU()        { return 0x88; }
+inline Op BinaryenI64Rotl()        { return 0x89; }
+inline Op BinaryenI64Rotr()        { return 0x8A; }
 
-// Global variable opcodes
-inline Op BinaryenGlobalGet() { return 0x23; }
-inline Op BinaryenGlobalSet() { return 0x24; }
+// ── Integer compare (i64) ───────────────────────────────────────────
+inline Op BinaryenI64Eq()          { return 0x51; }
+inline Op BinaryenI64Ne()          { return 0x52; }
+inline Op BinaryenI64LtS()         { return 0x53; }
+inline Op BinaryenI64LtU()         { return 0x54; }
+inline Op BinaryenI64GtS()         { return 0x55; }
+inline Op BinaryenI64GtU()         { return 0x56; }
+inline Op BinaryenI64LeS()         { return 0x57; }
+inline Op BinaryenI64LeU()         { return 0x58; }
+inline Op BinaryenI64GeS()         { return 0x59; }
+inline Op BinaryenI64GeU()         { return 0x5A; }
 
-// Call opcodes
-inline Op BinaryenCallFunction() { return 0x10; }
-inline Op BinaryenCallIndirect() { return 0x11; }
-inline Op BinaryenCallRef() { return 0x14; }
+// ── Float unary (f32) ───────────────────────────────────────────────
+inline Op BinaryenF32Abs()         { return 0x8B; }
+inline Op BinaryenF32Neg()         { return 0x8C; }
+inline Op BinaryenF32Ceil()        { return 0x8D; }
+inline Op BinaryenF32Floor()       { return 0x8E; }
+inline Op BinaryenF32Trunc()       { return 0x8F; }
+inline Op BinaryenF32Nearest()     { return 0x90; }
+inline Op BinaryenF32Sqrt()        { return 0x91; }
 
-// Memory load opcodes
-inline Op BinaryenI32Load() { return 0x28; }
-inline Op BinaryenI32LoadMem8S() { return 0x2C; }
-inline Op BinaryenI32LoadMem8U() { return 0x2D; }
-inline Op BinaryenI32LoadMem16S() { return 0x2E; }
-inline Op BinaryenI32LoadMem16U() { return 0x2F; }
-inline Op BinaryenI64Load() { return 0x29; }
+// ── Float binary (f32) ──────────────────────────────────────────────
+inline Op BinaryenF32Add()         { return 0x92; }
+inline Op BinaryenF32Sub()         { return 0x93; }
+inline Op BinaryenF32Mul()         { return 0x94; }
+inline Op BinaryenF32Div()         { return 0x95; }
+inline Op BinaryenF32Min()         { return 0x96; }
+inline Op BinaryenF32Max()         { return 0x97; }
+inline Op BinaryenF32CopySign()    { return 0x98; }
 
-// Memory store opcodes
-inline Op BinaryenI32Store() { return 0x36; }
-inline Op BinaryenI64Store() { return 0x37; }
+// ── Float compare (f32) ─────────────────────────────────────────────
+inline Op BinaryenF32Eq()          { return 0x5B; }
+inline Op BinaryenF32Ne()          { return 0x5C; }
+inline Op BinaryenF32Lt()          { return 0x5D; }
+inline Op BinaryenF32Gt()          { return 0x5E; }
+inline Op BinaryenF32Le()          { return 0x5F; }
+inline Op BinaryenF32Ge()          { return 0x60; }
 
-// Miscellaneous memory opcodes
-inline Op BinaryenMemoryGrow() { return 0x40; }
-inline Op BinaryenMemorySize() { return 0x3F; }
+// ── Float unary (f64) ───────────────────────────────────────────────
+inline Op BinaryenF64Abs()         { return 0x99; }
+inline Op BinaryenF64Neg()         { return 0x9A; }
+inline Op BinaryenF64Ceil()        { return 0x9B; }
+inline Op BinaryenF64Floor()       { return 0x9C; }
+inline Op BinaryenF64Trunc()       { return 0x9D; }
+inline Op BinaryenF64Nearest()     { return 0x9E; }
+inline Op BinaryenF64Sqrt()        { return 0x9F; }
 
-// SIMD opcodes
-inline Op BinaryenS128Load() { return 0xfd00; }
-inline Op BinaryenS128Load8Lane() { return 0xfd54; }
-inline Op BinaryenS128Load16Lane() { return 0xfd55; }
-inline Op BinaryenS128Load32Lane() { return 0xfd56; }
+// ── Float binary (f64) ──────────────────────────────────────────────
+inline Op BinaryenF64Add()         { return 0xA0; }
+inline Op BinaryenF64Sub()         { return 0xA1; }
+inline Op BinaryenF64Mul()         { return 0xA2; }
+inline Op BinaryenF64Div()         { return 0xA3; }
+inline Op BinaryenF64Min()         { return 0xA4; }
+inline Op BinaryenF64Max()         { return 0xA5; }
+inline Op BinaryenF64CopySign()    { return 0xA6; }
 
-// Atomic opcodes
-inline Op BinaryenI32AtomicLoad() { return 0xfe10; }
-inline Op BinaryenI32AtomicLoad8U() { return 0xfe12; }
-inline Op BinaryenI32AtomicLoad16U() { return 0xfe13; }
+// ── Float compare (f64) ─────────────────────────────────────────────
+inline Op BinaryenF64Eq()          { return 0x61; }
+inline Op BinaryenF64Ne()          { return 0x62; }
+inline Op BinaryenF64Lt()          { return 0x63; }
+inline Op BinaryenF64Gt()          { return 0x64; }
+inline Op BinaryenF64Le()          { return 0x65; }
+inline Op BinaryenF64Ge()          { return 0x66; }
 
-// GC opcodes
-inline Op BinaryenStructNew() { return 0xfb00; }
-inline Op BinaryenStructNewDefault() { return 0xfb01; }
+// ── Control / Variable / Call  ─────────────────────────
+inline Op BinaryenBr()             { return 0x0C; }
+inline Op BinaryenBrIf()           { return 0x0D; }
+inline Op BinaryenNop()            { return 0x01; }
+inline Op BinaryenIf()             { return 0x04; }
+
+inline Op BinaryenLocalGet()       { return 0x20; }
+inline Op BinaryenLocalSet()       { return 0x21; }
+inline Op BinaryenLocalTee()       { return 0x22; }
+inline Op BinaryenGlobalGet()      { return 0x23; }
+inline Op BinaryenGlobalSet()      { return 0x24; }
+
+inline Op BinaryenCallFunction()   { return 0x10; }
+inline Op BinaryenCallIndirect()   { return 0x11; }
+inline Op BinaryenCallRef()        { return 0x14; }
+
+// ── Memory (loads / stores + misc) ──────────────────────────────────
+inline Op BinaryenI32Load()        { return 0x28; }
+inline Op BinaryenI64Load()        { return 0x29; }
+inline Op BinaryenF32Load()        { return 0x2A; }
+inline Op BinaryenF64Load()        { return 0x2B; }
+inline Op BinaryenI32Load8S()      { return 0x2C; }
+inline Op BinaryenI32Load8U()      { return 0x2D; }
+inline Op BinaryenI32Load16S()     { return 0x2E; }
+inline Op BinaryenI32Load16U()     { return 0x2F; }
+inline Op BinaryenI64Load8S()      { return 0x30; }
+inline Op BinaryenI64Load8U()      { return 0x31; }
+inline Op BinaryenI64Load16S()     { return 0x32; }
+inline Op BinaryenI64Load16U()     { return 0x33; }
+inline Op BinaryenI64Load32S()     { return 0x34; }
+inline Op BinaryenI64Load32U()     { return 0x35; }
+
+inline Op BinaryenI32Store()       { return 0x36; }
+inline Op BinaryenI64Store()       { return 0x37; }
+inline Op BinaryenF32Store()       { return 0x38; }
+inline Op BinaryenF64Store()       { return 0x39; }
+inline Op BinaryenI32Store8()      { return 0x3A; }
+inline Op BinaryenI32Store16()     { return 0x3B; }
+inline Op BinaryenI64Store8()      { return 0x3C; }
+inline Op BinaryenI64Store16()     { return 0x3D; }
+inline Op BinaryenI64Store32()     { return 0x3E; }
+
+inline Op BinaryenMemorySize()     { return 0x3F; }
+inline Op BinaryenMemoryGrow()     { return 0x40; }
+
+// ── SIMD / Atomic / GC (default) ───────────────────────────────────────
+inline Op BinaryenS128Load()       { return 0xFD00; }
+inline Op BinaryenS128Load8Lane()  { return 0xFD54; }
+inline Op BinaryenS128Load16Lane() { return 0xFD55; }
+inline Op BinaryenS128Load32Lane() { return 0xFD56; }
+
+inline Op BinaryenI32AtomicLoad()      { return 0xFE10; }
+inline Op BinaryenI32AtomicLoad8U()    { return 0xFE12; }
+inline Op BinaryenI32AtomicLoad16U()   { return 0xFE13; }
+
+inline Op BinaryenStructNew()          { return 0xFB00; }
+inline Op BinaryenStructNewDefault()   { return 0xFB01; }
 
 //-----------------------------------------------------------------------------
 // Parse a WASM module from binary data using Binaryen's API.
@@ -1209,115 +1313,346 @@ std::vector<BW::Expression*> collectExpressions(BW::Expression* root)
 // For demonstration, we cover several representative categories.
 // In a complete implementation, candidate lists for every category defined
 // by the FOREACH_OPCODE macros should be used.
-Op getReplacementForOp(Op opcode, std::mt19937& rng)
+inline Op getReplacementForOp(Op opcode, std::mt19937& rng)
 {
-    // ----- Arithmetic (i32) opcodes -----
-    if (opcode == BinaryenI32Add()) {
-        std::vector<Op> candidates = { BinaryenI32Sub(), BinaryenI32Mul(),
-                                       BinaryenI32DivS(), BinaryenI32DivU(),
-                                       BinaryenI32And(), BinaryenI32Or(), BinaryenI32Xor() };
-        std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
-        return candidates[dist(rng)];
-    } else if (opcode == BinaryenI32Sub()) {
-        std::vector<Op> candidates = { BinaryenI32Add(), BinaryenI32Mul() };
-        return candidates[rng() % candidates.size()];
+    static bool init = false;
+    static std::vector<Op>
+        i32Arith, i32Bits, i32Cmp, i32Unary,
+        i64Arith, i64Bits, i64Cmp, i64Unary,
+        f32Arith, f32Cmp,  f32Unary,
+        f64Arith, f64Cmp,  f64Unary;
+
+    if (!init) {
+        init = true;
+
+        /* i32 */
+        i32Arith = { BinaryenI32Add(), BinaryenI32Sub(), BinaryenI32Mul(),
+                     BinaryenI32DivS(), BinaryenI32DivU(),
+                     BinaryenI32RemS(), BinaryenI32RemU() };
+        i32Bits  = { BinaryenI32And(), BinaryenI32Or(),  BinaryenI32Xor(),
+                     BinaryenI32Shl(), BinaryenI32ShrS(), BinaryenI32ShrU(),
+                     BinaryenI32Rotl(), BinaryenI32Rotr() };
+        i32Cmp   = { BinaryenI32Eq(), BinaryenI32Ne(),
+                     BinaryenI32LtS(), BinaryenI32LtU(), BinaryenI32LeS(), BinaryenI32LeU(),
+                     BinaryenI32GtS(), BinaryenI32GtU(), BinaryenI32GeS(), BinaryenI32GeU() };
+        i32Unary = { BinaryenI32Clz(), BinaryenI32Ctz(), BinaryenI32Popcnt(), BinaryenI32Eqz() };
+
+        /* i64 */
+        i64Arith = { BinaryenI64Add(), BinaryenI64Sub(), BinaryenI64Mul(),
+                     BinaryenI64DivS(), BinaryenI64DivU(),
+                     BinaryenI64RemS(), BinaryenI64RemU() };
+        i64Bits  = { BinaryenI64And(), BinaryenI64Or(),  BinaryenI64Xor(),
+                     BinaryenI64Shl(), BinaryenI64ShrS(), BinaryenI64ShrU(),
+                     BinaryenI64Rotl(), BinaryenI64Rotr() };
+        i64Cmp   = { BinaryenI64Eq(), BinaryenI64Ne(),
+                     BinaryenI64LtS(), BinaryenI64LtU(), BinaryenI64LeS(), BinaryenI64LeU(),
+                     BinaryenI64GtS(), BinaryenI64GtU(), BinaryenI64GeS(), BinaryenI64GeU() };
+        i64Unary = { BinaryenI64Clz(), BinaryenI64Ctz(), BinaryenI64Popcnt() };
+
+        /* f32 */
+        f32Arith = { BinaryenF32Add(), BinaryenF32Sub(), BinaryenF32Mul(), BinaryenF32Div(),
+                     BinaryenF32Min(), BinaryenF32Max(), BinaryenF32CopySign() };
+        f32Cmp   = { BinaryenF32Eq(), BinaryenF32Ne(),
+                     BinaryenF32Lt(), BinaryenF32Le(), BinaryenF32Gt(), BinaryenF32Ge() };
+        f32Unary = { BinaryenF32Abs(), BinaryenF32Neg(), BinaryenF32Ceil(), BinaryenF32Floor(),
+                     BinaryenF32Trunc(), BinaryenF32Nearest(), BinaryenF32Sqrt() };
+
+        /* f64 */
+        f64Arith = { BinaryenF64Add(), BinaryenF64Sub(), BinaryenF64Mul(), BinaryenF64Div(),
+                     BinaryenF64Min(), BinaryenF64Max(), BinaryenF64CopySign() };
+        f64Cmp   = { BinaryenF64Eq(), BinaryenF64Ne(),
+                     BinaryenF64Lt(), BinaryenF64Le(), BinaryenF64Gt(), BinaryenF64Ge() };
+        f64Unary = { BinaryenF64Abs(), BinaryenF64Neg(), BinaryenF64Ceil(), BinaryenF64Floor(),
+                     BinaryenF64Trunc(), BinaryenF64Nearest(), BinaryenF64Sqrt() };
     }
-    // ----- Arithmetic (i64) opcodes -----
-    if (opcode == BinaryenI64Add()) {
-        std::vector<Op> candidates = { BinaryenI64Sub(), BinaryenI64Mul() };
-        return candidates[rng() % candidates.size()];
-    } else if (opcode == BinaryenI64Sub()) {
-        std::vector<Op> candidates = { BinaryenI64Add(), BinaryenI64Mul() };
-        return candidates[rng() % candidates.size()];
-    }
-    // ----- Floating-point opcodes (f32) -----
-    if (opcode == BinaryenF32Add()) {
-        std::vector<Op> candidates = { BinaryenF32Sub(), BinaryenF32Mul(), BinaryenF32Div() };
-        return candidates[rng() % candidates.size()];
-    } else if (opcode == BinaryenF32Sub()) {
-        std::vector<Op> candidates = { BinaryenF32Add(), BinaryenF32Mul(), BinaryenF32Div() };
-        return candidates[rng() % candidates.size()];
-    }
-    // ----- Floating-point opcodes (f64) -----
-    if (opcode == BinaryenF64Add()) {
-        std::vector<Op> candidates = { BinaryenF64Sub(), BinaryenF64Mul(), BinaryenF64Div() };
-        return candidates[rng() % candidates.size()];
-    } else if (opcode == BinaryenF64Sub()) {
-        std::vector<Op> candidates = { BinaryenF64Add(), BinaryenF64Mul(), BinaryenF64Div() };
-        return candidates[rng() % candidates.size()];
-    }
-    // ----- Control opcodes -----
-    if (opcode == BinaryenBrIf()) {
-        std::vector<Op> candidates = { BinaryenBr(), BinaryenNop() };
-        return candidates[rng() % candidates.size()];
-    } else if (opcode == BinaryenIf()) {
-        // Replace an if with a Nop or possibly a block containing the then-branch.
-        std::vector<Op> candidates = { BinaryenNop() };
-        return candidates[rng() % candidates.size()];
-    }
-    // ----- Local variable opcodes -----
-    if (opcode == BinaryenLocalGet()) {
-        std::vector<Op> candidates = { BinaryenLocalSet(), BinaryenLocalTee() };
-        return candidates[rng() % candidates.size()];
-    } else if (opcode == BinaryenLocalSet()) {
-        std::vector<Op> candidates = { BinaryenLocalGet(), BinaryenLocalTee() };
-        return candidates[rng() % candidates.size()];
-    }
-    // ----- Global variable opcodes -----
-    if (opcode == BinaryenGlobalGet()) {
-        std::vector<Op> candidates = { BinaryenGlobalSet() };
-        return candidates[rng() % candidates.size()];
-    } else if (opcode == BinaryenGlobalSet()) {
-        std::vector<Op> candidates = { BinaryenGlobalGet() };
-        return candidates[rng() % candidates.size()];
-    }
-    // ----- Call opcodes -----
-    if (opcode == BinaryenCallFunction()) {
-        std::vector<Op> candidates = { BinaryenCallIndirect(), BinaryenCallRef() };
-        return candidates[rng() % candidates.size()];
-    }
-    // ----- Memory load opcodes -----
-    if (opcode == BinaryenI32Load()) {
-        std::vector<Op> candidates = { BinaryenI32LoadMem8S(), BinaryenI32LoadMem8U(),
-                                       BinaryenI32LoadMem16S(), BinaryenI32LoadMem16U() };
-        return candidates[rng() % candidates.size()];
-    } else if (opcode == BinaryenI64Load()) {
-        std::vector<Op> candidates = { /* Add i64.load variants if available */ };
-        if (!candidates.empty())
-            return candidates[rng() % candidates.size()];
-    }
-    // ----- Memory store opcodes -----
-    if (opcode == BinaryenI32Store()) {
-        std::vector<Op> candidates = { /* Add i32.store variants if available */ };
-        if (!candidates.empty())
-            return candidates[rng() % candidates.size()];
-    } else if (opcode == BinaryenI64Store()) {
-        std::vector<Op> candidates = { /* Add i64.store variants if available */ };
-        if (!candidates.empty())
-            return candidates[rng() % candidates.size()];
-    }
-    // ----- Miscellaneous memory opcodes -----
-    if (opcode == BinaryenMemoryGrow()) {
-        std::vector<Op> candidates = { BinaryenMemorySize() };
-        return candidates[rng() % candidates.size()];
-    }
-    // ----- SIMD opcodes -----
-    if (opcode == BinaryenS128Load()) {
-        std::vector<Op> candidates = { BinaryenS128Load8Lane(), BinaryenS128Load16Lane(), BinaryenS128Load32Lane() };
-        return candidates[rng() % candidates.size()];
-    }
-    // ----- Atomic opcodes -----
-    if (opcode == BinaryenI32AtomicLoad()) {
-        std::vector<Op> candidates = { BinaryenI32AtomicLoad8U(), BinaryenI32AtomicLoad16U() };
-        return candidates[rng() % candidates.size()];
-    }
-    // ----- GC opcodes -----
-    if (opcode == BinaryenStructNew()) {
-        std::vector<Op> candidates = { BinaryenStructNewDefault() };
-        return candidates[rng() % candidates.size()];
-    }
-    // If no replacement candidate is defined for this opcode category, return the original.
+
+    auto pickDifferent = [&](const std::vector<Op>& tbl) -> Op {
+        if (tbl.size() <= 1) return opcode;
+        std::uniform_int_distribution<size_t> dist(0, tbl.size() - 1);
+        Op alt;
+        do { alt = tbl[dist(rng)]; } while (alt == opcode);
+        return alt;
+    };
+
+#define IN(set) (std::find(set.begin(), set.end(), opcode) != set.end())
+
+    if (IN(i32Arith)) { Op n = pickDifferent(i32Arith);
+#ifdef PRINT_LOG
+        std::cout << "i32.arith " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+    if (IN(i32Bits))  { Op n = pickDifferent(i32Bits );
+#ifdef PRINT_LOG
+        std::cout << "i32.bit   " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+    if (IN(i32Cmp ))  { Op n = pickDifferent(i32Cmp  );
+#ifdef PRINT_LOG
+        std::cout << "i32.cmp   " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+    if (IN(i32Unary)){ Op n = pickDifferent(i32Unary);
+#ifdef PRINT_LOG
+        std::cout << "i32.unary " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+
+    if (IN(i64Arith)) { Op n = pickDifferent(i64Arith);
+#ifdef PRINT_LOG
+        std::cout << "i64.arith " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+    if (IN(i64Bits))  { Op n = pickDifferent(i64Bits );
+#ifdef PRINT_LOG
+        std::cout << "i64.bit   " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+    if (IN(i64Cmp ))  { Op n = pickDifferent(i64Cmp  );
+#ifdef PRINT_LOG
+        std::cout << "i64.cmp   " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+    if (IN(i64Unary)){ Op n = pickDifferent(i64Unary);
+#ifdef PRINT_LOG
+        std::cout << "i64.unary " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+
+    if (IN(f32Arith)) { Op n = pickDifferent(f32Arith);
+#ifdef PRINT_LOG
+        std::cout << "f32.arith " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+    if (IN(f32Cmp ))  { Op n = pickDifferent(f32Cmp );
+#ifdef PRINT_LOG
+        std::cout << "f32.cmp   " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+    if (IN(f32Unary)){ Op n = pickDifferent(f32Unary);
+#ifdef PRINT_LOG
+        std::cout << "f32.unary " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+
+    if (IN(f64Arith)) { Op n = pickDifferent(f64Arith);
+#ifdef PRINT_LOG
+        std::cout << "f64.arith " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+    if (IN(f64Cmp ))  { Op n = pickDifferent(f64Cmp );
+#ifdef PRINT_LOG
+        std::cout << "f64.cmp   " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+    if (IN(f64Unary)){ Op n = pickDifferent(f64Unary);
+#ifdef PRINT_LOG
+        std::cout << "f64.unary " << opcode << " -> " << n << '\n';
+#endif
+        return n; }
+
+#undef IN
     return opcode;
+}
+
+using Index = uint32_t;                             // missing typedef on old Binaryen
+
+static inline void mutateSingleConst(BW::Const* c, std::mt19937& rng)
+{
+    if (!c) return;
+
+    int mode = rng() & 1;               /* 0 = flip, 1 = edge value */
+
+    if (c->type == BW::Type::i32) {
+        int32_t v = c->value.geti32();
+        int32_t nv = mode ? 0 : (v ^ (1u << (rng() % 32)));
+        c->value = BW::Literal(nv);
+    }
+    else if (c->type == BW::Type::i64) {
+        int64_t v = c->value.geti64();
+        int64_t nv = mode ? 0 : (v ^ (int64_t(1) << (rng() % 64)));
+        c->value = BW::Literal(nv);     /* unambiguous ctor: int64_t           */
+    }
+    else if (c->type == BW::Type::f32) {
+        float  v  = c->value.getf32();
+        float  nv = mode ? std::numeric_limits<float>::infinity() : -v;
+        c->value  = BW::Literal(nv);
+    }
+    else if (c->type == BW::Type::f64) {
+        double v  = c->value.getf64();
+        double nv = mode ? std::numeric_limits<double>::quiet_NaN() : -v;
+        c->value  = BW::Literal(nv);
+    }
+}
+
+// mutateInstructions  –  module-wide flat walker
+void mutateInstructions(BW::Module* module, std::mt19937& rng)
+{
+    if (!module || module->functions.empty())
+        return;
+
+    /* — Commutative opcode set — */
+    static const std::unordered_set<Op> kCommutative = {
+        /* i32 */ BinaryenI32Add(), BinaryenI32Mul(), BinaryenI32And(),
+                 BinaryenI32Or(),  BinaryenI32Xor(),
+        /* i64 */ BinaryenI64Add(), BinaryenI64Mul(), BinaryenI64And(),
+                 BinaryenI64Or(),  BinaryenI64Xor(),
+        /* f32/f64 */ BinaryenF32Add(), BinaryenF32Mul(), BinaryenF32Min(),
+                     BinaryenF32Max(), BinaryenF64Add(), BinaryenF64Mul(),
+                     BinaryenF64Min(), BinaryenF64Max()
+    };
+
+    BW::Builder builder(*module);
+
+    for (auto& fPtr : module->functions) {
+        BW::Function* func = fPtr.get();
+#ifdef PRINT_LOG
+        std::cout << "[mutate] ► " << func->name.str << '\n';
+#endif
+        std::vector<BW::Expression*> exprs = collectExpressions(func->body);
+
+        for (BW::Expression* e : exprs)
+        {
+            /* --- Binary -------------------------------------------------- */
+            if (auto* bin = e->dynCast<BW::Binary>()) {
+                Op oldOp = bin->op;
+                Op newOp = getReplacementForOp(oldOp, rng);
+
+                bool typeOK = true;      /* rough mask check                  */
+                if      (bin->left->type == BW::Type::i32) typeOK = (newOp & 0xC0u) == 0x40u;
+                else if (bin->left->type == BW::Type::i64) typeOK = (newOp & 0xC0u) == 0x80u;
+                else if (bin->left->type == BW::Type::f32) typeOK = (newOp & 0xE0u) == 0x90u;
+                else if (bin->left->type == BW::Type::f64) typeOK = (newOp & 0xE0u) == 0xA0u;
+
+                if (typeOK && newOp != oldOp) {
+                    bin->op = static_cast<BW::BinaryOp>(newOp);
+#ifdef PRINT_LOG
+                    std::cout << "  • Binary " << oldOp << " → " << newOp << '\n';
+#endif
+                }
+
+                if (kCommutative.count(bin->op) && (rng() & 1)) {
+                    std::swap(bin->left, bin->right);
+#ifdef PRINT_LOG
+                    std::cout << "    ↳ operands swapped\n";
+#endif
+                }
+            }
+
+            /* --- Unary --------------------------------------------------- */
+            else if (auto* un = e->dynCast<BW::Unary>()) {
+                Op cand = getReplacementForOp(un->op, rng);
+                if (cand != un->op) {
+                    un->op = static_cast<BW::UnaryOp>(cand);
+#ifdef PRINT_LOG
+                    std::cout << "  • Unary  " << un->op << " → " << cand << '\n';
+#endif
+                }
+            }
+
+            /* --- Const --------------------------------------------------- */
+            else if (auto* c = e->dynCast<BW::Const>()) {
+                mutateSingleConst(c, rng);
+            }
+
+            /* --- Load ---------------------------------------------------- */
+            else if (auto* ld = e->dynCast<BW::Load>()) {
+                unsigned before = ld->bytes;
+                std::vector<unsigned> cand;
+                switch (ld->type.getBasic()) {
+                    case BW::Type::i32: cand = {1,2,4};      break;
+                    case BW::Type::i64: cand = {1,2,4,8};    break;
+                    case BW::Type::f32: cand = {4};          break;
+                    case BW::Type::f64: cand = {8};          break;
+                    default:             cand = {before};    break;
+                }
+                ld->bytes = ld->align = cand[rng() % cand.size()];
+#ifdef PRINT_LOG
+                std::cout << "  • Load   width " << before << " → " << ld->bytes << '\n';
+#endif
+            }
+
+            /* --- Store --------------------------------------------------- */
+            else if (auto* st = e->dynCast<BW::Store>()) {
+                unsigned before = st->bytes;
+                std::vector<unsigned> cand;
+                switch (st->valueType.getBasic()) {
+                    case BW::Type::i32: cand = {1,2,4};      break;
+                    case BW::Type::i64: cand = {1,2,4,8};    break;
+                    case BW::Type::f32: cand = {4};          break;
+                    case BW::Type::f64: cand = {8};          break;
+                    default:             cand = {before};    break;
+                }
+                st->bytes = st->align = cand[rng() % cand.size()];
+#ifdef PRINT_LOG
+                std::cout << "  • Store  width " << before << " → " << st->bytes << '\n';
+#endif
+            }
+
+            /* --- Call ---------------------------------------------------- */
+            else if (auto* call = e->dynCast<BW::Call>()) {
+                if (module->functions.size() > 1) {
+                    size_t idx;
+                    do { idx = rng() % module->functions.size(); }
+                    while (module->functions[idx]->name == call->target);
+
+                    call->target = module->functions[idx]->name;
+#ifdef PRINT_LOG
+                    std::cout << "  • Call   retarget → " << call->target.str << '\n';
+#endif
+                }
+            }
+
+            /* --- CallIndirect ------------------------------------------- */
+            else if (auto* ci = e->dynCast<BW::CallIndirect>()) {
+                if (auto* k = ci->target->dynCast<BW::Const>()) {
+                    uint32_t v = k->value.geti32();
+                    k->value   = BW::Literal(uint32_t(v ^ 1u));
+#ifdef PRINT_LOG
+                    std::cout << "  • CallIndirect index toggled\n";
+#endif
+                }
+            }
+
+            /* --- Select -------------------------------------------------- */
+            else if (auto* sel = e->dynCast<BW::Select>()) {
+                if (rng() & 1) {
+                    std::swap(sel->ifTrue, sel->ifFalse);
+#ifdef PRINT_LOG
+                    std::cout << "  • Select operands swapped\n";
+#endif
+                } else if (sel->condition->type == BW::Type::i32) {
+                    sel->condition = builder.makeUnary(
+                        static_cast<BW::UnaryOp>(BinaryenI32Eqz()),
+                        sel->condition);
+#ifdef PRINT_LOG
+                    std::cout << "  • Select condition inverted (eqz)\n";
+#endif
+                }
+            }
+
+            /* --- Drop ---------------------------------------------------- */
+            else if (auto* dp = e->dynCast<BW::Drop>()) {
+                if (rng() & 1) {
+                    dp->value = builder.makeBlock(
+                        { builder.makeNop(), dp->value });
+#ifdef PRINT_LOG
+                    std::cout << "  • Drop wrapped with Nop block\n";
+#endif
+                }
+            }
+
+            /* --- Block duplication -------------------------------------- */
+            else if (auto* blk = e->dynCast<BW::Block>()) {
+                if (!blk->list.empty() && (rng() & 1)) {
+                    size_t i = rng() % blk->list.size();
+                    blk->list.push_back(blk->list[i]);   /* shallow copy */
+#ifdef PRINT_LOG
+                    std::cout << "  • Block duplicated stmt @" << i << '\n';
+#endif
+                }
+            }
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1944,217 +2279,6 @@ void injectVulnerability(BW::Module* module, std::mt19937& rng)
         }
     }
 }
-
-//-----------------------------------------------------------------------------
-// Instruction Mutation: Walk through all expressions in every function
-// and if the expression is a Binary (or similar) operator, replace its opcode
-// with one drawn from a candidate list based on its category.
-// For commutative operations, optionally swap operands.
-// Additional cases for Call, CallIndirect, Memory Load/Store, Select, Drop,
-// and Block expressions are added.
-void mutateInstructions(BW::Module* module, std::mt19937& rng)
-{
-    if (!module || module->functions.empty()) return;
-    // Iterate over every function in the module.
-    for (auto& funcPtr : module->functions) {
-        BW::Function* func = funcPtr.get();
-        #ifdef PRINT_LOG
-        std::cout << "[Custom Mutator] Mutating instructions in function '" << func->name.str << "'.\n";
-        #endif
-        // Collect all expressions in the function body.
-        std::vector<BW::Expression*> exprs = collectExpressions(func->body);
-        #ifdef PRINT_LOG
-        std::cout << "[Custom Mutator] Collected " << exprs.size() << " expressions.\n";
-        #endif
-        // Process each expression.
-        for (auto* expr : exprs) {
-            // ----- Binary Expressions -----
-            if (auto* binary = expr->dynCast<BW::Binary>()) {
-                if (binary->left->type == BW::Type::i32 && binary->right->type == BW::Type::i32) {
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str 
-                              << "': Found Binary expression with opcode " << binary->op << ".\n";
-                    #endif
-
-                    // Define i32 operator
-                    std::vector<Op> validI32Ops = { 
-                        BinaryenI32Add(), BinaryenI32Sub(), BinaryenI32Mul(),
-                        BinaryenI32DivS(), BinaryenI32DivU(),
-                        BinaryenI32And(), BinaryenI32Or(), BinaryenI32Xor() 
-                    };
-
-                    // Replace opcode using candidate list based on its category.
-                    Op newOp = getReplacementForOp(binary->op, rng);
-
-                    if (std::find(validI32Ops.begin(), validI32Ops.end(), newOp) == validI32Ops.end()) {
-                        #ifdef PRINT_LOG
-                        std::cout << "[Custom Mutator] Function '" << func->name.str 
-                                  << "': Candidate opcode " << newOp << " is not valid for i32, skipping mutation.\n";
-                        #endif
-                        continue;
-                    }
-
-                    // Determine if the operation is commutative.
-                    bool commutative = false;
-                    if (binary->op == BinaryenI32Add() || binary->op == BinaryenI32Mul() ||
-                        binary->op == BinaryenI32And() || binary->op == BinaryenI32Or()  ||
-                        binary->op == BinaryenI32Xor() || binary->op == BinaryenF32Add() ||
-                        binary->op == BinaryenF32Mul() || binary->op == BinaryenF64Add() ||
-                        binary->op == BinaryenF64Mul()) {
-                        commutative = true;
-                    }
-
-                    // Randomly swap operands for commutative operations.
-                    if (commutative && (rng() % 2 == 0)) {
-                        std::swap(binary->left, binary->right);
-                        #ifdef PRINT_LOG
-                        std::cout << "[Custom Mutator] Function '" << func->name.str 
-                                << "': Swapped operands in Binary expression.\n";
-                        #endif
-                    }
-
-                    // Cast newOp (Op) to BinaryOp and log the change.
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str 
-                            << "': Replacing opcode " << binary->op << " with " << newOp << ".\n";
-                    #endif
-                    binary->op = static_cast<BW::BinaryOp>(newOp);
-                }
-            }
-            // ----- Unary Expressions -----
-            else if (auto* unary = expr->dynCast<BW::Unary>()) {
-                if (unary->op == static_cast<BW::UnaryOp>(BinaryenI32Eqz())) {
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str 
-                              << "': Found Unary expression with i32.eqz opcode.\n";
-                    #endif
-                    std::vector<Op> candidates = { BinaryenNop() };
-                    Op chosen = candidates[rng() % candidates.size()];
-                    unary->op = static_cast<BW::UnaryOp>(chosen);
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str 
-                              << "': Replaced Unary opcode with " << chosen << ".\n";
-                    #endif
-                }
-            }
-            // ----- Call Expressions -----
-            else if (auto* call = expr->dynCast<BW::Call>()) {
-                #ifdef PRINT_LOG
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Found Call expression targeting '" << call->target.str << "'.\n";
-                #endif
-                if (!module->functions.empty()) {
-                    std::vector<std::string> candidateTargets;
-                    for (auto& fPtr : module->functions) {
-                        BW::Function* f = fPtr.get();
-                        if (f->name.str != call->target.str) {
-                            candidateTargets.push_back(std::string(f->name.str));
-                        }
-                    }
-                    if (!candidateTargets.empty()) {
-                        std::uniform_int_distribution<size_t> dist(0, candidateTargets.size() - 1);
-                        std::string newTarget = candidateTargets[dist(rng)];
-                        call->target = BW::Name(newTarget);
-                        #ifdef PRINT_LOG
-                        std::cout << "[Custom Mutator] Function '" << func->name.str 
-                                  << "': Changed Call target to '" << newTarget << "'.\n";
-                        #endif
-                    }
-                }
-            }
-            // ----- CallIndirect Expressions -----
-            else if (auto* callIndirect = expr->dynCast<BW::CallIndirect>()) {
-                #ifdef PRINT_LOG
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Found CallIndirect expression. Setting target to 0.\n";
-                #endif
-                // Instead of using module->types (which is unavailable), choose a fixed value.
-                callIndirect->target = BW::Builder(*module).makeConst(BW::Literal((uint32_t)0));
-            }
-            // ----- Memory Load Expressions -----
-            else if (auto* load = expr->dynCast<BW::Load>()) {
-                #ifdef PRINT_LOG
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Found Memory Load expression. ";
-                #endif
-                // Adjust the 'bytes' field to a candidate value and update alignment.
-                std::vector<unsigned> candidateBytes = { 1, 2, 4, 8 };
-                unsigned chosenBytes = candidateBytes[rng() % candidateBytes.size()];
-                load->bytes = chosenBytes;
-                load->align = chosenBytes;
-                #ifdef PRINT_LOG
-                std::cout << "Set bytes to " << chosenBytes << " and alignment to " << chosenBytes << ".\n";
-                #endif
-            }
-            // ----- Memory Store Expressions -----
-            else if (auto* store = expr->dynCast<BW::Store>()) {
-                #ifdef PRINT_LOG
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Found Memory Store expression. ";
-                #endif
-                // Adjust the 'bytes' field for store expressions similarly.
-                std::vector<unsigned> candidateBytes = { 1, 2, 4, 8 };
-                unsigned chosenBytes = candidateBytes[rng() % candidateBytes.size()];
-                store->bytes = chosenBytes;
-                store->align = chosenBytes;
-                #ifdef PRINT_LOG
-                std::cout << "Set bytes to " << chosenBytes << " and alignment to " << chosenBytes << ".\n";
-                #endif
-            }
-            // ----- Select Expressions -----
-            else if (auto* sel = expr->dynCast<BW::Select>()) {
-                #ifdef PRINT_LOG
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Found Select expression. ";
-                #endif
-                if (rng() % 2 == 0) {
-                    std::swap(sel->ifTrue, sel->ifFalse);
-                    #ifdef PRINT_LOG
-                    std::cout << "Swapped ifTrue and ifFalse operands.\n";
-                    #endif
-                } else {
-                    if (sel->condition && sel->condition->type == BW::Type::i32) {
-                        BW::Expression* newCond = BW::Builder(*module).makeUnary(static_cast<BW::UnaryOp>(BinaryenI32Eqz()), sel->condition);
-                        sel->condition = newCond;
-                        #ifdef PRINT_LOG
-                        std::cout << "Modified condition using i32.eqz.\n";
-                        #endif
-                    }
-                }
-            }
-            // ----- Drop Expressions -----
-            else if (auto* drop = expr->dynCast<BW::Drop>()) {
-                #ifdef PRINT_LOG
-                std::cout << "[Custom Mutator] Function '" << func->name.str 
-                          << "': Found Drop expression. ";
-                #endif
-                // Optionally, wrap the drop's value with a block that inserts a Nop.
-                if (rng() % 2 == 0) {
-                    BW::Expression* nopExpr = BW::Builder(*module).makeNop();
-                    drop->value = BW::Builder(*module).makeBlock({ nopExpr, drop->value });
-                    #ifdef PRINT_LOG
-                    std::cout << "Wrapped value in a block with a Nop.\n";
-                    #endif
-                }
-            }
-            // ----- Block Expressions -----
-            else if (auto* block = expr->dynCast<BW::Block>()) {
-                if (!block->list.empty() && (rng() % 2 == 0)) {
-                    size_t idx = rng() % block->list.size();
-                    BW::Expression* duplicate = block->list[idx]; // shallow copy; deep clone is preferable
-                    // ArenaVector may not support insert; use push_back to duplicate the statement.
-                    block->list.push_back(duplicate);
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str 
-                              << "': Duplicated a statement in Block expression.\n";
-                    #endif
-                }
-            }
-            // Additional cases for other expression types (e.g. Loop, If, etc.) can be added here.
-        }
-    }
-}
-
 
 
 // libFuzzer Entry point
