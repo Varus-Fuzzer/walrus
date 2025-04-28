@@ -2216,92 +2216,109 @@ static inline void prepend(ArenaVector<BW::Expression*>& vec, BW::Expression* ex
 void mutateControlFlow(BW::Module* module, std::mt19937& rng)
 {
     if (!module || module->functions.empty()) return;
-    
-    // Iterate through each function.
-    for (auto& funcPtr : module->functions) {
-        BW::Function* func = funcPtr.get();
 
-        if (!hasBody(func))     
-            continue;
+    BW::Builder builder(*module);
+
+    for (auto& fptr : module->functions) {
+        BW::Function* func = fptr.get();
+        if (!hasBody(func)) continue;
 
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
         bool mutated = false;
-        
-        // Process each expression.
+
         for (auto* expr : exprs) {
-            // --- Option 1: Mutate conditional branch (Break) instructions ---
+
+            /* ───────────────── Break / br_if ───────────────── */
             if (auto* br = expr->dynCast<BW::Break>()) {
                 if (br->condition) {
-                    // Choose among three mutation strategies:
-                    // 0: Toggle the condition (wrap with i32.eqz)
-                    // 1: Remove the condition (set to Nop)
-                    // 2: Replace the condition with a constant (true or false)
-                    int option = rng() % 3;
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Control-Flow mutation in function '"
-                              << func->name.str << "': ";
-                    #endif
-                    if (option == 0) {
-                        BW::Expression* oldCond = br->condition;
-                        BW::Expression* newCond = BW::Builder(*module).makeUnary(
-                            static_cast<BW::UnaryOp>(BinaryenI32Eqz()), oldCond);
-                        br->condition = newCond;
-                        #ifdef PRINT_LOG
-                        std::cout << "Toggled branch condition.\n";
-                        #endif
-                    } else if (option == 1) {
-                        br->condition = BW::Builder(*module).makeNop();
-                        #ifdef PRINT_LOG
-                        std::cout << "Removed branch condition.\n";
-                        #endif
-                    } else {
-                        int boolVal = rng() % 2; // 0: false, 1: true
-                        BW::Expression* constCond = BW::Builder(*module).makeConst(
-                            BW::Literal(int32_t(boolVal ? 1 : 0)));
-                        br->condition = constCond;
-                        #ifdef PRINT_LOG
-                        std::cout << "Replaced branch condition with constant "
-                                  << (boolVal ? "true" : "false") << ".\n";
-                        #endif
+                    switch (rng() % 3) {
+                    case 0:  // toggle
+                        br->condition = builder.makeUnary(
+                            static_cast<BW::UnaryOp>(BinaryenI32Eqz()),
+                            br->condition);
+                        break;
+                    case 1:  // remove
+                        br->condition = builder.makeNop();
+                        break;
+                    case 2:  // constant
+                        br->condition = builder.makeConst(
+                            BW::Literal(int32_t(rng() & 1)));
+                        break;
                     }
-                    mutated = true;
                 }
-                // --- Option 2: Mutate branch target labels ---
-                if (!(br->name == BW::Name()) && (rng() % 2 == 0)) {
-                    std::string oldLabel = std::string(br->name.str);
-                    std::string newLabel = oldLabel + "_mut";
-                    br->name = BW::Name(newLabel);
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Changed branch target label from '"
-                              << oldLabel << "' to '" << newLabel << "'.\n";
-                    #endif
-                    mutated = true;
-                }
-            }
-            // --- Option 3: Mutate loop constructs ---
-            else if (auto* loop = expr->dynCast<BW::Loop>()) {
-                // Example mutation: force an early exit from the loop by inserting a break at the beginning.
-                #ifdef PRINT_LOG
-                std::cout << "[Custom Mutator] Found Loop in function '" << func->name.str << "'.\n";
-                #endif
-                BW::Builder builder(*module);
-                BW::Expression* breakExpr = builder.makeBreak(
-                    BW::Name("break_mut"), nullptr, builder.makeConst(BW::Literal(int32_t(1))));
-                
-                BW::Block* blk = ensureBlock(builder, loop->body);
-                prepend(blk->list, breakExpr);     
 
+                /* label 변형은 **같은 블록 안**에서 처리해야 br 가 보입니다 */
+                if (!(br->name == BW::Name()) && (rng() & 1)) {
+                    std::string old = std::string(br->name.str);
+                    br->name        = BW::Name(old + "_mut");
+                }
                 mutated = true;
             }
-        }
-        
-        if (!mutated) {
-            #ifdef PRINT_LOG
-            std::cout << "[Custom Mutator] No control-flow mutations applied in function '"
-                      << func->name.str << "'.\n";
-            #endif
-        }
-    }
+
+            /* ───────────────── Loop ───────────────── */
+            else if (auto* loop = expr->dynCast<BW::Loop>()) {
+                int style = rng() % 3;
+                BW::Block* body = ensureBlock(builder, loop->body);
+
+                switch (style) {
+                case 0: {  // early break
+                    auto* brk = builder.makeBreak(
+                        BW::Name(), nullptr,
+                        builder.makeConst(BW::Literal(int32_t(1))));
+                    prepend(body->list, brk);
+                    break;
+                }
+                case 1: {  // if(cond) break;
+                    auto* cond  = builder.makeConst(
+                        BW::Literal(int32_t(rng() & 1)));
+                    auto* ifBrk = builder.makeIf(
+                        cond, builder.makeBreak(loop->name));
+                    prepend(body->list, ifBrk);
+                    break;
+                }
+                case 2: {  // wrap with outer loop
+                    auto* outer = builder.makeLoop(
+                        BW::Name(std::string(loop->name.str) + "_wrap"),
+                        loop);
+                    prepend(body->list, outer);
+                    break;
+                }
+                }
+                mutated = true;
+            }
+
+            /* ───────────────── If / Else ───────────────── */
+            else if (auto* iff = expr->dynCast<BW::If>()) {
+                if (iff->ifFalse && (rng() & 1)) {           // swap then/else
+                    std::swap(iff->ifTrue, iff->ifFalse);
+                    iff->condition = builder.makeUnary(
+                        static_cast<BW::UnaryOp>(BinaryenI32Eqz()),
+                        iff->condition);
+                    mutated = true;
+                } else if (!iff->ifFalse && (rng() % 10 < 3)) {
+                    iff->ifFalse = builder.makeNop();
+                    mutated = true;
+                }
+            }
+
+            /* ───────────────── Select ───────────────── */
+            else if (auto* sel = expr->dynCast<BW::Select>()) {
+                if (rng() & 1) {
+                    std::swap(sel->ifTrue, sel->ifFalse);
+                    sel->condition = builder.makeUnary(
+                        static_cast<BW::UnaryOp>(BinaryenI32Eqz()),
+                        sel->condition);
+                    mutated = true;
+                }
+            }
+        } // for-expr
+
+#ifdef PRINT_LOG
+        if (!mutated)
+            std::cout << "[mutateCF] nothing changed in "
+                      << func->name.str << '\n';
+#endif
+    } // for-function
 }
 
 
