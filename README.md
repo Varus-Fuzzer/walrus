@@ -44,7 +44,7 @@ docker buildx build --progress=plain -t walrus-fuzz .
 - Run
 
 ```sh
-docker run -it -v ~/walrus/out:/opt/Varus/walrus/out/release/x64/crashes walrus-fuzz:latest 
+docker run -it -v ~/walrus/output:/opt/Varus/walrus/out/release/x64/crashes walrus-fuzz:latest 
 
 $ cd out/release/x64
 $ ./fuzzer -artifact_prefix=./crashes/ [ The rest of options e.g. -max_len, -print_final_stats, -seed_inputs etc.. ]
