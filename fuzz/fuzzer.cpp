@@ -1751,7 +1751,7 @@ inline Op getReplacementForOp(Op opcode, std::mt19937& rng)
             i8Cmp   = { BinaryenI8X16Eq(),  BinaryenI8X16Ne(),  BinaryenI8X16LtS(), BinaryenI8X16LtU(),
                         BinaryenI8X16GtS(), BinaryenI8X16GtU(), BinaryenI8X16LeS(), BinaryenI8X16LeU(),
                         BinaryenI8X16GeS(), BinaryenI8X16GeU() };
-            i8Unary = { BinaryenI8X16Abs(), BinaryenI8X16Neg(), BinaryenI8X16AnyTrue(),
+            i8Unary = { BinaryenI8X16Abs(), BinaryenI8X16Neg(), BinaryenI8X16AllTrue(),
                         BinaryenI8X16AllTrue(), BinaryenI8X16Bitmask(), BinaryenI8X16Popcnt() };
     
             /*──────────── i16x8 ────────────────*/
@@ -1765,7 +1765,7 @@ inline Op getReplacementForOp(Op opcode, std::mt19937& rng)
             i16Cmp   = { BinaryenI16X8Eq(),  BinaryenI16X8Ne(),  BinaryenI16X8LtS(), BinaryenI16X8LtU(),
                          BinaryenI16X8GtS(), BinaryenI16X8GtU(), BinaryenI16X8LeS(), BinaryenI16X8LeU(),
                          BinaryenI16X8GeS(), BinaryenI16X8GeU() };
-            i16Unary = { BinaryenI16X8Abs(), BinaryenI16X8Neg(), BinaryenI16X8AnyTrue(),
+            i16Unary = { BinaryenI16X8Abs(), BinaryenI16X8Neg(), BinaryenI16X8AllTrue(),
                          BinaryenI16X8AllTrue(), BinaryenI16X8Bitmask() };
     
             /*──────────── i32x4 ────────────────*/
@@ -1777,7 +1777,7 @@ inline Op getReplacementForOp(Op opcode, std::mt19937& rng)
             i32xCmp   = { BinaryenI32X4Eq(),  BinaryenI32X4Ne(),  BinaryenI32X4LtS(), BinaryenI32X4LtU(),
                           BinaryenI32X4GtS(), BinaryenI32X4GtU(), BinaryenI32X4LeS(), BinaryenI32X4LeU(),
                           BinaryenI32X4GeS(), BinaryenI32X4GeU() };
-            i32xUnary = { BinaryenI32X4Abs(), BinaryenI32X4Neg(), BinaryenI32X4AnyTrue(),
+            i32xUnary = { BinaryenI32X4Abs(), BinaryenI32X4Neg(), BinaryenI32X4AllTrue(),
                           BinaryenI32X4AllTrue(), BinaryenI32X4Bitmask() };
     
             /*──────────── i64x2 ────────────────*/
@@ -1785,7 +1785,7 @@ inline Op getReplacementForOp(Op opcode, std::mt19937& rng)
             i64xShift = { BinaryenI64X2Shl(), BinaryenI64X2ShrS(), BinaryenI64X2ShrU() };
             i64xCmp   = { BinaryenI64X2Eq(),  BinaryenI64X2Ne(),  BinaryenI64X2LtS(),
                           BinaryenI64X2GtS(), BinaryenI64X2LeS(), BinaryenI64X2GeS() };
-            i64xUnary = { BinaryenI64X2Abs(), BinaryenI64X2Neg(), BinaryenI64X2AnyTrue(),
+            i64xUnary = { BinaryenI64X2Abs(), BinaryenI64X2Neg(), BinaryenI64X2AllTrue(),
                           BinaryenI64X2AllTrue(), BinaryenI64X2Bitmask() };
     
             /*──────────── f32x4 / f64x2 ────────*/
@@ -2058,21 +2058,21 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                      BinaryenF32Max(), BinaryenF64Add(), BinaryenF64Mul(),
                      BinaryenF64Min(), BinaryenF64Max(),
         /* v128 bit operation */ BinaryenV128And(), BinaryenV128Or(),  BinaryenV128Xor(),
-        /* i8x16 */ BinaryenI8x16Add(),      BinaryenI8x16AddSatS(),  BinaryenI8x16AddSatU(),
-                    BinaryenI8x16MinS(),     BinaryenI8x16MinU(),
-                    BinaryenI8x16MaxS(),     BinaryenI8x16MaxU(),
-        /* i16x8 */ BinaryenI16x8Add(),      BinaryenI16x8AddSatS(),  BinaryenI16x8AddSatU(),
-                    BinaryenI16x8Mul(),
-                    BinaryenI16x8MinS(),     BinaryenI16x8MinU(),
-                    BinaryenI16x8MaxS(),     BinaryenI16x8MaxU(),
-        /* i32x4 */ BinaryenI32x4Add(),      BinaryenI32x4Mul(),
-                    BinaryenI32x4MinS(),     BinaryenI32x4MinU(),
-                    BinaryenI32x4MaxS(),     BinaryenI32x4MaxU(),
-        /* i64x2 */ BinaryenI64x2Add(),      BinaryenI64x2Mul(),                            
-        /* f32x4 & f64x2 */ BinaryenF32x4Add(),      BinaryenF32x4Mul(),
-                    BinaryenF32x4Min(),      BinaryenF32x4Max(),
-                    BinaryenF64x2Add(),      BinaryenF64x2Mul(),
-                    BinaryenF64x2Min(),      BinaryenF64x2Max()
+        /* i8x16 */ BinaryenI8X16Add(),      BinaryenI8X16AddSatS(),  BinaryenI8X16AddSatU(),
+                    BinaryenI8X16MinS(),     BinaryenI8X16MinU(),
+                    BinaryenI8X16MaxS(),     BinaryenI8X16MaxU(),
+        /* i16x8 */ BinaryenI16X8Add(),      BinaryenI16X8AddSatS(),  BinaryenI16X8AddSatU(),
+                    BinaryenI16X8Mul(),
+                    BinaryenI16X8MinS(),     BinaryenI16X8MinU(),
+                    BinaryenI16X8MaxS(),     BinaryenI16X8MaxU(),
+        /* i32x4 */ BinaryenI32X4Add(),      BinaryenI32X4Mul(),
+                    BinaryenI32X4MinS(),     BinaryenI32X4MinU(),
+                    BinaryenI32X4MaxS(),     BinaryenI32X4MaxU(),
+        /* i64x2 */ BinaryenI64X2Add(),      BinaryenI64X2Mul(),                            
+        /* f32x4 & f64x2 */ BinaryenF32X4Add(),      BinaryenF32X4Mul(),
+                    BinaryenF32X4Min(),      BinaryenF32X4Max(),
+                    BinaryenF64X2Add(),      BinaryenF64X2Mul(),
+                    BinaryenF64X2Min(),      BinaryenF64X2Max()
     };
 
     BW::Builder builder(*module);
@@ -2092,13 +2092,12 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 Op oldOp = bin->op;
                 Op newOp = getReplacementForOp(oldOp, rng);
 
-                auto isSameLane = [&](Op op) {
-                    return BW::Type::getSingleLaneType(
-                                BW::getBinaryLaneType(static_cast<BW::BinaryOp>(op)))
-                            == bin->left->type;
-                };
-                    
-                bool typeOK = isSameLane(newOp);
+                bool typeOK = true;      /* rough mask check                  */
+ 
+                if(bin->left->type == BW::Type::i32) typeOK = (newOp & 0xC0u) == 0x40u;
+                else if (bin->left->type == BW::Type::i64) typeOK = (newOp & 0xC0u) == 0x80u;
+                else if (bin->left->type == BW::Type::f32) typeOK = (newOp & 0xE0u) == 0x90u;
+                else if (bin->left->type == BW::Type::f64) typeOK = (newOp & 0xE0u) == 0xA0u;
 
                 if (typeOK && newOp != oldOp) {
                     bin->op = static_cast<BW::BinaryOp>(newOp);
