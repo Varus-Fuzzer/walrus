@@ -1052,197 +1052,561 @@ static void runExports(Store* store, const std::string& filename, const std::vec
 }
 
 namespace BW = wasm; // Binaryen Wasm
-                     // Define Op as an alias for uint32_t.
 
-using Op = uint32_t;
-#define DEFINE_OP(name, value)  constexpr Op name = value
+using Op = uint32_t; // Define Op as an alias for uint32_t.
 
 // Provide inline definitions for opcodes used in candidate lists.
+// https://github.com/WebAssembly/spec/blob/main/proposals/simd/NewOpcodes.md
+// https://github.com/WebAssembly/spec/blob/main/proposals/simd/SIMD.md
 
-// ── Value Types ──────────────────────────────────────────────────────
-inline Op BinaryenTypeInt32()      { return 0x7F; }
-inline Op BinaryenTypeInt64()      { return 0x7E; }
-inline Op BinaryenTypeFloat32()    { return 0x7D; }
-inline Op BinaryenTypeFloat64()    { return 0x7C; }
 
-// ── Integer unary (i32) ─────────────────────────────────────────────
-inline Op BinaryenI32Clz()         { return 0x67; }
-inline Op BinaryenI32Ctz()         { return 0x68; }
-inline Op BinaryenI32Popcnt()      { return 0x69; }
-inline Op BinaryenI32Eqz()         { return 0x45; }   // (control group)
-
-// ── Integer binary (i32) ────────────────────────────────────────────
-inline Op BinaryenI32Add()         { return 0x6A; }
-inline Op BinaryenI32Sub()         { return 0x6B; }
-inline Op BinaryenI32Mul()         { return 0x6C; }
-inline Op BinaryenI32DivS()        { return 0x6D; }
-inline Op BinaryenI32DivU()        { return 0x6E; }
-inline Op BinaryenI32RemS()        { return 0x6F; }
-inline Op BinaryenI32RemU()        { return 0x70; }
-inline Op BinaryenI32And()         { return 0x71; }
-inline Op BinaryenI32Or()          { return 0x72; }
-inline Op BinaryenI32Xor()         { return 0x73; }
-inline Op BinaryenI32Shl()         { return 0x74; }
-inline Op BinaryenI32ShrS()        { return 0x75; }
-inline Op BinaryenI32ShrU()        { return 0x76; }
-inline Op BinaryenI32Rotl()        { return 0x77; }
-inline Op BinaryenI32Rotr()        { return 0x78; }
-
-// ── Integer compare (i32) ───────────────────────────────────────────
-inline Op BinaryenI32Eq()          { return 0x46; }
-inline Op BinaryenI32Ne()          { return 0x47; }
-inline Op BinaryenI32LtS()         { return 0x48; }
-inline Op BinaryenI32LtU()         { return 0x49; }
-inline Op BinaryenI32GtS()         { return 0x4A; }
-inline Op BinaryenI32GtU()         { return 0x4B; }
-inline Op BinaryenI32LeS()         { return 0x4C; }
-inline Op BinaryenI32LeU()         { return 0x4D; }
-inline Op BinaryenI32GeS()         { return 0x4E; }
-inline Op BinaryenI32GeU()         { return 0x4F; }
-
-// ── Integer unary (i64) ─────────────────────────────────────────────
-inline Op BinaryenI64Clz()         { return 0x79; }
-inline Op BinaryenI64Ctz()         { return 0x7A; }
-inline Op BinaryenI64Popcnt()      { return 0x7B; }
-
-// ── Integer binary (i64) ────────────────────────────────────────────
-inline Op BinaryenI64Add()         { return 0x7C; }
-inline Op BinaryenI64Sub()         { return 0x7D; }
-inline Op BinaryenI64Mul()         { return 0x7E; }
-inline Op BinaryenI64DivS()        { return 0x7F; }
-inline Op BinaryenI64DivU()        { return 0x80; }
-inline Op BinaryenI64RemS()        { return 0x81; }
-inline Op BinaryenI64RemU()        { return 0x82; }
-inline Op BinaryenI64And()         { return 0x83; }
-inline Op BinaryenI64Or()          { return 0x84; }
-inline Op BinaryenI64Xor()         { return 0x85; }
-inline Op BinaryenI64Shl()         { return 0x86; }
-inline Op BinaryenI64ShrS()        { return 0x87; }
-inline Op BinaryenI64ShrU()        { return 0x88; }
-inline Op BinaryenI64Rotl()        { return 0x89; }
-inline Op BinaryenI64Rotr()        { return 0x8A; }
-
-// ── Integer compare (i64) ───────────────────────────────────────────
-inline Op BinaryenI64Eq()          { return 0x51; }
-inline Op BinaryenI64Ne()          { return 0x52; }
-inline Op BinaryenI64LtS()         { return 0x53; }
-inline Op BinaryenI64LtU()         { return 0x54; }
-inline Op BinaryenI64GtS()         { return 0x55; }
-inline Op BinaryenI64GtU()         { return 0x56; }
-inline Op BinaryenI64LeS()         { return 0x57; }
-inline Op BinaryenI64LeU()         { return 0x58; }
-inline Op BinaryenI64GeS()         { return 0x59; }
-inline Op BinaryenI64GeU()         { return 0x5A; }
-
-// ── Float unary (f32) ───────────────────────────────────────────────
-inline Op BinaryenF32Abs()         { return 0x8B; }
-inline Op BinaryenF32Neg()         { return 0x8C; }
-inline Op BinaryenF32Ceil()        { return 0x8D; }
-inline Op BinaryenF32Floor()       { return 0x8E; }
-inline Op BinaryenF32Trunc()       { return 0x8F; }
-inline Op BinaryenF32Nearest()     { return 0x90; }
-inline Op BinaryenF32Sqrt()        { return 0x91; }
-
-// ── Float binary (f32) ──────────────────────────────────────────────
-inline Op BinaryenF32Add()         { return 0x92; }
-inline Op BinaryenF32Sub()         { return 0x93; }
-inline Op BinaryenF32Mul()         { return 0x94; }
-inline Op BinaryenF32Div()         { return 0x95; }
-inline Op BinaryenF32Min()         { return 0x96; }
-inline Op BinaryenF32Max()         { return 0x97; }
-inline Op BinaryenF32CopySign()    { return 0x98; }
-
-// ── Float compare (f32) ─────────────────────────────────────────────
-inline Op BinaryenF32Eq()          { return 0x5B; }
-inline Op BinaryenF32Ne()          { return 0x5C; }
-inline Op BinaryenF32Lt()          { return 0x5D; }
-inline Op BinaryenF32Gt()          { return 0x5E; }
-inline Op BinaryenF32Le()          { return 0x5F; }
-inline Op BinaryenF32Ge()          { return 0x60; }
-
-// ── Float unary (f64) ───────────────────────────────────────────────
-inline Op BinaryenF64Abs()         { return 0x99; }
-inline Op BinaryenF64Neg()         { return 0x9A; }
-inline Op BinaryenF64Ceil()        { return 0x9B; }
-inline Op BinaryenF64Floor()       { return 0x9C; }
-inline Op BinaryenF64Trunc()       { return 0x9D; }
-inline Op BinaryenF64Nearest()     { return 0x9E; }
-inline Op BinaryenF64Sqrt()        { return 0x9F; }
-
-// ── Float binary (f64) ──────────────────────────────────────────────
-inline Op BinaryenF64Add()         { return 0xA0; }
-inline Op BinaryenF64Sub()         { return 0xA1; }
-inline Op BinaryenF64Mul()         { return 0xA2; }
-inline Op BinaryenF64Div()         { return 0xA3; }
-inline Op BinaryenF64Min()         { return 0xA4; }
-inline Op BinaryenF64Max()         { return 0xA5; }
-inline Op BinaryenF64CopySign()    { return 0xA6; }
-
-// ── Float compare (f64) ─────────────────────────────────────────────
-inline Op BinaryenF64Eq()          { return 0x61; }
-inline Op BinaryenF64Ne()          { return 0x62; }
-inline Op BinaryenF64Lt()          { return 0x63; }
-inline Op BinaryenF64Gt()          { return 0x64; }
-inline Op BinaryenF64Le()          { return 0x65; }
-inline Op BinaryenF64Ge()          { return 0x66; }
-
-// ── Control / Variable / Call  ─────────────────────────
-inline Op BinaryenBr()             { return 0x0C; }
-inline Op BinaryenBrIf()           { return 0x0D; }
-inline Op BinaryenNop()            { return 0x01; }
-inline Op BinaryenIf()             { return 0x04; }
-
-inline Op BinaryenLocalGet()       { return 0x20; }
-inline Op BinaryenLocalSet()       { return 0x21; }
-inline Op BinaryenLocalTee()       { return 0x22; }
-inline Op BinaryenGlobalGet()      { return 0x23; }
-inline Op BinaryenGlobalSet()      { return 0x24; }
-
-inline Op BinaryenCallFunction()   { return 0x10; }
-inline Op BinaryenCallIndirect()   { return 0x11; }
-inline Op BinaryenCallRef()        { return 0x14; }
-
-// ── Memory (loads / stores + misc) ──────────────────────────────────
-inline Op BinaryenI32Load()        { return 0x28; }
-inline Op BinaryenI64Load()        { return 0x29; }
-inline Op BinaryenF32Load()        { return 0x2A; }
-inline Op BinaryenF64Load()        { return 0x2B; }
-inline Op BinaryenI32Load8S()      { return 0x2C; }
-inline Op BinaryenI32Load8U()      { return 0x2D; }
-inline Op BinaryenI32Load16S()     { return 0x2E; }
-inline Op BinaryenI32Load16U()     { return 0x2F; }
-inline Op BinaryenI64Load8S()      { return 0x30; }
-inline Op BinaryenI64Load8U()      { return 0x31; }
-inline Op BinaryenI64Load16S()     { return 0x32; }
-inline Op BinaryenI64Load16U()     { return 0x33; }
-inline Op BinaryenI64Load32S()     { return 0x34; }
-inline Op BinaryenI64Load32U()     { return 0x35; }
-
-inline Op BinaryenI32Store()       { return 0x36; }
-inline Op BinaryenI64Store()       { return 0x37; }
-inline Op BinaryenF32Store()       { return 0x38; }
-inline Op BinaryenF64Store()       { return 0x39; }
-inline Op BinaryenI32Store8()      { return 0x3A; }
-inline Op BinaryenI32Store16()     { return 0x3B; }
-inline Op BinaryenI64Store8()      { return 0x3C; }
-inline Op BinaryenI64Store16()     { return 0x3D; }
-inline Op BinaryenI64Store32()     { return 0x3E; }
-
-inline Op BinaryenMemorySize()     { return 0x3F; }
-inline Op BinaryenMemoryGrow()     { return 0x40; }
-
-// ── SIMD / Atomic / GC (default) ───────────────────────────────────────
-inline Op BinaryenS128Load()       { return 0xFD00; }
-inline Op BinaryenS128Load8Lane()  { return 0xFD54; }
-inline Op BinaryenS128Load16Lane() { return 0xFD55; }
-inline Op BinaryenS128Load32Lane() { return 0xFD56; }
-
-inline Op BinaryenI32AtomicLoad()      { return 0xFE10; }
-inline Op BinaryenI32AtomicLoad8U()    { return 0xFE12; }
-inline Op BinaryenI32AtomicLoad16U()   { return 0xFE13; }
-
-inline Op BinaryenStructNew()          { return 0xFB00; }
-inline Op BinaryenStructNewDefault()   { return 0xFB01; }
+inline Op BinaryenUnreachable() { return 0x0000; }
+inline Op BinaryenNop() { return 0x0001; }
+inline Op BinaryenBlock() { return 0x0002; }
+inline Op BinaryenLoop() { return 0x0003; }
+inline Op BinaryenIf() { return 0x0004; }
+inline Op BinaryenElse() { return 0x0005; }
+inline Op BinaryenTry() { return 0x0006; }
+inline Op BinaryenCatch() { return 0x0007; }
+inline Op BinaryenThrow() { return 0x0008; }
+inline Op BinaryenRethrow() { return 0x0009; }
+inline Op BinaryenEnd() { return 0x000B; }
+inline Op BinaryenBr() { return 0x000C; }
+inline Op BinaryenBrIf() { return 0x000D; }
+inline Op BinaryenBrTable() { return 0x000E; }
+inline Op BinaryenReturn() { return 0x000F; }
+inline Op BinaryenCall() { return 0x0010; }
+inline Op BinaryenCallIndirect() { return 0x0011; }
+inline Op BinaryenReturnCall() { return 0x0012; }
+inline Op BinaryenReturnCallIndirect() { return 0x0013; }
+inline Op BinaryenCallRef() { return 0x0014; }
+inline Op BinaryenDelegate() { return 0x0018; }
+inline Op BinaryenCatchAll() { return 0x0019; }
+inline Op BinaryenDrop() { return 0x001A; }
+inline Op BinaryenSelect() { return 0x001B; }
+inline Op BinaryenSelectT() { return 0x001C; }
+inline Op BinaryenLocalGet() { return 0x0020; }
+inline Op BinaryenLocalSet() { return 0x0021; }
+inline Op BinaryenLocalTee() { return 0x0022; }
+inline Op BinaryenGlobalGet() { return 0x0023; }
+inline Op BinaryenGlobalSet() { return 0x0024; }
+inline Op BinaryenI32Load() { return 0x0028; }
+inline Op BinaryenI64Load() { return 0x0029; }
+inline Op BinaryenF32Load() { return 0x002A; }
+inline Op BinaryenF64Load() { return 0x002B; }
+inline Op BinaryenI32Load8S() { return 0x002C; }
+inline Op BinaryenI32Load8U() { return 0x002D; }
+inline Op BinaryenI32Load16S() { return 0x002E; }
+inline Op BinaryenI32Load16U() { return 0x002F; }
+inline Op BinaryenI64Load8S() { return 0x0030; }
+inline Op BinaryenI64Load8U() { return 0x0031; }
+inline Op BinaryenI64Load16S() { return 0x0032; }
+inline Op BinaryenI64Load16U() { return 0x0033; }
+inline Op BinaryenI64Load32S() { return 0x0034; }
+inline Op BinaryenI64Load32U() { return 0x0035; }
+inline Op BinaryenI32Store() { return 0x0036; }
+inline Op BinaryenI64Store() { return 0x0037; }
+inline Op BinaryenF32Store() { return 0x0038; }
+inline Op BinaryenF64Store() { return 0x0039; }
+inline Op BinaryenI32Store8() { return 0x003A; }
+inline Op BinaryenI32Store16() { return 0x003B; }
+inline Op BinaryenI64Store8() { return 0x003C; }
+inline Op BinaryenI64Store16() { return 0x003D; }
+inline Op BinaryenI64Store32() { return 0x003E; }
+inline Op BinaryenMemorySize() { return 0x003F; }
+inline Op BinaryenMemoryGrow() { return 0x0040; }
+inline Op BinaryenI32Const() { return 0x0041; }
+inline Op BinaryenI64Const() { return 0x0042; }
+inline Op BinaryenF32Const() { return 0x0043; }
+inline Op BinaryenF64Const() { return 0x0044; }
+inline Op BinaryenI32Eqz() { return 0x0045; }
+inline Op BinaryenI32Eq() { return 0x0046; }
+inline Op BinaryenI32Ne() { return 0x0047; }
+inline Op BinaryenI32LtS() { return 0x0048; }
+inline Op BinaryenI32LtU() { return 0x0049; }
+inline Op BinaryenI32GtS() { return 0x004A; }
+inline Op BinaryenI32GtU() { return 0x004B; }
+inline Op BinaryenI32LeS() { return 0x004C; }
+inline Op BinaryenI32LeU() { return 0x004D; }
+inline Op BinaryenI32GeS() { return 0x004E; }
+inline Op BinaryenI32GeU() { return 0x004F; }
+inline Op BinaryenI64Eqz() { return 0x0050; }
+inline Op BinaryenI64Eq() { return 0x0051; }
+inline Op BinaryenI64Ne() { return 0x0052; }
+inline Op BinaryenI64LtS() { return 0x0053; }
+inline Op BinaryenI64LtU() { return 0x0054; }
+inline Op BinaryenI64GtS() { return 0x0055; }
+inline Op BinaryenI64GtU() { return 0x0056; }
+inline Op BinaryenI64LeS() { return 0x0057; }
+inline Op BinaryenI64LeU() { return 0x0058; }
+inline Op BinaryenI64GeS() { return 0x0059; }
+inline Op BinaryenI64GeU() { return 0x005A; }
+inline Op BinaryenF32Eq() { return 0x005B; }
+inline Op BinaryenF32Ne() { return 0x005C; }
+inline Op BinaryenF32Lt() { return 0x005D; }
+inline Op BinaryenF32Gt() { return 0x005E; }
+inline Op BinaryenF32Le() { return 0x005F; }
+inline Op BinaryenF32Ge() { return 0x0060; }
+inline Op BinaryenF64Eq() { return 0x0061; }
+inline Op BinaryenF64Ne() { return 0x0062; }
+inline Op BinaryenF64Lt() { return 0x0063; }
+inline Op BinaryenF64Gt() { return 0x0064; }
+inline Op BinaryenF64Le() { return 0x0065; }
+inline Op BinaryenF64Ge() { return 0x0066; }
+inline Op BinaryenI32Clz() { return 0x0067; }
+inline Op BinaryenI32Ctz() { return 0x0068; }
+inline Op BinaryenI32Popcnt() { return 0x0069; }
+inline Op BinaryenI32Add() { return 0x006A; }
+inline Op BinaryenI32Sub() { return 0x006B; }
+inline Op BinaryenI32Mul() { return 0x006C; }
+inline Op BinaryenI32DivS() { return 0x006D; }
+inline Op BinaryenI32DivU() { return 0x006E; }
+inline Op BinaryenI32RemS() { return 0x006F; }
+inline Op BinaryenI32RemU() { return 0x0070; }
+inline Op BinaryenI32And() { return 0x0071; }
+inline Op BinaryenI32Or() { return 0x0072; }
+inline Op BinaryenI32Xor() { return 0x0073; }
+inline Op BinaryenI32Shl() { return 0x0074; }
+inline Op BinaryenI32ShrS() { return 0x0075; }
+inline Op BinaryenI32ShrU() { return 0x0076; }
+inline Op BinaryenI32Rotl() { return 0x0077; }
+inline Op BinaryenI32Rotr() { return 0x0078; }
+inline Op BinaryenI64Clz() { return 0x0079; }
+inline Op BinaryenI64Ctz() { return 0x007A; }
+inline Op BinaryenI64Popcnt() { return 0x007B; }
+inline Op BinaryenI64Add() { return 0x007C; }
+inline Op BinaryenI64Sub() { return 0x007D; }
+inline Op BinaryenI64Mul() { return 0x007E; }
+inline Op BinaryenI64DivS() { return 0x007F; }
+inline Op BinaryenI64DivU() { return 0x0080; }
+inline Op BinaryenI64RemS() { return 0x0081; }
+inline Op BinaryenI64RemU() { return 0x0082; }
+inline Op BinaryenI64And() { return 0x0083; }
+inline Op BinaryenI64Or() { return 0x0084; }
+inline Op BinaryenI64Xor() { return 0x0085; }
+inline Op BinaryenI64Shl() { return 0x0086; }
+inline Op BinaryenI64ShrS() { return 0x0087; }
+inline Op BinaryenI64ShrU() { return 0x0088; }
+inline Op BinaryenI64Rotl() { return 0x0089; }
+inline Op BinaryenI64Rotr() { return 0x008A; }
+inline Op BinaryenF32Abs() { return 0x008B; }
+inline Op BinaryenF32Neg() { return 0x008C; }
+inline Op BinaryenF32Ceil() { return 0x008D; }
+inline Op BinaryenF32Floor() { return 0x008E; }
+inline Op BinaryenF32Trunc() { return 0x008F; }
+inline Op BinaryenF32Nearest() { return 0x0090; }
+inline Op BinaryenF32Sqrt() { return 0x0091; }
+inline Op BinaryenF32Add() { return 0x0092; }
+inline Op BinaryenF32Sub() { return 0x0093; }
+inline Op BinaryenF32Mul() { return 0x0094; }
+inline Op BinaryenF32Div() { return 0x0095; }
+inline Op BinaryenF32Min() { return 0x0096; }
+inline Op BinaryenF32Max() { return 0x0097; }
+inline Op BinaryenF32Copysign() { return 0x0098; }
+inline Op BinaryenF64Abs() { return 0x0099; }
+inline Op BinaryenF64Neg() { return 0x009A; }
+inline Op BinaryenF64Ceil() { return 0x009B; }
+inline Op BinaryenF64Floor() { return 0x009C; }
+inline Op BinaryenF64Trunc() { return 0x009D; }
+inline Op BinaryenF64Nearest() { return 0x009E; }
+inline Op BinaryenF64Sqrt() { return 0x009F; }
+inline Op BinaryenF64Add() { return 0x00A0; }
+inline Op BinaryenF64Sub() { return 0x00A1; }
+inline Op BinaryenF64Mul() { return 0x00A2; }
+inline Op BinaryenF64Div() { return 0x00A3; }
+inline Op BinaryenF64Min() { return 0x00A4; }
+inline Op BinaryenF64Max() { return 0x00A5; }
+inline Op BinaryenF64Copysign() { return 0x00A6; }
+inline Op BinaryenI32WrapI64() { return 0x00A7; }
+inline Op BinaryenI32TruncF32S() { return 0x00A8; }
+inline Op BinaryenI32TruncF32U() { return 0x00A9; }
+inline Op BinaryenI32TruncF64S() { return 0x00AA; }
+inline Op BinaryenI32TruncF64U() { return 0x00AB; }
+inline Op BinaryenI64ExtendI32S() { return 0x00AC; }
+inline Op BinaryenI64ExtendI32U() { return 0x00AD; }
+inline Op BinaryenI64TruncF32S() { return 0x00AE; }
+inline Op BinaryenI64TruncF32U() { return 0x00AF; }
+inline Op BinaryenI64TruncF64S() { return 0x00B0; }
+inline Op BinaryenI64TruncF64U() { return 0x00B1; }
+inline Op BinaryenF32ConvertI32S() { return 0x00B2; }
+inline Op BinaryenF32ConvertI32U() { return 0x00B3; }
+inline Op BinaryenF32ConvertI64S() { return 0x00B4; }
+inline Op BinaryenF32ConvertI64U() { return 0x00B5; }
+inline Op BinaryenF32DemoteF64() { return 0x00B6; }
+inline Op BinaryenF64ConvertI32S() { return 0x00B7; }
+inline Op BinaryenF64ConvertI32U() { return 0x00B8; }
+inline Op BinaryenF64ConvertI64S() { return 0x00B9; }
+inline Op BinaryenF64ConvertI64U() { return 0x00BA; }
+inline Op BinaryenF64PromoteF32() { return 0x00BB; }
+inline Op BinaryenI32ReinterpretF32() { return 0x00BC; }
+inline Op BinaryenI64ReinterpretF64() { return 0x00BD; }
+inline Op BinaryenF32ReinterpretI32() { return 0x00BE; }
+inline Op BinaryenF64ReinterpretI64() { return 0x00BF; }
+inline Op BinaryenI32Extend8S() { return 0x00C0; }
+inline Op BinaryenI32Extend16S() { return 0x00C1; }
+inline Op BinaryenI64Extend8S() { return 0x00C2; }
+inline Op BinaryenI64Extend16S() { return 0x00C3; }
+inline Op BinaryenI64Extend32S() { return 0x00C4; }
+// inline Op BinaryenInterpAlloca() { return 0x00E0; }
+// inline Op BinaryenInterpBrUnless() { return 0x00E1; }
+// inline Op BinaryenInterpCallImport() { return 0x00E2; }
+// inline Op BinaryenInterpData() { return 0x00E3; }
+// inline Op BinaryenInterpDropKeep() { return 0x00E4; }
+// inline Op BinaryenInterpCatchDrop() { return 0x00E5; }
+// inline Op BinaryenInterpAdjustFrameForReturnCall() { return 0x00E6; }
+inline Op BinaryenI32TruncSatF32S() { return 0xFC00; }
+inline Op BinaryenI32TruncSatF32U() { return 0xFC01; }
+inline Op BinaryenI32TruncSatF64S() { return 0xFC02; }
+inline Op BinaryenI32TruncSatF64U() { return 0xFC03; }
+inline Op BinaryenI64TruncSatF32S() { return 0xFC04; }
+inline Op BinaryenI64TruncSatF32U() { return 0xFC05; }
+inline Op BinaryenI64TruncSatF64S() { return 0xFC06; }
+inline Op BinaryenI64TruncSatF64U() { return 0xFC07; }
+inline Op BinaryenMemoryInit() { return 0xFC08; }
+inline Op BinaryenDataDrop() { return 0xFC09; }
+inline Op BinaryenMemoryCopy() { return 0xFC0A; }
+inline Op BinaryenMemoryFill() { return 0xFC0B; }
+inline Op BinaryenTableInit() { return 0xFC0C; }
+inline Op BinaryenElemDrop() { return 0xFC0D; }
+inline Op BinaryenTableCopy() { return 0xFC0E; }
+inline Op BinaryenTableGet() { return 0x0025; }
+inline Op BinaryenTableSet() { return 0x0026; }
+inline Op BinaryenTableGrow() { return 0xFC0F; }
+inline Op BinaryenTableSize() { return 0xFC10; }
+inline Op BinaryenTableFill() { return 0xFC11; }
+inline Op BinaryenRefNull() { return 0x00D0; }
+inline Op BinaryenRefIsNull() { return 0x00D1; }
+inline Op BinaryenRefFunc() { return 0x00D2; }
+inline Op BinaryenV128Load() { return 0xFD00; }
+inline Op BinaryenV128Load8X8S() { return 0xFD01; }
+inline Op BinaryenV128Load8X8U() { return 0xFD02; }
+inline Op BinaryenV128Load16X4S() { return 0xFD03; }
+inline Op BinaryenV128Load16X4U() { return 0xFD04; }
+inline Op BinaryenV128Load32X2S() { return 0xFD05; }
+inline Op BinaryenV128Load32X2U() { return 0xFD06; }
+inline Op BinaryenV128Load8Splat() { return 0xFD07; }
+inline Op BinaryenV128Load16Splat() { return 0xFD08; }
+inline Op BinaryenV128Load32Splat() { return 0xFD09; }
+inline Op BinaryenV128Load64Splat() { return 0xFD0A; }
+inline Op BinaryenV128Store() { return 0xFD0B; }
+inline Op BinaryenV128Const() { return 0xFD0C; }
+inline Op BinaryenI8X16Shuffle() { return 0xFD0D; }
+inline Op BinaryenI8X16Swizzle() { return 0xFD0E; }
+inline Op BinaryenI8X16Splat() { return 0xFD0F; }
+inline Op BinaryenI16X8Splat() { return 0xFD10; }
+inline Op BinaryenI32X4Splat() { return 0xFD11; }
+inline Op BinaryenI64X2Splat() { return 0xFD12; }
+inline Op BinaryenF32X4Splat() { return 0xFD13; }
+inline Op BinaryenF64X2Splat() { return 0xFD14; }
+inline Op BinaryenI8X16ExtractLaneS() { return 0xFD15; }
+inline Op BinaryenI8X16ExtractLaneU() { return 0xFD16; }
+inline Op BinaryenI8X16ReplaceLane() { return 0xFD17; }
+inline Op BinaryenI16X8ExtractLaneS() { return 0xFD18; }
+inline Op BinaryenI16X8ExtractLaneU() { return 0xFD19; }
+inline Op BinaryenI16X8ReplaceLane() { return 0xFD1A; }
+inline Op BinaryenI32X4ExtractLane() { return 0xFD1B; }
+inline Op BinaryenI32X4ReplaceLane() { return 0xFD1C; }
+inline Op BinaryenI64X2ExtractLane() { return 0xFD1D; }
+inline Op BinaryenI64X2ReplaceLane() { return 0xFD1E; }
+inline Op BinaryenF32X4ExtractLane() { return 0xFD1F; }
+inline Op BinaryenF32X4ReplaceLane() { return 0xFD20; }
+inline Op BinaryenF64X2ExtractLane() { return 0xFD21; }
+inline Op BinaryenF64X2ReplaceLane() { return 0xFD22; }
+inline Op BinaryenI8X16Eq() { return 0xFD23; }
+inline Op BinaryenI8X16Ne() { return 0xFD24; }
+inline Op BinaryenI8X16LtS() { return 0xFD25; }
+inline Op BinaryenI8X16LtU() { return 0xFD26; }
+inline Op BinaryenI8X16GtS() { return 0xFD27; }
+inline Op BinaryenI8X16GtU() { return 0xFD28; }
+inline Op BinaryenI8X16LeS() { return 0xFD29; }
+inline Op BinaryenI8X16LeU() { return 0xFD2A; }
+inline Op BinaryenI8X16GeS() { return 0xFD2B; }
+inline Op BinaryenI8X16GeU() { return 0xFD2C; }
+inline Op BinaryenI16X8Eq() { return 0xFD2D; }
+inline Op BinaryenI16X8Ne() { return 0xFD2E; }
+inline Op BinaryenI16X8LtS() { return 0xFD2F; }
+inline Op BinaryenI16X8LtU() { return 0xFD30; }
+inline Op BinaryenI16X8GtS() { return 0xFD31; }
+inline Op BinaryenI16X8GtU() { return 0xFD32; }
+inline Op BinaryenI16X8LeS() { return 0xFD33; }
+inline Op BinaryenI16X8LeU() { return 0xFD34; }
+inline Op BinaryenI16X8GeS() { return 0xFD35; }
+inline Op BinaryenI16X8GeU() { return 0xFD36; }
+inline Op BinaryenI32X4Eq() { return 0xFD37; }
+inline Op BinaryenI32X4Ne() { return 0xFD38; }
+inline Op BinaryenI32X4LtS() { return 0xFD39; }
+inline Op BinaryenI32X4LtU() { return 0xFD3A; }
+inline Op BinaryenI32X4GtS() { return 0xFD3B; }
+inline Op BinaryenI32X4GtU() { return 0xFD3C; }
+inline Op BinaryenI32X4LeS() { return 0xFD3D; }
+inline Op BinaryenI32X4LeU() { return 0xFD3E; }
+inline Op BinaryenI32X4GeS() { return 0xFD3F; }
+inline Op BinaryenI32X4GeU() { return 0xFD40; }
+inline Op BinaryenF32X4Eq() { return 0xFD41; }
+inline Op BinaryenF32X4Ne() { return 0xFD42; }
+inline Op BinaryenF32X4Lt() { return 0xFD43; }
+inline Op BinaryenF32X4Gt() { return 0xFD44; }
+inline Op BinaryenF32X4Le() { return 0xFD45; }
+inline Op BinaryenF32X4Ge() { return 0xFD46; }
+inline Op BinaryenF64X2Eq() { return 0xFD47; }
+inline Op BinaryenF64X2Ne() { return 0xFD48; }
+inline Op BinaryenF64X2Lt() { return 0xFD49; }
+inline Op BinaryenF64X2Gt() { return 0xFD4A; }
+inline Op BinaryenF64X2Le() { return 0xFD4B; }
+inline Op BinaryenF64X2Ge() { return 0xFD4C; }
+inline Op BinaryenV128Not() { return 0xFD4D; }
+inline Op BinaryenV128And() { return 0xFD4E; }
+inline Op BinaryenV128Andnot() { return 0xFD4F; }
+inline Op BinaryenV128Or() { return 0xFD50; }
+inline Op BinaryenV128Xor() { return 0xFD51; }
+inline Op BinaryenV128BitSelect() { return 0xFD52; }
+inline Op BinaryenV128AnyTrue() { return 0xFD53; }
+inline Op BinaryenV128Load8Lane() { return 0xFD54; }
+inline Op BinaryenV128Load16Lane() { return 0xFD55; }
+inline Op BinaryenV128Load32Lane() { return 0xFD56; }
+inline Op BinaryenV128Load64Lane() { return 0xFD57; }
+inline Op BinaryenV128Store8Lane() { return 0xFD58; }
+inline Op BinaryenV128Store16Lane() { return 0xFD59; }
+inline Op BinaryenV128Store32Lane() { return 0xFD5A; }
+inline Op BinaryenV128Store64Lane() { return 0xFD5B; }
+inline Op BinaryenV128Load32Zero() { return 0xFD5C; }
+inline Op BinaryenV128Load64Zero() { return 0xFD5D; }
+inline Op BinaryenF32X4DemoteF64X2Zero() { return 0xFD5E; }
+inline Op BinaryenF64X2PromoteLowF32X4() { return 0xFD5F; }
+inline Op BinaryenI8X16Abs() { return 0xFD60; }
+inline Op BinaryenI8X16Neg() { return 0xFD61; }
+inline Op BinaryenI8X16Popcnt() { return 0xFD62; }
+inline Op BinaryenI8X16AllTrue() { return 0xFD63; }
+inline Op BinaryenI8X16Bitmask() { return 0xFD64; }
+inline Op BinaryenI8X16NarrowI16X8S() { return 0xFD65; }
+inline Op BinaryenI8X16NarrowI16X8U() { return 0xFD66; }
+inline Op BinaryenI8X16Shl() { return 0xFD6B; }
+inline Op BinaryenI8X16ShrS() { return 0xFD6C; }
+inline Op BinaryenI8X16ShrU() { return 0xFD6D; }
+inline Op BinaryenI8X16Add() { return 0xFD6E; }
+inline Op BinaryenI8X16AddSatS() { return 0xFD6F; }
+inline Op BinaryenI8X16AddSatU() { return 0xFD70; }
+inline Op BinaryenI8X16Sub() { return 0xFD71; }
+inline Op BinaryenI8X16SubSatS() { return 0xFD72; }
+inline Op BinaryenI8X16SubSatU() { return 0xFD73; }
+inline Op BinaryenI8X16MinS() { return 0xFD76; }
+inline Op BinaryenI8X16MinU() { return 0xFD77; }
+inline Op BinaryenI8X16MaxS() { return 0xFD78; }
+inline Op BinaryenI8X16MaxU() { return 0xFD79; }
+inline Op BinaryenI8X16AvgrU() { return 0xFD7B; }
+inline Op BinaryenI16X8ExtaddPairwiseI8X16S() { return 0xFD7C; }
+inline Op BinaryenI16X8ExtaddPairwiseI8X16U() { return 0xFD7D; }
+inline Op BinaryenI32X4ExtaddPairwiseI16X8S() { return 0xFD7E; }
+inline Op BinaryenI32X4ExtaddPairwiseI16X8U() { return 0xFD7F; }
+inline Op BinaryenI16X8Abs() { return 0xFD80; }
+inline Op BinaryenI16X8Neg() { return 0xFD81; }
+inline Op BinaryenI16X8Q15mulrSatS() { return 0xFD82; }
+inline Op BinaryenI16X8AllTrue() { return 0xFD83; }
+inline Op BinaryenI16X8Bitmask() { return 0xFD84; }
+inline Op BinaryenI16X8NarrowI32X4S() { return 0xFD85; }
+inline Op BinaryenI16X8NarrowI32X4U() { return 0xFD86; }
+inline Op BinaryenI16X8ExtendLowI8X16S() { return 0xFD87; }
+inline Op BinaryenI16X8ExtendHighI8X16S() { return 0xFD88; }
+inline Op BinaryenI16X8ExtendLowI8X16U() { return 0xFD89; }
+inline Op BinaryenI16X8ExtendHighI8X16U() { return 0xFD8A; }
+inline Op BinaryenI16X8Shl() { return 0xFD8B; }
+inline Op BinaryenI16X8ShrS() { return 0xFD8C; }
+inline Op BinaryenI16X8ShrU() { return 0xFD8D; }
+inline Op BinaryenI16X8Add() { return 0xFD8E; }
+inline Op BinaryenI16X8AddSatS() { return 0xFD8F; }
+inline Op BinaryenI16X8AddSatU() { return 0xFD90; }
+inline Op BinaryenI16X8Sub() { return 0xFD91; }
+inline Op BinaryenI16X8SubSatS() { return 0xFD92; }
+inline Op BinaryenI16X8SubSatU() { return 0xFD93; }
+inline Op BinaryenI16X8Mul() { return 0xFD95; }
+inline Op BinaryenI16X8MinS() { return 0xFD96; }
+inline Op BinaryenI16X8MinU() { return 0xFD97; }
+inline Op BinaryenI16X8MaxS() { return 0xFD98; }
+inline Op BinaryenI16X8MaxU() { return 0xFD99; }
+inline Op BinaryenI16X8AvgrU() { return 0xFD9B; }
+inline Op BinaryenI16X8ExtmulLowI8X16S() { return 0xFD9C; }
+inline Op BinaryenI16X8ExtmulHighI8X16S() { return 0xFD9D; }
+inline Op BinaryenI16X8ExtmulLowI8X16U() { return 0xFD9E; }
+inline Op BinaryenI16X8ExtmulHighI8X16U() { return 0xFD9F; }
+inline Op BinaryenI32X4Abs() { return 0xFDA0; }
+inline Op BinaryenI32X4Neg() { return 0xFDA1; }
+inline Op BinaryenI32X4AllTrue() { return 0xFDA3; }
+inline Op BinaryenI32X4Bitmask() { return 0xFDA4; }
+inline Op BinaryenI32X4ExtendLowI16X8S() { return 0xFDA7; }
+inline Op BinaryenI32X4ExtendHighI16X8S() { return 0xFDA8; }
+inline Op BinaryenI32X4ExtendLowI16X8U() { return 0xFDA9; }
+inline Op BinaryenI32X4ExtendHighI16X8U() { return 0xFDAA; }
+inline Op BinaryenI32X4Shl() { return 0xFDAB; }
+inline Op BinaryenI32X4ShrS() { return 0xFDAC; }
+inline Op BinaryenI32X4ShrU() { return 0xFDAD; }
+inline Op BinaryenI32X4Add() { return 0xFDAE; }
+inline Op BinaryenI32X4Sub() { return 0xFDB1; }
+inline Op BinaryenI32X4Mul() { return 0xFDB5; }
+inline Op BinaryenI32X4MinS() { return 0xFDB6; }
+inline Op BinaryenI32X4MinU() { return 0xFDB7; }
+inline Op BinaryenI32X4MaxS() { return 0xFDB8; }
+inline Op BinaryenI32X4MaxU() { return 0xFDB9; }
+inline Op BinaryenI32X4DotI16X8S() { return 0xFDBA; }
+inline Op BinaryenI32X4ExtmulLowI16X8S() { return 0xFDBC; }
+inline Op BinaryenI32X4ExtmulHighI16X8S() { return 0xFDBD; }
+inline Op BinaryenI32X4ExtmulLowI16X8U() { return 0xFDBE; }
+inline Op BinaryenI32X4ExtmulHighI16X8U() { return 0xFDBF; }
+inline Op BinaryenI64X2Abs() { return 0xFDC0; }
+inline Op BinaryenI64X2Neg() { return 0xFDC1; }
+inline Op BinaryenI64X2AllTrue() { return 0xFDC3; }
+inline Op BinaryenI64X2Bitmask() { return 0xFDC4; }
+inline Op BinaryenI64X2ExtendLowI32X4S() { return 0xFDC7; }
+inline Op BinaryenI64X2ExtendHighI32X4S() { return 0xFDC8; }
+inline Op BinaryenI64X2ExtendLowI32X4U() { return 0xFDC9; }
+inline Op BinaryenI64X2ExtendHighI32X4U() { return 0xFDCA; }
+inline Op BinaryenI64X2Shl() { return 0xFDCB; }
+inline Op BinaryenI64X2ShrS() { return 0xFDCC; }
+inline Op BinaryenI64X2ShrU() { return 0xFDCD; }
+inline Op BinaryenI64X2Add() { return 0xFDCE; }
+inline Op BinaryenI64X2Sub() { return 0xFDD1; }
+inline Op BinaryenI64X2Mul() { return 0xFDD5; }
+inline Op BinaryenI64X2Eq() { return 0xFDD6; }
+inline Op BinaryenI64X2Ne() { return 0xFDD7; }
+inline Op BinaryenI64X2LtS() { return 0xFDD8; }
+inline Op BinaryenI64X2GtS() { return 0xFDD9; }
+inline Op BinaryenI64X2LeS() { return 0xFDDA; }
+inline Op BinaryenI64X2GeS() { return 0xFDDB; }
+inline Op BinaryenI64X2ExtmulLowI32X4S() { return 0xFDDC; }
+inline Op BinaryenI64X2ExtmulHighI32X4S() { return 0xFDDD; }
+inline Op BinaryenI64X2ExtmulLowI32X4U() { return 0xFDDE; }
+inline Op BinaryenI64X2ExtmulHighI32X4U() { return 0xFDDF; }
+inline Op BinaryenF32X4Ceil() { return 0xFD67; }
+inline Op BinaryenF32X4Floor() { return 0xFD68; }
+inline Op BinaryenF32X4Trunc() { return 0xFD69; }
+inline Op BinaryenF32X4Nearest() { return 0xFD6A; }
+inline Op BinaryenF64X2Ceil() { return 0xFD74; }
+inline Op BinaryenF64X2Floor() { return 0xFD75; }
+inline Op BinaryenF64X2Trunc() { return 0xFD7A; }
+inline Op BinaryenF64X2Nearest() { return 0xFD94; }
+inline Op BinaryenF32X4Abs() { return 0xFDE0; }
+inline Op BinaryenF32X4Neg() { return 0xFDE1; }
+inline Op BinaryenF32X4Sqrt() { return 0xFDE3; }
+inline Op BinaryenF32X4Add() { return 0xFDE4; }
+inline Op BinaryenF32X4Sub() { return 0xFDE5; }
+inline Op BinaryenF32X4Mul() { return 0xFDE6; }
+inline Op BinaryenF32X4Div() { return 0xFDE7; }
+inline Op BinaryenF32X4Min() { return 0xFDE8; }
+inline Op BinaryenF32X4Max() { return 0xFDE9; }
+inline Op BinaryenF32X4PMin() { return 0xFDEA; }
+inline Op BinaryenF32X4PMax() { return 0xFDEB; }
+inline Op BinaryenF64X2Abs() { return 0xFDEC; }
+inline Op BinaryenF64X2Neg() { return 0xFDED; }
+inline Op BinaryenF64X2Sqrt() { return 0xFDEF; }
+inline Op BinaryenF64X2Add() { return 0xFDF0; }
+inline Op BinaryenF64X2Sub() { return 0xFDF1; }
+inline Op BinaryenF64X2Mul() { return 0xFDF2; }
+inline Op BinaryenF64X2Div() { return 0xFDF3; }
+inline Op BinaryenF64X2Min() { return 0xFDF4; }
+inline Op BinaryenF64X2Max() { return 0xFDF5; }
+inline Op BinaryenF64X2PMin() { return 0xFDF6; }
+inline Op BinaryenF64X2PMax() { return 0xFDF7; }
+inline Op BinaryenI32X4TruncSatF32X4S() { return 0xFDF8; }
+inline Op BinaryenI32X4TruncSatF32X4U() { return 0xFDF9; }
+inline Op BinaryenF32X4ConvertI32X4S() { return 0xFDFA; }
+inline Op BinaryenF32X4ConvertI32X4U() { return 0xFDFB; }
+inline Op BinaryenI32X4TruncSatF64X2SZero() { return 0xFDFC; }
+inline Op BinaryenI32X4TruncSatF64X2UZero() { return 0xFDFD; }
+inline Op BinaryenF64X2ConvertLowI32X4S() { return 0xFDFE; }
+inline Op BinaryenF64X2ConvertLowI32X4U() { return 0xFDFF; }
+// inline Op BinaryenI8X16RelaxedSwizzle() { return 0xFD00; }
+// inline Op BinaryenI32X4RelaxedTruncF32X4S() { return 0xFD01; }
+// inline Op BinaryenI32X4RelaxedTruncF32X4U() { return 0xFD02; }
+// inline Op BinaryenI32X4RelaxedTruncF64X2SZero() { return 0xFD03; }
+// inline Op BinaryenI32X4RelaxedTruncF64X2UZero() { return 0xFD04; }
+// inline Op BinaryenF32X4RelaxedMadd() { return 0xFD05; }
+// inline Op BinaryenF32X4RelaxedNmadd() { return 0xFD06; }
+// inline Op BinaryenF64X2RelaxedMadd() { return 0xFD07; }
+// inline Op BinaryenF64X2RelaxedNmadd() { return 0xFD08; }
+// inline Op BinaryenI8X16RelaxedLaneSelect() { return 0xFD09; }
+// inline Op BinaryenI16X8RelaxedLaneSelect() { return 0xFD0A; }
+// inline Op BinaryenI32X4RelaxedLaneSelect() { return 0xFD0B; }
+// inline Op BinaryenI64X2RelaxedLaneSelect() { return 0xFD0C; }
+// inline Op BinaryenF32X4RelaxedMin() { return 0xFD0D; }
+// inline Op BinaryenF32X4RelaxedMax() { return 0xFD0E; }
+// inline Op BinaryenF64X2RelaxedMin() { return 0xFD0F; }
+// inline Op BinaryenF64X2RelaxedMax() { return 0xFD10; }
+// inline Op BinaryenI16X8RelaxedQ15mulrS() { return 0xFD11; }
+inline Op BinaryenI16X8DotI8X16I7X16S() { return 0xFD12; }
+inline Op BinaryenI32X4DotI8X16I7X16AddS() { return 0xFD13; }
+inline Op BinaryenMemoryAtomicNotify() { return 0xFE00; }
+inline Op BinaryenMemoryAtomicWait32() { return 0xFE01; }
+inline Op BinaryenMemoryAtomicWait64() { return 0xFE02; }
+inline Op BinaryenAtomicFence() { return 0xFE03; }
+inline Op BinaryenI32AtomicLoad() { return 0xFE10; }
+inline Op BinaryenI64AtomicLoad() { return 0xFE11; }
+inline Op BinaryenI32AtomicLoad8U() { return 0xFE12; }
+inline Op BinaryenI32AtomicLoad16U() { return 0xFE13; }
+inline Op BinaryenI64AtomicLoad8U() { return 0xFE14; }
+inline Op BinaryenI64AtomicLoad16U() { return 0xFE15; }
+inline Op BinaryenI64AtomicLoad32U() { return 0xFE16; }
+inline Op BinaryenI32AtomicStore() { return 0xFE17; }
+inline Op BinaryenI64AtomicStore() { return 0xFE18; }
+inline Op BinaryenI32AtomicStore8() { return 0xFE19; }
+inline Op BinaryenI32AtomicStore16() { return 0xFE1A; }
+inline Op BinaryenI64AtomicStore8() { return 0xFE1B; }
+inline Op BinaryenI64AtomicStore16() { return 0xFE1C; }
+inline Op BinaryenI64AtomicStore32() { return 0xFE1D; }
+inline Op BinaryenI32AtomicRmwAdd() { return 0xFE1E; }
+inline Op BinaryenI64AtomicRmwAdd() { return 0xFE1F; }
+inline Op BinaryenI32AtomicRmw8AddU() { return 0xFE20; }
+inline Op BinaryenI32AtomicRmw16AddU() { return 0xFE21; }
+inline Op BinaryenI64AtomicRmw8AddU() { return 0xFE22; }
+inline Op BinaryenI64AtomicRmw16AddU() { return 0xFE23; }
+inline Op BinaryenI64AtomicRmw32AddU() { return 0xFE24; }
+inline Op BinaryenI32AtomicRmwSub() { return 0xFE25; }
+inline Op BinaryenI64AtomicRmwSub() { return 0xFE26; }
+inline Op BinaryenI32AtomicRmw8SubU() { return 0xFE27; }
+inline Op BinaryenI32AtomicRmw16SubU() { return 0xFE28; }
+inline Op BinaryenI64AtomicRmw8SubU() { return 0xFE29; }
+inline Op BinaryenI64AtomicRmw16SubU() { return 0xFE2A; }
+inline Op BinaryenI64AtomicRmw32SubU() { return 0xFE2B; }
+inline Op BinaryenI32AtomicRmwAnd() { return 0xFE2C; }
+inline Op BinaryenI64AtomicRmwAnd() { return 0xFE2D; }
+inline Op BinaryenI32AtomicRmw8AndU() { return 0xFE2E; }
+inline Op BinaryenI32AtomicRmw16AndU() { return 0xFE2F; }
+inline Op BinaryenI64AtomicRmw8AndU() { return 0xFE30; }
+inline Op BinaryenI64AtomicRmw16AndU() { return 0xFE31; }
+inline Op BinaryenI64AtomicRmw32AndU() { return 0xFE32; }
+inline Op BinaryenI32AtomicRmwOr() { return 0xFE33; }
+inline Op BinaryenI64AtomicRmwOr() { return 0xFE34; }
+inline Op BinaryenI32AtomicRmw8OrU() { return 0xFE35; }
+inline Op BinaryenI32AtomicRmw16OrU() { return 0xFE36; }
+inline Op BinaryenI64AtomicRmw8OrU() { return 0xFE37; }
+inline Op BinaryenI64AtomicRmw16OrU() { return 0xFE38; }
+inline Op BinaryenI64AtomicRmw32OrU() { return 0xFE39; }
+inline Op BinaryenI32AtomicRmwXor() { return 0xFE3A; }
+inline Op BinaryenI64AtomicRmwXor() { return 0xFE3B; }
+inline Op BinaryenI32AtomicRmw8XorU() { return 0xFE3C; }
+inline Op BinaryenI32AtomicRmw16XorU() { return 0xFE3D; }
+inline Op BinaryenI64AtomicRmw8XorU() { return 0xFE3E; }
+inline Op BinaryenI64AtomicRmw16XorU() { return 0xFE3F; }
+inline Op BinaryenI64AtomicRmw32XorU() { return 0xFE40; }
+inline Op BinaryenI32AtomicRmwXchg() { return 0xFE41; }
+inline Op BinaryenI64AtomicRmwXchg() { return 0xFE42; }
+inline Op BinaryenI32AtomicRmw8XchgU() { return 0xFE43; }
+inline Op BinaryenI32AtomicRmw16XchgU() { return 0xFE44; }
+inline Op BinaryenI64AtomicRmw8XchgU() { return 0xFE45; }
+inline Op BinaryenI64AtomicRmw16XchgU() { return 0xFE46; }
+inline Op BinaryenI64AtomicRmw32XchgU() { return 0xFE47; }
+inline Op BinaryenI32AtomicRmwCmpxchg() { return 0xFE48; }
+inline Op BinaryenI64AtomicRmwCmpxchg() { return 0xFE49; }
+inline Op BinaryenI32AtomicRmw8CmpxchgU() { return 0xFE4A; }
+inline Op BinaryenI32AtomicRmw16CmpxchgU() { return 0xFE4B; }
+inline Op BinaryenI64AtomicRmw8CmpxchgU() { return 0xFE4C; }
+inline Op BinaryenI64AtomicRmw16CmpxchgU() { return 0xFE4D; }
+inline Op BinaryenI64AtomicRmw32CmpxchgU() { return 0xFE4E; }
+inline Op BinaryenMoveI32() { return 0x00E7; }
+inline Op BinaryenMoveF32() { return 0x00E8; }
+inline Op BinaryenMoveI64() { return 0x00E9; }
+inline Op BinaryenMoveF64() { return 0x00EA; }
+inline Op BinaryenMoveV128() { return 0x00EB; }
+inline Op BinaryenConst32() { return 0x00EC; }
+inline Op BinaryenConst64() { return 0x00ED; }
 
 //-----------------------------------------------------------------------------
 // Parse a WASM module from binary data using Binaryen's API.
@@ -1320,138 +1684,324 @@ inline Op getReplacementForOp(Op opcode, std::mt19937& rng)
         i32Arith, i32Bits, i32Cmp, i32Unary,
         i64Arith, i64Bits, i64Cmp, i64Unary,
         f32Arith, f32Cmp,  f32Unary,
-        f64Arith, f64Cmp,  f64Unary;
+        f64Arith, f64Cmp,  f64Unary,
+        i8Arith ,i8Shift,i8Cmp ,i8Unary ,
+        i16Arith,i16Shift,i16Cmp,i16Unary,
+        i32xArith,i32xShift,i32xCmp,i32xUnary,
+        i64xArith,i64xShift,i64xCmp,i64xUnary,
+        f32xArith,f32xCmp ,f32xUnary,
+        f64xArith,f64xCmp ,f64xUnary,
+        v128Logic,
+        ctrlFlow, localGlobal, memoryOps, constOps, conversion, tableOps, refOps, atomicOps,
+        directCalls, bulkMemoryOps, saturatingTrunc, simdConvert, moveConst, simdNarrow, simdLaneAccess, simdLaneLoadStore, simdMemoryOps, simdSplatShuffle;
 
-    if (!init) {
-        init = true;
+        if (!init) {
+   
+            /*──────────── scalar i32 ────────────*/
+            i32Arith = { BinaryenI32Add(), BinaryenI32Sub(), BinaryenI32Mul(),
+                         BinaryenI32DivS(), BinaryenI32DivU(),
+                         BinaryenI32RemS(), BinaryenI32RemU() };
+            i32Bits  = { BinaryenI32And(), BinaryenI32Or(),  BinaryenI32Xor(),
+                         BinaryenI32Shl(), BinaryenI32ShrS(), BinaryenI32ShrU(),
+                         BinaryenI32Rotl(), BinaryenI32Rotr() };
+            i32Cmp   = { BinaryenI32Eq(),  BinaryenI32Ne(),
+                         BinaryenI32LtS(), BinaryenI32LtU(), BinaryenI32LeS(), BinaryenI32LeU(),
+                         BinaryenI32GtS(), BinaryenI32GtU(), BinaryenI32GeS(), BinaryenI32GeU() };
+            i32Unary = { BinaryenI32Clz(), BinaryenI32Ctz(), BinaryenI32Popcnt(), BinaryenI32Eqz() };
+    
+            /*──────────── scalar i64 ────────────*/
+            i64Arith = { BinaryenI64Add(), BinaryenI64Sub(), BinaryenI64Mul(),
+                         BinaryenI64DivS(), BinaryenI64DivU(),
+                         BinaryenI64RemS(), BinaryenI64RemU() };
+            i64Bits  = { BinaryenI64And(), BinaryenI64Or(),  BinaryenI64Xor(),
+                         BinaryenI64Shl(), BinaryenI64ShrS(), BinaryenI64ShrU(),
+                         BinaryenI64Rotl(), BinaryenI64Rotr() };
+            i64Cmp   = { BinaryenI64Eq(),  BinaryenI64Ne(),
+                         BinaryenI64LtS(), BinaryenI64LtU(), BinaryenI64LeS(), BinaryenI64LeU(),
+                         BinaryenI64GtS(), BinaryenI64GtU(), BinaryenI64GeS(), BinaryenI64GeU() };
+            i64Unary = { BinaryenI64Clz(), BinaryenI64Ctz(), BinaryenI64Popcnt() };
+    
+            /*──────────── scalar f32 / f64 ──────*/
+            f32Arith = { BinaryenF32Add(), BinaryenF32Sub(), BinaryenF32Mul(), BinaryenF32Div(),
+                         BinaryenF32Min(), BinaryenF32Max(), BinaryenF32Copysign() }; 
+            f32Cmp   = { BinaryenF32Eq(),  BinaryenF32Ne(),
+                         BinaryenF32Lt(),  BinaryenF32Le(), BinaryenF32Gt(),  BinaryenF32Ge() };
+            f32Unary = { BinaryenF32Abs(), BinaryenF32Neg(), BinaryenF32Ceil(),   BinaryenF32Floor(),
+                         BinaryenF32Trunc(),BinaryenF32Nearest(), BinaryenF32Sqrt() };
+    
+            f64Arith = { BinaryenF64Add(), BinaryenF64Sub(), BinaryenF64Mul(), BinaryenF64Div(),
+                         BinaryenF64Min(), BinaryenF64Max(), BinaryenF64Copysign() }; 
+            f64Cmp   = { BinaryenF64Eq(),  BinaryenF64Ne(),
+                         BinaryenF64Lt(),  BinaryenF64Le(), BinaryenF64Gt(),  BinaryenF64Ge() };
+            f64Unary = { BinaryenF64Abs(), BinaryenF64Neg(), BinaryenF64Ceil(),   BinaryenF64Floor(),
+                         BinaryenF64Trunc(),BinaryenF64Nearest(), BinaryenF64Sqrt() };
+    
+            /*──────────── v128 logic ────────────*/
+            v128Logic = { BinaryenV128And(), BinaryenV128Or(),  BinaryenV128Xor(),
+                          BinaryenV128Andnot(), BinaryenV128BitSelect() };
+    
+            /*──────────── i8x16 ────────────────*/
+            i8Arith = { BinaryenI8X16Add(), BinaryenI8X16Sub(),
+                        BinaryenI8X16AddSatS(), BinaryenI8X16AddSatU(),
+                        BinaryenI8X16SubSatS(), BinaryenI8X16SubSatU(),
+                        BinaryenI8X16MinS(),    BinaryenI8X16MinU(),
+                        BinaryenI8X16MaxS(),    BinaryenI8X16MaxU(),
+                        BinaryenI8X16AvgrU() };
+            i8Shift = { BinaryenI8X16Shl(), BinaryenI8X16ShrS(), BinaryenI8X16ShrU() };
+            i8Cmp   = { BinaryenI8X16Eq(),  BinaryenI8X16Ne(),  BinaryenI8X16LtS(), BinaryenI8X16LtU(),
+                        BinaryenI8X16GtS(), BinaryenI8X16GtU(), BinaryenI8X16LeS(), BinaryenI8X16LeU(),
+                        BinaryenI8X16GeS(), BinaryenI8X16GeU() };
+            i8Unary = { BinaryenI8X16Abs(), BinaryenI8X16Neg(), BinaryenI8X16AnyTrue(),
+                        BinaryenI8X16AllTrue(), BinaryenI8X16Bitmask(), BinaryenI8X16Popcnt() };
+    
+            /*──────────── i16x8 ────────────────*/
+            i16Arith = { BinaryenI16X8Add(), BinaryenI16X8Sub(), BinaryenI16X8Mul(),
+                         BinaryenI16X8AddSatS(), BinaryenI16X8AddSatU(),
+                         BinaryenI16X8SubSatS(), BinaryenI16X8SubSatU(),
+                         BinaryenI16X8MinS(),    BinaryenI16X8MinU(),
+                         BinaryenI16X8MaxS(),    BinaryenI16X8MaxU(),
+                         BinaryenI16X8AvgrU(),   BinaryenI16X8Q15mulrSatS() };       
+            i16Shift = { BinaryenI16X8Shl(), BinaryenI16X8ShrS(), BinaryenI16X8ShrU() };
+            i16Cmp   = { BinaryenI16X8Eq(),  BinaryenI16X8Ne(),  BinaryenI16X8LtS(), BinaryenI16X8LtU(),
+                         BinaryenI16X8GtS(), BinaryenI16X8GtU(), BinaryenI16X8LeS(), BinaryenI16X8LeU(),
+                         BinaryenI16X8GeS(), BinaryenI16X8GeU() };
+            i16Unary = { BinaryenI16X8Abs(), BinaryenI16X8Neg(), BinaryenI16X8AnyTrue(),
+                         BinaryenI16X8AllTrue(), BinaryenI16X8Bitmask() };
+    
+            /*──────────── i32x4 ────────────────*/
+            i32xArith = { BinaryenI32X4Add(), BinaryenI32X4Sub(), BinaryenI32X4Mul(),
+                          BinaryenI32X4MinS(), BinaryenI32X4MinU(),
+                          BinaryenI32X4MaxS(), BinaryenI32X4MaxU(),
+                          BinaryenI32X4DotI16X8S() };
+            i32xShift = { BinaryenI32X4Shl(), BinaryenI32X4ShrS(), BinaryenI32X4ShrU() };
+            i32xCmp   = { BinaryenI32X4Eq(),  BinaryenI32X4Ne(),  BinaryenI32X4LtS(), BinaryenI32X4LtU(),
+                          BinaryenI32X4GtS(), BinaryenI32X4GtU(), BinaryenI32X4LeS(), BinaryenI32X4LeU(),
+                          BinaryenI32X4GeS(), BinaryenI32X4GeU() };
+            i32xUnary = { BinaryenI32X4Abs(), BinaryenI32X4Neg(), BinaryenI32X4AnyTrue(),
+                          BinaryenI32X4AllTrue(), BinaryenI32X4Bitmask() };
+    
+            /*──────────── i64x2 ────────────────*/
+            i64xArith = { BinaryenI64X2Add(), BinaryenI64X2Sub(), BinaryenI64X2Mul() };
+            i64xShift = { BinaryenI64X2Shl(), BinaryenI64X2ShrS(), BinaryenI64X2ShrU() };
+            i64xCmp   = { BinaryenI64X2Eq(),  BinaryenI64X2Ne(),  BinaryenI64X2LtS(),
+                          BinaryenI64X2GtS(), BinaryenI64X2LeS(), BinaryenI64X2GeS() };
+            i64xUnary = { BinaryenI64X2Abs(), BinaryenI64X2Neg(), BinaryenI64X2AnyTrue(),
+                          BinaryenI64X2AllTrue(), BinaryenI64X2Bitmask() };
+    
+            /*──────────── f32x4 / f64x2 ────────*/
+            f32xArith = { BinaryenF32X4Add(), BinaryenF32X4Sub(), BinaryenF32X4Mul(),
+                          BinaryenF32X4Div(), BinaryenF32X4Min(), BinaryenF32X4Max(),
+                          BinaryenF32X4PMin(),BinaryenF32X4PMax() };
+            f32xCmp   = { BinaryenF32X4Eq(),  BinaryenF32X4Ne(), BinaryenF32X4Lt(), BinaryenF32X4Gt(),
+                          BinaryenF32X4Le(),  BinaryenF32X4Ge() };
+            f32xUnary = { BinaryenF32X4Abs(), BinaryenF32X4Neg(), BinaryenF32X4Sqrt(),   BinaryenF32X4Ceil(),   BinaryenF32X4Floor(), BinaryenF32X4Trunc(),  BinaryenF32X4Nearest()};
+    
+            f64xArith = { BinaryenF64X2Add(), BinaryenF64X2Sub(), BinaryenF64X2Mul(),
+                          BinaryenF64X2Div(), BinaryenF64X2Min(), BinaryenF64X2Max(),
+                          BinaryenF64X2PMin(),BinaryenF64X2PMax() };
+            f64xCmp   = { BinaryenF64X2Eq(),  BinaryenF64X2Ne(), BinaryenF64X2Lt(), BinaryenF64X2Gt(),
+                          BinaryenF64X2Le(),  BinaryenF64X2Ge() };
+            f64xUnary = { BinaryenF64X2Abs(), BinaryenF64X2Neg(), BinaryenF64X2Sqrt(), BinaryenF64X2Ceil(),   BinaryenF64X2Floor(), BinaryenF64X2Trunc(),  BinaryenF64X2Nearest() };
 
-        /* i32 */
-        i32Arith = { BinaryenI32Add(), BinaryenI32Sub(), BinaryenI32Mul(),
-                     BinaryenI32DivS(), BinaryenI32DivU(),
-                     BinaryenI32RemS(), BinaryenI32RemU() };
-        i32Bits  = { BinaryenI32And(), BinaryenI32Or(),  BinaryenI32Xor(),
-                     BinaryenI32Shl(), BinaryenI32ShrS(), BinaryenI32ShrU(),
-                     BinaryenI32Rotl(), BinaryenI32Rotr() };
-        i32Cmp   = { BinaryenI32Eq(), BinaryenI32Ne(),
-                     BinaryenI32LtS(), BinaryenI32LtU(), BinaryenI32LeS(), BinaryenI32LeU(),
-                     BinaryenI32GtS(), BinaryenI32GtU(), BinaryenI32GeS(), BinaryenI32GeU() };
-        i32Unary = { BinaryenI32Clz(), BinaryenI32Ctz(), BinaryenI32Popcnt(), BinaryenI32Eqz() };
+            simdNarrow = { BinaryenI8X16NarrowI16X8S(), BinaryenI8X16NarrowI16X8U() };
 
-        /* i64 */
-        i64Arith = { BinaryenI64Add(), BinaryenI64Sub(), BinaryenI64Mul(),
-                     BinaryenI64DivS(), BinaryenI64DivU(),
-                     BinaryenI64RemS(), BinaryenI64RemU() };
-        i64Bits  = { BinaryenI64And(), BinaryenI64Or(),  BinaryenI64Xor(),
-                     BinaryenI64Shl(), BinaryenI64ShrS(), BinaryenI64ShrU(),
-                     BinaryenI64Rotl(), BinaryenI64Rotr() };
-        i64Cmp   = { BinaryenI64Eq(), BinaryenI64Ne(),
-                     BinaryenI64LtS(), BinaryenI64LtU(), BinaryenI64LeS(), BinaryenI64LeU(),
-                     BinaryenI64GtS(), BinaryenI64GtU(), BinaryenI64GeS(), BinaryenI64GeU() };
-        i64Unary = { BinaryenI64Clz(), BinaryenI64Ctz(), BinaryenI64Popcnt() };
+            simdLaneLoadStore = { BinaryenV128Load8Lane(), BinaryenV128Load16Lane(), BinaryenV128Load32Lane(),BinaryenV128Load64Lane(), BinaryenV128Store8Lane(),BinaryenV128Store16Lane(), BinaryenV128Store32Lane(),BinaryenV128Store64Lane() };
 
-        /* f32 */
-        f32Arith = { BinaryenF32Add(), BinaryenF32Sub(), BinaryenF32Mul(), BinaryenF32Div(),
-                     BinaryenF32Min(), BinaryenF32Max(), BinaryenF32CopySign() };
-        f32Cmp   = { BinaryenF32Eq(), BinaryenF32Ne(),
-                     BinaryenF32Lt(), BinaryenF32Le(), BinaryenF32Gt(), BinaryenF32Ge() };
-        f32Unary = { BinaryenF32Abs(), BinaryenF32Neg(), BinaryenF32Ceil(), BinaryenF32Floor(),
-                     BinaryenF32Trunc(), BinaryenF32Nearest(), BinaryenF32Sqrt() };
+            simdSplatShuffle = { BinaryenI8X16Shuffle(), BinaryenI8X16Swizzle(), BinaryenI8X16Splat(), BinaryenI16X8Splat(), BinaryenI32X4Splat(), BinaryenI64X2Splat(), BinaryenF32X4Splat(), BinaryenF64X2Splat() };
 
-        /* f64 */
-        f64Arith = { BinaryenF64Add(), BinaryenF64Sub(), BinaryenF64Mul(), BinaryenF64Div(),
-                     BinaryenF64Min(), BinaryenF64Max(), BinaryenF64CopySign() };
-        f64Cmp   = { BinaryenF64Eq(), BinaryenF64Ne(),
-                     BinaryenF64Lt(), BinaryenF64Le(), BinaryenF64Gt(), BinaryenF64Ge() };
-        f64Unary = { BinaryenF64Abs(), BinaryenF64Neg(), BinaryenF64Ceil(), BinaryenF64Floor(),
-                     BinaryenF64Trunc(), BinaryenF64Nearest(), BinaryenF64Sqrt() };
+            simdMemoryOps = {
+                // full‐vector loads
+                BinaryenV128Load(),
+                BinaryenV128Load8X8S(), BinaryenV128Load8X8U(),
+                BinaryenV128Load16X4S(), BinaryenV128Load16X4U(),
+                BinaryenV128Load32X2S(), BinaryenV128Load32X2U(),
+
+                BinaryenV128Load8Splat(), BinaryenV128Load16Splat(),
+                BinaryenV128Load32Splat(), BinaryenV128Load64Splat(),
+                // zero‐extend loads
+                BinaryenV128Load32Zero(), BinaryenV128Load64Zero(),
+                // full‐vector store
+                BinaryenV128Store()
+              };
+
+            simdLaneAccess = { BinaryenI8X16ExtractLaneS(), BinaryenI8X16ExtractLaneU(), BinaryenI8X16ReplaceLane(), BinaryenI16X8ExtractLaneS(), BinaryenI16X8ExtractLaneU(), BinaryenI16X8ReplaceLane(), BinaryenI32X4ExtractLane(),
+                               BinaryenI32X4ReplaceLane(), BinaryenI64X2ExtractLane(), BinaryenI64X2ReplaceLane(), BinaryenF32X4ExtractLane(), BinaryenF32X4ReplaceLane(), BinaryenF64X2ExtractLane(), BinaryenF64X2ReplaceLane() };
+
+            /*──────────── control flow ────────────*/
+            ctrlFlow = { BinaryenUnreachable(), BinaryenNop(), BinaryenBlock(), BinaryenLoop(),
+                         BinaryenIf(), BinaryenElse(), BinaryenBr(), BinaryenBrIf(),
+                         BinaryenBrTable(), BinaryenReturn(), BinaryenDrop(), BinaryenSelect(),
+                         BinaryenSelectT(), BinaryenTry(), BinaryenCatch(), BinaryenThrow(),
+                         BinaryenRethrow(), BinaryenDelegate(), BinaryenCatchAll(),
+                         BinaryenReturnCall(), BinaryenReturnCallIndirect(), BinaryenCallRef() 
+            };
+
+            directCalls = {
+                BinaryenCall(), BinaryenCallIndirect(),
+                BinaryenReturnCall(), BinaryenReturnCallIndirect(),
+                BinaryenCallRef()
+            };
+
+            bulkMemoryOps = {
+                BinaryenMemoryInit(), BinaryenDataDrop(),
+                BinaryenMemoryCopy(), BinaryenMemoryFill(),
+                BinaryenTableInit(),  BinaryenElemDrop(),
+                BinaryenTableCopy()
+            };
+
+            saturatingTrunc = {
+                BinaryenI32TruncSatF32S(), BinaryenI32TruncSatF32U(),
+                BinaryenI32TruncSatF64S(), BinaryenI32TruncSatF64U(),
+                BinaryenI64TruncSatF32S(), BinaryenI64TruncSatF32U(),
+                BinaryenI64TruncSatF64S(), BinaryenI64TruncSatF64U()
+            };
+
+            simdConvert = {
+                BinaryenF32X4DemoteF64X2Zero(),  BinaryenF64X2PromoteLowF32X4(),
+                BinaryenF32X4ConvertI32X4S(),    BinaryenF32X4ConvertI32X4U(),
+                BinaryenF64X2ConvertLowI32X4S(), BinaryenF64X2ConvertLowI32X4U()
+              };
+
+            moveConst = {
+                BinaryenMoveI32(),  BinaryenMoveF32(),
+                BinaryenMoveI64(),  BinaryenMoveF64(),
+                BinaryenMoveV128(), BinaryenConst32(),
+                BinaryenConst64(), BinaryenV128Const()
+            };
+            
+            
+            /*──────────── locals & globals ────────────*/
+            localGlobal = { BinaryenLocalGet(), BinaryenLocalSet(), BinaryenLocalTee(),
+                            BinaryenGlobalGet(), BinaryenGlobalSet()
+            };
+
+            /*──────────── memory operations ────────────*/
+            memoryOps = {
+                // aligned loads
+                BinaryenI32Load(), BinaryenI64Load(), BinaryenF32Load(), BinaryenF64Load(),
+                // sub-byte / half-word loads
+                BinaryenI32Load8S(), BinaryenI32Load8U(), BinaryenI32Load16S(), BinaryenI32Load16U(),
+                BinaryenI64Load8S(), BinaryenI64Load8U(), BinaryenI64Load16S(), BinaryenI64Load16U(),
+                BinaryenI64Load32S(), BinaryenI64Load32U(),
+                // aligned stores
+                BinaryenI32Store(), BinaryenI64Store(), BinaryenF32Store(), BinaryenF64Store(),
+                // sub-byte / half-word stores
+                BinaryenI32Store8(), BinaryenI32Store16(), BinaryenI64Store8(), BinaryenI64Store16(), BinaryenI64Store32(),
+                // memory management
+                BinaryenMemorySize(), BinaryenMemoryGrow()
+            };
+
+            /*──────────── constants ────────────*/
+            constOps = { BinaryenI32Const(), BinaryenI64Const(), BinaryenF32Const(), BinaryenF64Const()
+            };
+
+            /*──────────── conversions ────────────*/
+            conversion = { BinaryenI32WrapI64(), BinaryenI32TruncF32S(), BinaryenI32TruncF32U(),
+                           BinaryenI32TruncF64S(), BinaryenI32TruncF64U(), BinaryenI64ExtendI32S(),    
+                           BinaryenI64ExtendI32U(), BinaryenI64TruncF32S(), BinaryenI64TruncF32U(),
+                           BinaryenI64TruncF64S(), BinaryenI64TruncF64U(), BinaryenF32ConvertI32S(),
+                           BinaryenF32ConvertI32U(), BinaryenF32ConvertI64S(), BinaryenF32ConvertI64U(),
+                           BinaryenF32DemoteF64(), BinaryenF64ConvertI32S(), BinaryenF64ConvertI32U(),
+                           BinaryenF64ConvertI64S(), BinaryenF64ConvertI64U(), BinaryenF64PromoteF32(),
+                           BinaryenI32ReinterpretF32(), BinaryenI64ReinterpretF64(),
+                           BinaryenF32ReinterpretI32(), BinaryenF64ReinterpretI64()
+            };  
+
+            /*──────────── table operations ────────────*/
+            tableOps = { BinaryenTableGet(), BinaryenTableSet(), BinaryenTableGrow(),
+                        BinaryenTableSize(), BinaryenTableFill(), BinaryenTableCopy()
+            };
+
+            /*──────────── reference ops ────────────*/
+            refOps = { BinaryenRefNull(), BinaryenRefIsNull(), BinaryenRefFunc()
+            };
+
+            /*──────────── atomic operations ────────────*/
+            atomicOps = {
+                // atomic loads
+                BinaryenI32AtomicLoad(), BinaryenI64AtomicLoad(),
+                BinaryenI32AtomicLoad8U(), BinaryenI32AtomicLoad16U(),
+                BinaryenI64AtomicLoad8U(), BinaryenI64AtomicLoad16U(), BinaryenI64AtomicLoad32U(),
+                // atomic stores
+                BinaryenI32AtomicStore(), BinaryenI64AtomicStore(),
+                BinaryenI32AtomicStore8(), BinaryenI32AtomicStore16(), BinaryenI64AtomicStore8(), BinaryenI64AtomicStore16(), BinaryenI64AtomicStore32(),
+                // fences & wait/notify
+                BinaryenAtomicFence(), BinaryenMemoryAtomicNotify(),
+                BinaryenMemoryAtomicWait32(), BinaryenMemoryAtomicWait64(),
+                // read-modify-write ops: add / sub
+                BinaryenI32AtomicRmwAdd(), BinaryenI64AtomicRmwAdd(),
+                BinaryenI32AtomicRmwSub(), BinaryenI64AtomicRmwSub(),
+                // byte/half-word RMW variants
+                BinaryenI32AtomicRmw8AddU(), BinaryenI32AtomicRmw16AddU(),
+                BinaryenI64AtomicRmw8AddU(), BinaryenI64AtomicRmw16AddU(), BinaryenI64AtomicRmw32AddU(),
+                BinaryenI32AtomicRmw8SubU(), BinaryenI32AtomicRmw16SubU(), BinaryenI64AtomicRmw8SubU(), BinaryenI64AtomicRmw16SubU(), BinaryenI64AtomicRmw32SubU(),
+                // bitwise RMW: and/or/xor
+                BinaryenI32AtomicRmwAnd(), BinaryenI64AtomicRmwAnd(),
+                BinaryenI32AtomicRmwOr(), BinaryenI64AtomicRmwOr(),
+                BinaryenI32AtomicRmwXor(), BinaryenI64AtomicRmwXor(),
+                // byte/half-word bitwise RMW variants
+                BinaryenI32AtomicRmw8AndU(), BinaryenI32AtomicRmw16AndU(), BinaryenI64AtomicRmw8AndU(), BinaryenI64AtomicRmw16AndU(), BinaryenI64AtomicRmw32AndU(),
+                BinaryenI32AtomicRmw8OrU(), BinaryenI32AtomicRmw16OrU(), BinaryenI64AtomicRmw8OrU(), BinaryenI64AtomicRmw16OrU(), BinaryenI64AtomicRmw32OrU(),
+                BinaryenI32AtomicRmw8XorU(), BinaryenI32AtomicRmw16XorU(), BinaryenI64AtomicRmw8XorU(), BinaryenI64AtomicRmw16XorU(), BinaryenI64AtomicRmw32XorU(),
+                // exchange & compare-exchange
+                BinaryenI32AtomicRmwXchg(), BinaryenI64AtomicRmwXchg(),
+                BinaryenI32AtomicRmw8XchgU(), BinaryenI32AtomicRmw16XchgU(), BinaryenI64AtomicRmw8XchgU(), BinaryenI64AtomicRmw16XchgU(), BinaryenI64AtomicRmw32XchgU(),
+                BinaryenI32AtomicRmwCmpxchg(), BinaryenI64AtomicRmwCmpxchg(),
+                BinaryenI32AtomicRmw8CmpxchgU(), BinaryenI32AtomicRmw16CmpxchgU(), BinaryenI64AtomicRmw8CmpxchgU(), BinaryenI64AtomicRmw16CmpxchgU(), BinaryenI64AtomicRmw32CmpxchgU()
+            };    
+
+            init = true;
     }
 
-    auto pickDifferent = [&](const std::vector<Op>& tbl) -> Op {
-        if (tbl.size() <= 1) return opcode;
-        std::uniform_int_distribution<size_t> dist(0, tbl.size() - 1);
+    using Vec = std::vector<Op>;
+
+    auto pick = [&](const Vec& tbl)->Op{
+        if (tbl.size()<2) return opcode;
+        std::uniform_int_distribution<size_t> d(0,tbl.size()-1);
         Op alt;
-        do { alt = tbl[dist(rng)]; } while (alt == opcode);
+        do { alt = tbl[d(rng)]; } while (alt==opcode);
         return alt;
     };
 
-#define IN(set) (std::find(set.begin(), set.end(), opcode) != set.end())
+#define TRY(cat)  if (std::find(cat.begin(),cat.end(),opcode)!=cat.end()) \
+                     return pick(cat)
 
-    if (IN(i32Arith)) { Op n = pickDifferent(i32Arith);
-#ifdef PRINT_LOG
-        std::cout << "i32.arith " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-    if (IN(i32Bits))  { Op n = pickDifferent(i32Bits );
-#ifdef PRINT_LOG
-        std::cout << "i32.bit   " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-    if (IN(i32Cmp ))  { Op n = pickDifferent(i32Cmp  );
-#ifdef PRINT_LOG
-        std::cout << "i32.cmp   " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-    if (IN(i32Unary)){ Op n = pickDifferent(i32Unary);
-#ifdef PRINT_LOG
-        std::cout << "i32.unary " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
+    /* scalar */
+    TRY(i32Arith); TRY(i32Bits); TRY(i32Cmp); TRY(i32Unary);
+    TRY(i64Arith); TRY(i64Bits); TRY(i64Cmp); TRY(i64Unary);
+    TRY(f32Arith); TRY(f32Cmp);  TRY(f32Unary);
+    TRY(f64Arith); TRY(f64Cmp);  TRY(f64Unary);
 
-    if (IN(i64Arith)) { Op n = pickDifferent(i64Arith);
-#ifdef PRINT_LOG
-        std::cout << "i64.arith " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-    if (IN(i64Bits))  { Op n = pickDifferent(i64Bits );
-#ifdef PRINT_LOG
-        std::cout << "i64.bit   " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-    if (IN(i64Cmp ))  { Op n = pickDifferent(i64Cmp  );
-#ifdef PRINT_LOG
-        std::cout << "i64.cmp   " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-    if (IN(i64Unary)){ Op n = pickDifferent(i64Unary);
-#ifdef PRINT_LOG
-        std::cout << "i64.unary " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
+    /* 128-bit SIMD */
+    TRY(v128Logic);
 
-    if (IN(f32Arith)) { Op n = pickDifferent(f32Arith);
-#ifdef PRINT_LOG
-        std::cout << "f32.arith " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-    if (IN(f32Cmp ))  { Op n = pickDifferent(f32Cmp );
-#ifdef PRINT_LOG
-        std::cout << "f32.cmp   " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-    if (IN(f32Unary)){ Op n = pickDifferent(f32Unary);
-#ifdef PRINT_LOG
-        std::cout << "f32.unary " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-
-    if (IN(f64Arith)) { Op n = pickDifferent(f64Arith);
-#ifdef PRINT_LOG
-        std::cout << "f64.arith " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-    if (IN(f64Cmp ))  { Op n = pickDifferent(f64Cmp );
-#ifdef PRINT_LOG
-        std::cout << "f64.cmp   " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-    if (IN(f64Unary)){ Op n = pickDifferent(f64Unary);
-#ifdef PRINT_LOG
-        std::cout << "f64.unary " << opcode << " -> " << n << '\n';
-#endif
-        return n; }
-
-#undef IN
-    return opcode;
+    TRY(i8Arith);  TRY(i8Shift);  TRY(i8Cmp);  TRY(i8Unary);
+    TRY(i16Arith); TRY(i16Shift); TRY(i16Cmp); TRY(i16Unary);
+    TRY(i32xArith);TRY(i32xShift);TRY(i32xCmp);TRY(i32xUnary);
+    TRY(i64xArith);TRY(i64xShift);TRY(i64xCmp);TRY(i64xUnary);
+    TRY(f32xArith);TRY(f32xCmp);  TRY(f32xUnary);
+    TRY(f64xArith);TRY(f64xCmp);  TRY(f64xUnary);
+    
+    TRY(ctrlFlow);
+    TRY(localGlobal);
+    TRY(memoryOps);
+    TRY(constOps);
+    TRY(conversion);
+    TRY(tableOps);
+    TRY(refOps);
+    TRY(atomicOps);
+    TRY(directCalls);
+    TRY(bulkMemoryOps);
+    TRY(saturatingTrunc);
+    TRY(simdConvert);
+    TRY(moveConst);
+    TRY(simdNarrow);
+    TRY(simdLaneAccess);
+    TRY(simdLaneLoadStore);
+    TRY(simdSplatShuffle);
+    TRY(simdMemoryOps);
+#undef TRY
+    return opcode;        // fallback (unchanged)
 }
 
 
@@ -1506,13 +2056,30 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                  BinaryenI64Or(),  BinaryenI64Xor(),
         /* f32/f64 */ BinaryenF32Add(), BinaryenF32Mul(), BinaryenF32Min(),
                      BinaryenF32Max(), BinaryenF64Add(), BinaryenF64Mul(),
-                     BinaryenF64Min(), BinaryenF64Max()
+                     BinaryenF64Min(), BinaryenF64Max(),
+        /* v128 bit operation */ BinaryenV128And(), BinaryenV128Or(),  BinaryenV128Xor(),
+        /* i8x16 */ BinaryenI8x16Add(),      BinaryenI8x16AddSatS(),  BinaryenI8x16AddSatU(),
+                    BinaryenI8x16MinS(),     BinaryenI8x16MinU(),
+                    BinaryenI8x16MaxS(),     BinaryenI8x16MaxU(),
+        /* i16x8 */ BinaryenI16x8Add(),      BinaryenI16x8AddSatS(),  BinaryenI16x8AddSatU(),
+                    BinaryenI16x8Mul(),
+                    BinaryenI16x8MinS(),     BinaryenI16x8MinU(),
+                    BinaryenI16x8MaxS(),     BinaryenI16x8MaxU(),
+        /* i32x4 */ BinaryenI32x4Add(),      BinaryenI32x4Mul(),
+                    BinaryenI32x4MinS(),     BinaryenI32x4MinU(),
+                    BinaryenI32x4MaxS(),     BinaryenI32x4MaxU(),
+        /* i64x2 */ BinaryenI64x2Add(),      BinaryenI64x2Mul(),                            
+        /* f32x4 & f64x2 */ BinaryenF32x4Add(),      BinaryenF32x4Mul(),
+                    BinaryenF32x4Min(),      BinaryenF32x4Max(),
+                    BinaryenF64x2Add(),      BinaryenF64x2Mul(),
+                    BinaryenF64x2Min(),      BinaryenF64x2Max()
     };
 
     BW::Builder builder(*module);
 
     for (auto& fPtr : module->functions) {
         BW::Function* func = fPtr.get();
+        if(!func->body) continue;
 #ifdef PRINT_LOG
         std::cout << "[mutate] ► " << func->name.str << '\n';
 #endif
@@ -1525,11 +2092,13 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 Op oldOp = bin->op;
                 Op newOp = getReplacementForOp(oldOp, rng);
 
-                bool typeOK = true;      /* rough mask check                  */
-                if      (bin->left->type == BW::Type::i32) typeOK = (newOp & 0xC0u) == 0x40u;
-                else if (bin->left->type == BW::Type::i64) typeOK = (newOp & 0xC0u) == 0x80u;
-                else if (bin->left->type == BW::Type::f32) typeOK = (newOp & 0xE0u) == 0x90u;
-                else if (bin->left->type == BW::Type::f64) typeOK = (newOp & 0xE0u) == 0xA0u;
+                auto isSameLane = [&](Op op) {
+                    return BW::Type::getSingleLaneType(
+                                BW::getBinaryLaneType(static_cast<BW::BinaryOp>(op)))
+                            == bin->left->type;
+                };
+                    
+                bool typeOK = isSameLane(newOp);
 
                 if (typeOK && newOp != oldOp) {
                     bin->op = static_cast<BW::BinaryOp>(newOp);
@@ -1747,13 +2316,13 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                     continue;
 
                 if (auto* blk = fnPtr->body->dynCast<BW::Block>()) {
-                         if (!blk->list.empty() &&
+                        if (!blk->list.empty() &&
                              !blk->list[0]->dynCast<BW::Nop>()) {
                              blk->list[0] = builder.makeNop();
-                         }
-                     }
-                 }
-             }
+                        }
+                }
+            }
+        }
 }
 
 //-----------------------------------------------------------------------------
@@ -2247,7 +2816,6 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
                     }
                 }
 
-                /* label 변형은 **같은 블록 안**에서 처리해야 br 가 보입니다 */
                 if (!(br->name == BW::Name()) && (rng() & 1)) {
                     std::string old = std::string(br->name.str);
                     br->name        = BW::Name(old + "_mut");
