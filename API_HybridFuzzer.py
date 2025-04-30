@@ -36,7 +36,7 @@ class HybridFuzzer:
         libfuzzer_cycles: int = 1,
         llm_cycles: int = 1,
         gemini_api_key: str = None,  # Gemini API 키 추가
-        confirm_requests: bool = True,  # API 요청 전 확인 요청 옵션
+        confirm_requests: bool = False,  # API 요청 전 확인 요청 옵션
         free_tier_only: bool = True,  # 무료 티어만 사용
     ):
         self.target_path = os.path.abspath(target_path)
@@ -325,6 +325,26 @@ class HybridFuzzer:
                     except ValueError:
                         pass
 
+                # NEW 라인에서 직접 커버리지 파싱 (이 형식이 로그에 나타남)
+                elif "NEW" in line and "cov:" in line:
+                    try:
+                        parts = line.split()
+                        for i, part in enumerate(parts):
+                            if part == "cov:":
+                                if i + 1 < len(parts):
+                                    val = int(parts[i + 1])
+                                    logger.debug(f"[LibFuzzer] 'NEW' 라인에서 커버리지 {val} 파싱됨")
+                                    with self.stats_lock:
+                                        old_coverage = self.stats.get("coverage", 0)
+                                        self.stats["coverage"] = val
+                                        if val > old_coverage:
+                                            self.last_coverage = val
+                                            self.last_coverage_change_time = time.time()
+                                            logger.info(f"[LibFuzzer] Coverage increased to {val} paths")
+                                    break
+                    except (ValueError, IndexError) as e:
+                        logger.warning(f"[LibFuzzer] NEW 라인에서 커버리지 파싱 실패: {e}, 라인: {line.strip()}")
+
                 # 실행 수 업데이트 - 다양한 형식 지원
                 elif "stat::number_of_executed_units" in line or "stat::executions:" in line or "exec/s:" in line:
                     try:
@@ -366,6 +386,19 @@ class HybridFuzzer:
                 # 기본 통계 라인에서 정보 추출 (줄 형식: "cov: 123 ft: 456 corp: 78/90b exec: 1234k ...")
                 elif " exec:" in line and "cov:" in line:
                     try:
+                        # 커버리지 값 추출
+                        cov_pattern = re.search(r'cov:\s*(\d+)', line)
+                        if cov_pattern:
+                            cov_val = int(cov_pattern.group(1))
+                            logger.debug(f"[LibFuzzer] 통계 라인에서 커버리지 {cov_val} 파싱됨")
+                            with self.stats_lock:
+                                old_coverage = self.stats.get("coverage", 0)
+                                self.stats["coverage"] = cov_val
+                                if cov_val > old_coverage:
+                                    self.last_coverage = cov_val
+                                    self.last_coverage_change_time = time.time()
+                                    logger.info(f"[LibFuzzer] Coverage increased to {cov_val} paths")
+                        
                         # 실행 수 추출
                         exec_part = re.search(r'exec:[\s]*(\d+)(?:k|M|G)?', line)
                         if exec_part:
@@ -395,13 +428,14 @@ class HybridFuzzer:
                     except ValueError:
                         pass
 
-                # 커버리지 관련 정보 (Covered PCs)
+                # 커버리지 관련 정보 (Covered PCs) - 개선된 정규식으로 수정
                 elif "cov:" in line:
                     try:
                         # 예: "cov: 123 ft: 456 ..." 또는 "    cov: 123"
-                        cov_match = re.search(r'cov:[\s]*(\d+)', line)
+                        cov_match = re.search(r'cov:\s*(\d+)', line)
                         if cov_match:
                             val = int(cov_match.group(1))
+                            logger.debug(f"[LibFuzzer] 일반 라인에서 커버리지 {val} 파싱됨")
                             with self.stats_lock:
                                 old_coverage = self.stats.get("coverage", 0)
                                 self.stats["coverage"] = val
@@ -411,6 +445,8 @@ class HybridFuzzer:
                                     self.last_coverage = val
                                     self.last_coverage_change_time = time.time()
                                     logger.info(f"[LibFuzzer] Coverage increased to {val} paths")
+                        else:
+                            logger.debug(f"[LibFuzzer] 'cov:' 있지만 매치 실패, 라인: {line.strip()}")
                     except (ValueError, IndexError, AttributeError) as e:
                         logger.debug(f"[LibFuzzer] Failed to parse coverage: {e} in line: {line.strip()}")
                         
