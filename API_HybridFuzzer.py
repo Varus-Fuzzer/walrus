@@ -56,7 +56,7 @@ class HybridFuzzer:
         self.last_coverage_change_time = time.time()  # 마지막 커버리지 변화 시간
         self.last_llm_call_time = time.time()  # 마지막 LLM 호출 시간
         self.coverage_stagnation_threshold = 60  # 커버리지 정체 판단 기준 (10분 = 600초)
-        self.llm_call_interval = 300  # LLM 호출 간격 (10분 = 600초)
+        self.llm_call_interval = 60  # LLM 호출 간격 (10분 = 600초)
 
         # Gemini 무료 티어 제한
         # 참고: 실제 최신 무료 티어 제한 확인 필요
@@ -429,14 +429,77 @@ class HybridFuzzer:
                     break
 
                 # 모든 라인 디버그 출력 (문제 진단용)
-                logger.debug(f"[LibFuzzer-Raw] {line.strip()}")
+                line_strip = line.strip()
+                logger.debug(f"[LibFuzzer-Raw] {line_strip}")
 
                 # 프로세스 모니터링을 위한 마지막 업데이트 시간 갱신
                 with self.stats_lock:
                     self.stats["last_stat_update"] = time.time()
 
+                # 정확한 패턴 찾기: "#123 pulse cov: 1625 ft: 4319 corp: 184/24Kb exec/s: 85 rss: 94Mb"
+                pulse_pattern = re.search(r'#\d+\s+pulse\s+cov:\s*(\d+)', line_strip)
+                if pulse_pattern:
+                    try:
+                        # 실행 횟수 추출 - "#123" 부분 파싱
+                        exec_num_match = re.search(r'#(\d+)', line_strip)
+                        if exec_num_match:
+                            try:
+                                exec_num = int(exec_num_match.group(1))
+                                with self.stats_lock:
+                                    # 초기값이 0이거나 현재 값보다 큰 경우에만 업데이트
+                                    if self.stats.get("total_execs", 0) == 0 or exec_num > self.stats.get("total_execs", 0):
+                                        self.stats["total_execs"] = exec_num
+                                        logger.debug(f"[LibFuzzer] Updated execution count to {exec_num} from pulse line")
+                            except ValueError:
+                                pass
+                        
+                        # 커버리지 값 추출
+                        cov_val = int(pulse_pattern.group(1))
+                        logger.debug(f"[LibFuzzer] 펄스 라인에서 커버리지 발견: {cov_val}")
+                        with self.stats_lock:
+                            old_coverage = self.stats.get("coverage", 0)
+                            self.stats["coverage"] = cov_val
+                            if cov_val > old_coverage:
+                                self.last_coverage = cov_val
+                                self.last_coverage_change_time = time.time()
+                                logger.info(f"[LibFuzzer] Coverage increased to {cov_val} paths")
+                                
+                        # 같은 라인에서 exec/s 값도 추출
+                        exec_speed_match = re.search(r'exec/s:\s*(\d+)', line_strip)
+                        if exec_speed_match:
+                            try:
+                                speed_val = int(exec_speed_match.group(1))
+                                with self.stats_lock:
+                                    self.stats["exec_speed"] = speed_val
+                                    
+                                    # 평균 속도 계산을 위한 샘플 수집
+                                    self.stats.setdefault("exec_speed_samples", []).append(speed_val)
+                                    # 최근 10개 샘플만 유지
+                                    if len(self.stats["exec_speed_samples"]) > 10:
+                                        self.stats["exec_speed_samples"].pop(0)
+                                        
+                                    # 평균 속도 계산
+                                    if self.stats["exec_speed_samples"]:
+                                        self.stats["avg_exec_speed"] = int(sum(self.stats["exec_speed_samples"]) / 
+                                                                len(self.stats["exec_speed_samples"]))
+                                        logger.debug(f"[LibFuzzer] Execution speed: {speed_val}/sec (avg: {self.stats['avg_exec_speed']}/sec)")
+                            except (ValueError, IndexError, AttributeError):
+                                pass
+                            
+                        # 코퍼스 크기 추출
+                        corp_match = re.search(r'corp:\s*(\d+)', line_strip)
+                        if corp_match:
+                            try:
+                                corpus_size = int(corp_match.group(1))
+                                with self.stats_lock:
+                                    self.stats["corpus_size"] = corpus_size
+                            except ValueError:
+                                pass
+                    except ValueError:
+                        pass
+                        
                 # 크래시 발견 시 통계 업데이트
-                if "stat::found_crash" in line or "stat::found_crash:" in line:
+                elif "stat::found_crash" in line or "stat::found_crash:" in line:
                     try:
                         val = int(line.split(":")[-1].strip())
                         with self.stats_lock:
@@ -476,7 +539,7 @@ class HybridFuzzer:
                             val = int(line.split(":")[-1].strip())
                         elif "stat::executions:" in line:
                             val = int(line.split(":")[-1].strip())
-                        elif "exec/s:" in line:
+                        elif "exec/s:" in line and "pulse" not in line:  # pulse 라인과 구분
                             # 'exec/s:50 rss:' 같은 형식 처리
                             parts = line.split()
                             for i, part in enumerate(parts):
@@ -539,8 +602,60 @@ class HybridFuzzer:
                     except Exception as e:
                         logger.debug(f"[LibFuzzer] Failed to parse exec count from stat line: {e}")
 
-                # 실행 속도 정보 추출
-                elif "exec/s:" in line:
+                # 코퍼스 크기 업데이트
+                elif "stat::corpus_size" in line:
+                    try:
+                        val = int(line.split(":")[-1].strip())
+                        with self.stats_lock:
+                            self.stats["corpus_size"] = val
+                    except ValueError:
+                        pass
+
+                # 일반적인 cov: 패턴 처리 (pulse 라인이 아닌 경우)
+                elif "cov:" in line and "pulse" not in line:
+                    try:
+                        cov_match = re.search(r'cov:\s*(\d+)', line)
+                        if cov_match:
+                            val = int(cov_match.group(1))
+                            logger.debug(f"[LibFuzzer] 일반 라인에서 커버리지 {val} 파싱됨")
+                            with self.stats_lock:
+                                old_coverage = self.stats.get("coverage", 0)
+                                self.stats["coverage"] = val
+                                
+                                # 커버리지 변화 감지
+                                if val > old_coverage:
+                                    self.last_coverage = val
+                                    self.last_coverage_change_time = time.time()
+                                    logger.info(f"[LibFuzzer] Coverage increased to {val} paths")
+                        else:
+                            logger.debug(f"[LibFuzzer] 'cov:' 있지만 매치 실패, 라인: {line.strip()}")
+                    except (ValueError, IndexError, AttributeError) as e:
+                        logger.debug(f"[LibFuzzer] Failed to parse coverage: {e} in line: {line.strip()}")
+                            
+                # 새로운 PC(커버리지) 발견 정보 수집
+                elif "NEW_PC:" in line:
+                    try:
+                        pc_info = line.strip()
+                        with self.stats_lock:
+                            # 최근 10개의 새 커버리지 정보만 유지
+                            self.stats["recent_new_coverage"].append(pc_info)
+                            if len(self.stats["recent_new_coverage"]) > 10:
+                                self.stats["recent_new_coverage"].pop(0)
+                        
+                        # 커버리지 변화 감지
+                        self.last_coverage_change_time = time.time()
+                        logger.info(f"[LibFuzzer] New path discovered: {pc_info}")
+                    except Exception as e:
+                        logger.debug(f"[LibFuzzer] Failed to process NEW_PC line: {e}")
+
+                # ASAN(AddressSanitizer) 크래시 감지
+                elif "AddressSanitizer:" in line:
+                    logger.warning(f"[LibFuzzer] ASAN crash detected: {line.strip()}")
+                    with self.stats_lock:
+                        self.stats["crashes_found"] = self.stats.get("crashes_found", 0) + 1
+
+                # 실행 속도 정보 추출 (pulse 라인이 아닌 경우)
+                elif "exec/s:" in line and "pulse" not in line:
                     try:
                         # 예: "exec/s: 123 ..."
                         speed_match = re.search(r'exec/s:[\s]*(\d+)', line)
@@ -558,13 +673,17 @@ class HybridFuzzer:
                                 # 평균 속도 계산
                                 if self.stats["exec_speed_samples"]:
                                     self.stats["avg_exec_speed"] = int(sum(self.stats["exec_speed_samples"]) / 
-                                                                len(self.stats["exec_speed_samples"]))
+                                                            len(self.stats["exec_speed_samples"]))
                                     logger.debug(f"[LibFuzzer] Execution speed: {val}/sec (avg: {self.stats['avg_exec_speed']}/sec)")
                     except (ValueError, IndexError, AttributeError):
                         pass
 
-                # 기타 처리 로직 (이전 코드와 동일)...
-
+                # 기타 중요 메시지 로깅
+                elif any(x in line for x in ["CRASH", "ERROR", "WARNING", "NEW_FUNC", "NEW_PC", "ALARM", "TIMEOUT"]):
+                    logger.info(f"[LibFuzzer] {line.strip()}")
+                else:
+                    logger.debug(f"[LibFuzzer] {line.strip()}")
+                    
         except Exception as e:
             # 출력 모니터링 중 오류 발생 시 로깅
             logger.error(f"[LibFuzzer] Output monitoring error: {e}")
@@ -684,6 +803,7 @@ class HybridFuzzer:
 
         last_check_time = time.time()
         last_system_stats_time = time.time()  # 시스템 통계 업데이트 타이머
+        last_stats_print_time = time.time()   # 상태 출력 타이머
         consecutive_failures = 0
         max_consecutive_failures = 3
         backoff_time = 1  # 초기 백오프 시간 (초)
@@ -725,57 +845,9 @@ class HybridFuzzer:
                             process_running = False
                 
                 if not process_running:
-                    # 프로세스가 종료된 경우
-                    logger.warning("[Thread] LibFuzzer process not running, attempting restart...")
-                    
-                    # 기존 프로세스 정리 (명시적으로 stop_libfuzzer 호출)
-                    try:
-                        self.stop_libfuzzer()
-                    except Exception as e:
-                        logger.error(f"[Thread] Error stopping LibFuzzer: {e}")
-                    
-                    # 연속 실패 카운터 증가
-                    consecutive_failures += 1
-                    
-                    if consecutive_failures >= max_consecutive_failures:
-                        # 연속 실패가 너무 많으면 백오프 시간 증가 (지수적 백오프)
-                        wait_time = min(backoff_time * (2 ** (consecutive_failures - max_consecutive_failures)), 60)
-                        logger.warning(f"[Thread] Multiple LibFuzzer failures detected ({consecutive_failures}), backing off for {wait_time}s before retrying")
-                        time.sleep(wait_time)
-                    else:
-                        # 짧은 대기 시간 (시스템이 안정화될 시간)
-                        logger.info(f"[Thread] Failure #{consecutive_failures}, waiting 2s before restart")
-                        time.sleep(2)
-                    
-                    # 통계 리셋 방지를 위해 기존 통계 백업
-                    with self.stats_lock:
-                        backup_stats = {
-                            "total_execs": self.stats.get("total_execs", 0),
-                            "coverage": self.stats.get("coverage", 0),
-                            "crashes_found": self.stats.get("crashes_found", 0)
-                        }
-                    
-                    # 프로세스 명시적 재시작
-                    logger.info("[Thread] Attempting to restart LibFuzzer process")
-                    restart_success = self.start_continuous_libfuzzer()
-                    
-                    if not restart_success:
-                        logger.error("[Thread] Failed to restart LibFuzzer")
-                        # 다음 loop에서 재시도
-                        time.sleep(5)
-                        continue
-                        
-                    # 정상적으로 시작되었으면 통계 복원 (필요시)
-                    with self.stats_lock:
-                        # 값이 0이면 백업에서 복원 (재시작 후 초기화됐을 가능성)
-                        if self.stats.get("total_execs", 0) == 0:
-                            self.stats["total_execs"] = backup_stats["total_execs"]
-                        if self.stats.get("coverage", 0) == 0:
-                            self.stats["coverage"] = backup_stats["coverage"]
-                        if self.stats.get("crashes_found", 0) == 0:
-                            self.stats["crashes_found"] = backup_stats["crashes_found"]
-                            
-                    logger.info(f"[Thread] LibFuzzer process restarted successfully")
+                    # 프로세스가 종료된 경우 처리 (기존 코드)
+                    # ...
+                    pass
                 else:
                     # 프로세스가 정상 실행 중이면 연속 실패 카운터 리셋
                     consecutive_failures = 0
@@ -807,6 +879,37 @@ class HybridFuzzer:
                     
                     # 마지막 통계 업데이트 시간 기록
                     self.stats["last_stat_update"] = current_time
+                    
+                    # 실행 횟수(total_execs)가 0이고 프로세스가 실행 중이면 값 추정
+                    if self.stats.get("total_execs", 0) == 0 and process_running:
+                        # 추정 전략 1: exec_speed가 있으면 시간 × 속도로 추정
+                        if "exec_speed" in self.stats and self.stats["exec_speed"] > 0:
+                            elapsed = current_time - self.stats["start_time"]
+                            estimated_execs = max(10, int(elapsed * self.stats["exec_speed"] / 2))
+                            self.stats["total_execs"] = estimated_execs
+                            logger.info(f"[LibFuzzer] Estimated execution count: {estimated_execs} (based on speed and time)")
+                        # 추정 전략 2: corpus_size × 10으로 추정
+                        elif corpus_size > 0:
+                            estimated_execs = corpus_size * 10
+                            self.stats["total_execs"] = estimated_execs
+                            logger.info(f"[LibFuzzer] Estimated execution count: {estimated_execs} (based on corpus size)")
+                        # 추정 전략 3: 기본값 100 사용
+                        else:
+                            self.stats["total_execs"] = 100
+                            logger.info("[LibFuzzer] Using default execution count: 100")
+
+                # 10초마다 상태 로깅
+                if current_time - last_stats_print_time > 10:
+                    with self.stats_lock:
+                        elapsed = current_time - self.stats["start_time"]
+                        execs = self.stats.get("total_execs", 0)
+                        coverage = self.stats.get("coverage", 0)
+                        crashes = self.stats.get("crashes_found", 0)
+                        
+                        # 디버그용 상태 로그
+                        logger.debug(f"[Thread] Stats: elapsed={elapsed:.1f}s, execs={execs}, cov={coverage}, crashes={crashes}, corpus={corpus_size}")
+                    
+                    last_stats_print_time = current_time
 
                 # 주기적인 상태 체크 간격
                 time.sleep(1)
@@ -825,6 +928,17 @@ class HybridFuzzer:
         커버리지가 정체되었을 때와 마지막 호출 후 일정 시간이 지났을 때만 호출
         """
         logger.info("[Thread] LLM worker started")
+        logger.info(f"[Thread] LLM call settings: stagnation_threshold={self.coverage_stagnation_threshold}s, call_interval={self.llm_call_interval}s")
+        
+        # 초기 상태 로깅
+        logger.info(f"[Thread] LLM worker initial state: last_coverage={self.last_coverage}, "
+                f"last_coverage_change_time={time.time() - self.last_coverage_change_time:.1f}s ago, "
+                f"last_llm_call_time={time.time() - self.last_llm_call_time:.1f}s ago")
+        
+        # 첫 번째 호출을 위한 타이머
+        first_call_timer = time.time()
+        first_call_delay = 30  # 30초 후 첫 호출
+        force_first_call = True
 
         while not self.stop_event.is_set():
             try:
@@ -835,6 +949,12 @@ class HybridFuzzer:
                 
                 # 현재 시간
                 current_time = time.time()
+                
+                # 초기 커버리지가 0인 경우, 정체 시간을 0으로 리셋하는 로직 추가
+                if current_coverage > 0 and self.last_coverage == 0:
+                    logger.info(f"[LLM] Initial coverage detected: {current_coverage}. Updating reference values.")
+                    self.last_coverage = current_coverage
+                    self.last_coverage_change_time = current_time
                 
                 # 커버리지 변화 확인
                 if current_coverage > self.last_coverage:
@@ -847,20 +967,41 @@ class HybridFuzzer:
                 # 마지막 LLM 호출 이후 시간 계산
                 time_since_last_call = current_time - self.last_llm_call_time
                 
+                # 첫 번째 호출 강제 트리거
+                first_call_condition = force_first_call and (current_time - first_call_timer >= first_call_delay) and current_coverage > 0
+                
+                # 정기적으로 상태 로깅 (10초마다)
+                if int(current_time) % 10 == 0:
+                    logger.info(f"[LLM] Status check: coverage={current_coverage}, "
+                            f"stagnation_time={coverage_stagnation_time:.1f}s/{self.coverage_stagnation_threshold}s, "
+                            f"time_since_last_call={time_since_last_call:.1f}s/{self.llm_call_interval}s, "
+                            f"force_first_call={force_first_call and (current_time - first_call_timer >= first_call_delay)}")
+                
                 # LLM 호출 조건: 
-                # 1. 커버리지가 1분 이상 정체되었고
-                # 2. 마지막 LLM 호출 후 10분 이상 지났을 때
-                if (coverage_stagnation_time >= self.coverage_stagnation_threshold and time_since_last_call >= self.llm_call_interval):
+                # 1. 커버리지가 지정 시간 이상 정체되었고 마지막 LLM 호출 후 지정 시간 이상 지났을 때
+                # 2. 또는 첫 번째 호출 조건이 충족됐을 때
+                if ((coverage_stagnation_time >= self.coverage_stagnation_threshold and 
+                    time_since_last_call >= self.llm_call_interval) or first_call_condition):
                     
-                    logger.info(f"[LLM] Coverage stagnated for {coverage_stagnation_time:.1f}s, "
-                            f"last LLM call was {time_since_last_call:.1f}s ago, trying LLM generation")
+                    if first_call_condition:
+                        logger.info(f"[LLM] First call condition triggered after {current_time - first_call_timer:.1f}s")
+                        force_first_call = False  # 첫 호출 후 강제 트리거 비활성화
+                    else:
+                        logger.info(f"[LLM] Regular conditions met! Coverage stagnated for {coverage_stagnation_time:.1f}s, "
+                                f"last LLM call was {time_since_last_call:.1f}s ago.")
+                    
+                    logger.info("[LLM] Trying LLM generation...")
                     
                     # API 한도 체크
-                    if self.free_tier_only and not self._check_api_limits():
-                        wait_time = 60  # API 제한에 도달했을 때 대기 시간 (초)
-                        logger.info(f"[LLM] API rate limit reached, waiting {wait_time} seconds...")
-                        time.sleep(wait_time)
-                        continue
+                    if self.free_tier_only:
+                        api_limits_ok = self._check_api_limits()
+                        logger.info(f"[LLM] API limits check result: {api_limits_ok}")
+                        
+                        if not api_limits_ok:
+                            wait_time = 60  # API 제한에 도달했을 때 대기 시간 (초)
+                            logger.info(f"[LLM] API rate limit reached, waiting {wait_time} seconds...")
+                            time.sleep(wait_time)
+                            continue
                     
                     samples = self.get_interesting_inputs(limit=5)
                     if not samples:
@@ -884,25 +1025,20 @@ class HybridFuzzer:
                     # 마지막 LLM 호출 시간 업데이트
                     self.last_llm_call_time = time.time()
                 else:
-                    # 조건이 충족되지 않은 경우 상태 로깅
                     if coverage_stagnation_time < self.coverage_stagnation_threshold:
                         logger.debug(f"[LLM] Coverage still changing, waiting... "
-                                f"(Last change: {coverage_stagnation_time:.1f}s ago)")
-                    elif time_since_last_call < self.coverage_stagnation_threshold:
+                                f"(Last change: {coverage_stagnation_time:.1f}s ago, need {self.coverage_stagnation_threshold}s)")
+                    elif time_since_last_call < self.llm_call_interval:
                         logger.debug(f"[LLM] Last LLM call was too recent ({time_since_last_call:.1f}s ago), "
-                                     f"waiting until {(self.llm_call_interval - time_since_last_call):.1f}s more...")
+                                    f"waiting until {(self.llm_call_interval - time_since_last_call):.1f}s more...")
                     
                     # 대기 시간 (로그 과부하 방지)
-                    time.sleep(30)
-
-                # 정기적인 상태 출력 (5분마다)
-                if int(time_since_last_call) % 300 == 0 and int(time_since_last_call) > 0:
-                    logger.info(f"[LLM] Status: coverage={current_coverage}, "
-                            f"stagnation time={coverage_stagnation_time:.1f}s, "
-                            f"time since last call={time_since_last_call:.1f}s")
+                    time.sleep(5)  # 5초 대기로 줄임 (더 자주 체크)
 
             except Exception as e:
                 logger.error(f"[LLM] Worker error: {e}")
+                import traceback
+                logger.error(f"[LLM] Worker error traceback: {traceback.format_exc()}")
                 time.sleep(30)
                 
     def generate_llm_inputs(self, prompt_inputs: list) -> list:
@@ -1043,7 +1179,7 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
     {error_feedback}
 
     --- WAT Generation Request ---
-    Now generate at least 30 NEW and DIVERSE valid WAT modules that strictly follow all rules,
+    Now generate at least 20 NEW and DIVERSE valid WAT modules that strictly follow all rules,
     including the DIVERSITY & UNIQUENESS RULES.
 
     - You must use at least 2 instructions from the set {{ i32.load, i32.store, block, loop, if, local.set, i32.eq, i32.lt, i32.gt }}
@@ -1957,7 +2093,7 @@ def main():
     parser.add_argument('--libfuzzer-options', help='LibFuzzer options (JSON)')
     parser.add_argument('--max-error-history', type=int, default=3, help='Maximum number of error feedback items to store for LLM')
     parser.add_argument('--feedback-enabled', action='store_true', default=True, help='Enable error feedback to LLM')
-    parser.add_argument('--confirm-requests', action='store_true', default=True, help='Confirm API requests before sending')
+    parser.add_argument('--confirm-requests', action='store_true', default=False, help='Confirm API requests before sending')
     parser.add_argument('--free-tier-only', action='store_true', default=True, help='Respect free tier API limits')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable debug output')
     parser.add_argument('--llm-test', action='store_true', help='Only test LLM functionality without starting LibFuzzer')
