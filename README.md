@@ -105,5 +105,6 @@ python3 API_HybridFuzzer.py \
   --libfuzzer-options '{"max_len": 10240, "print_pcs": 1}' \
   --verbose \
   --confirm-requests \
-  --llm-test
+  --llm-test \
+  --dashboard
 ```
