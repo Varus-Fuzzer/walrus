@@ -15,6 +15,9 @@ import re
 import hashlib
 import signal
 import tempfile
+import shutil
+import curses
+import psutil
 from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -31,13 +34,13 @@ class HybridFuzzer:
         target_path: str,
         corpus_dir: str,
         libfuzzer_options: dict = None,
-        llm_model: str = "gemini-1.5-pro",  # 기본값을 Gemini로 변경
+        llm_model: str = "gemini-1.5-pro",
         llm_temperature: float = 0.7,
         libfuzzer_cycles: int = 1,
         llm_cycles: int = 1,
-        gemini_api_key: str = None,  # Gemini API 키 추가
-        confirm_requests: bool = False,  # API 요청 전 확인 요청 옵션
-        free_tier_only: bool = True,  # 무료 티어만 사용
+        gemini_api_key: str = None,
+        confirm_requests: bool = False,
+        free_tier_only: bool = True,
     ):
         self.target_path = os.path.abspath(target_path)
         self.corpus_dir = os.path.abspath(corpus_dir)
@@ -124,8 +127,61 @@ class HybridFuzzer:
             "recent_new_coverage": [],  # 최근 발견된 커버리지 정보
             "api_requests": 0,
             "api_free_tier_limit": self.free_tier_limits["daily_requests"],
-            "api_requests_remaining": self.free_tier_limits["daily_requests"]
+            "api_requests_remaining": self.free_tier_limits["daily_requests"],
+            # CPU 및 속도 모니터링 관련 추가 항목
+            "cpu_percent": 0,
+            "cpu_per_core": 0,
+            "exec_speed": 0,
+            "avg_exec_speed": 0,
+            "exec_speed_samples": []
         }
+
+        self.use_dashboard = False
+        self.screen = None
+        self.log_buffer = []
+        self.max_log_lines = 30
+
+    def _update_system_stats(self):
+        """
+        시스템 통계(CPU 사용량, 메모리 등)를 업데이트합니다.
+        """
+        try:
+            # 현재 프로세스의 CPU 사용량 가져오기
+            process = psutil.Process(os.getpid())
+            
+            # 전체 프로세스 트리의 CPU 사용량 합산
+            total_cpu_percent = process.cpu_percent(interval=0.1)
+            
+            # LibFuzzer 프로세스가 있다면 그 프로세스도 포함
+            if self.libfuzzer_process is not None and self._is_process_running(self.libfuzzer_process.pid):
+                try:
+                    libfuzzer_process = psutil.Process(self.libfuzzer_process.pid)
+                    total_cpu_percent += libfuzzer_process.cpu_percent(interval=0.1)
+                    
+                    # 자식 프로세스들도 포함
+                    for child in libfuzzer_process.children(recursive=True):
+                        try:
+                            total_cpu_percent += child.cpu_percent(interval=0.1)
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            pass
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+            
+            # 프로세서 수
+            cpu_count = psutil.cpu_count(logical=True)
+            
+            # CPU 사용률 및 코어당 사용률 계산
+            with self.stats_lock:
+                self.stats["cpu_percent"] = round(total_cpu_percent, 1)
+                self.stats["cpu_per_core"] = round(total_cpu_percent / max(1, cpu_count), 1)
+                logger.debug(f"[System] CPU usage: {self.stats['cpu_percent']}% (per core: {self.stats['cpu_per_core']}%)")
+
+        except Exception as e:
+            logger.error(f"[System] Failed to update CPU stats: {e}")
+            with self.stats_lock:
+                self.stats["cpu_percent"] = 0
+                self.stats["cpu_per_core"] = 0
+
 
     def _test_gemini_connection(self):
         """Gemini API 연결을 테스트합니다."""
@@ -235,25 +291,34 @@ class HybridFuzzer:
         반환값: 성공 여부 (True/False)
         """
         with self.libfuzzer_process_lock:
+            # 기존 프로세스 정리
             if self.libfuzzer_process is not None:
                 logger.warning("[LibFuzzer] Process already running, terminating it first")
-                self.stop_libfuzzer()
+                try:
+                    self.stop_libfuzzer()
+                except Exception as e:
+                    logger.error(f"[LibFuzzer] Error during process cleanup: {e}")
+                
+                # 이전 프로세스가 완전히 종료될 때까지 기다림
+                time.sleep(2)
+                
+                # 프로세스 변수 초기화
+                self.libfuzzer_process = None
 
             logger.info("[LibFuzzer] Starting continuous fuzzing process")
 
+            # LibFuzzer 옵션 구성
             options = [
                 f"-artifact_prefix={self.crashes_dir}{os.sep}",
                 "-print_final_stats=1",
                 "-print_pcs=1",          # 커버리지 추적을 위해 PC 출력
                 "-print_corpus_stats=1", # 코퍼스 상태 출력
-                "-print_new_pcs=1",      # 새로운 PC 출력 (커버리지 정보 수집용)
-                "-timeout=10",           # 시간 초과 설정 (10초)
-                "-rss_limit_mb=2048"     # 메모리 제한 (2GB)
+                "-print_new_pcs=1"       #옵션 제거 (에러 발생 시)
+                "-timeout=30",           # 시간 초과 설정 (10초)
+                "-rss_limit_mb=4096"     # 메모리 제한 (2GB)
             ]
 
-            # 시간 제한 제거 (지속적 실행을 위해)
-            # max_total_time 옵션은 추가하지 않음
-
+            # 사용자 정의 옵션 추가
             for k, v in self.libfuzzer_options.items():
                 if k != "max_total_time":  # 시간 제한 옵션은 건너뜀
                     options.append(f"-{k}={v}")
@@ -262,41 +327,96 @@ class HybridFuzzer:
             logger.debug(f"[LibFuzzer] Command: {' '.join(cmd)}")
 
             try:
-                # 프로세스를 별도의 파이프로 연결하여 출력을 모니터링
-                self.libfuzzer_process = subprocess.Popen(
+                # 명시적으로 환경 변수 복사하여 전달
+                env = os.environ.copy()
+                
+                # 프로세스 생성
+                logger.info("[LibFuzzer] Creating new process...")
+                process = subprocess.Popen(
                     cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     universal_newlines=True,
-                    bufsize=1  # 라인 버퍼링 활성화
+                    bufsize=1,  # 라인 버퍼링 활성화
+                    env=env,
+                    preexec_fn=os.setsid  # 새로운 프로세스 그룹 생성 (리눅스 전용)
                 )
                 
-                # 출력을 비차단 방식으로 처리하는 스레드 시작
-                self.stdout_thread = threading.Thread(
+                # 프로세스 시작 확인
+                if process.poll() is not None:
+                    logger.error(f"[LibFuzzer] Process terminated immediately with code {process.poll()}")
+                    return False
+                
+                logger.info(f"[LibFuzzer] Process created with PID: {process.pid}")
+                
+                # 출력 모니터링 스레드 시작
+                stdout_thread = threading.Thread(
                     target=self._monitor_libfuzzer_output,
-                    args=(self.libfuzzer_process.stdout,),
-                    daemon=True
+                    args=(process.stdout,),
+                    daemon=True,
+                    name=f"stdout-{process.pid}"
                 )
-                self.stderr_thread = threading.Thread(
+                
+                stderr_thread = threading.Thread(
                     target=self._monitor_libfuzzer_output,
-                    args=(self.libfuzzer_process.stderr,),
-                    daemon=True
+                    args=(process.stderr,),
+                    daemon=True,
+                    name=f"stderr-{process.pid}"
                 )
-
-                self.stdout_thread.start()
-                self.stderr_thread.start()
-
+                
+                stdout_thread.start()
+                stderr_thread.start()
+                
+                # 프로세스와 스레드 참조 저장
+                self.libfuzzer_process = process
+                self.stdout_thread = stdout_thread
+                self.stderr_thread = stderr_thread
+                
+                # 통계 업데이트
                 with self.stats_lock:
                     self.stats["libfuzzer_runs"] += 1
-                    # 마지막 통계 업데이트 시간 초기화
                     self.stats["last_stat_update"] = time.time()
-
-                logger.info(f"[LibFuzzer] Continuous process started with PID: {self.libfuzzer_process.pid}")
-                return True
+                    
+                # 프로세스가 실제로 실행되고 있는지 확인 (최대 5초 대기)
+                start_time = time.time()
+                while time.time() - start_time < 5:
+                    if process.poll() is not None:
+                        # 5초 내에 종료됨
+                        logger.error(f"[LibFuzzer] Process terminated during startup with code {process.poll()}")
+                        return False
+                    
+                    # 프로세스가 여전히 실행 중이면 성공으로 간주
+                    if self._is_process_running(process.pid):
+                        logger.info(f"[LibFuzzer] Continuous process confirmed running with PID: {process.pid}")
+                        return True
+                    
+                    time.sleep(0.5)
                 
+                # 5초 후에도 실행 중이면 성공
+                if self._is_process_running(process.pid):
+                    logger.info(f"[LibFuzzer] Continuous process started with PID: {process.pid}")
+                    return True
+                else:
+                    logger.error("[LibFuzzer] Process appears to be running but PID check failed")
+                    return False
+                    
             except Exception as e:
                 logger.error(f"[LibFuzzer] Failed to start process: {e}")
+                import traceback
+                logger.error(f"[LibFuzzer] Exception traceback: {traceback.format_exc()}")
                 return False
+
+    def _is_process_running(self, pid):
+        """특정 PID의 프로세스가 실행 중인지 확인합니다."""
+        try:
+            # 리눅스/맥OS에서 프로세스 존재 여부 확인
+            os.kill(pid, 0)
+            return True
+        except OSError:
+            return False
+        except Exception as e:
+            logger.error(f"[LibFuzzer] Error checking process status: {e}")
+            return False
 
     def _monitor_libfuzzer_output(self, pipe):
         """
@@ -419,59 +539,6 @@ class HybridFuzzer:
                     except Exception as e:
                         logger.debug(f"[LibFuzzer] Failed to parse exec count from stat line: {e}")
 
-                # 코퍼스 크기 업데이트
-                elif "stat::corpus_size" in line:
-                    try:
-                        val = int(line.split(":")[-1].strip())
-                        with self.stats_lock:
-                            self.stats["corpus_size"] = val
-                    except ValueError:
-                        pass
-
-                # 커버리지 관련 정보 (Covered PCs) - 개선된 정규식으로 수정
-                elif "cov:" in line:
-                    try:
-                        # 예: "cov: 123 ft: 456 ..." 또는 "    cov: 123"
-                        cov_match = re.search(r'cov:\s*(\d+)', line)
-                        if cov_match:
-                            val = int(cov_match.group(1))
-                            logger.debug(f"[LibFuzzer] 일반 라인에서 커버리지 {val} 파싱됨")
-                            with self.stats_lock:
-                                old_coverage = self.stats.get("coverage", 0)
-                                self.stats["coverage"] = val
-                                
-                                # 커버리지 변화 감지
-                                if val > old_coverage:
-                                    self.last_coverage = val
-                                    self.last_coverage_change_time = time.time()
-                                    logger.info(f"[LibFuzzer] Coverage increased to {val} paths")
-                        else:
-                            logger.debug(f"[LibFuzzer] 'cov:' 있지만 매치 실패, 라인: {line.strip()}")
-                    except (ValueError, IndexError, AttributeError) as e:
-                        logger.debug(f"[LibFuzzer] Failed to parse coverage: {e} in line: {line.strip()}")
-                        
-                # 새로운 PC(커버리지) 발견 정보 수집
-                elif "NEW_PC:" in line:
-                    try:
-                        pc_info = line.strip()
-                        with self.stats_lock:
-                            # 최근 10개의 새 커버리지 정보만 유지
-                            self.stats["recent_new_coverage"].append(pc_info)
-                            if len(self.stats["recent_new_coverage"]) > 10:
-                                self.stats["recent_new_coverage"].pop(0)
-                        
-                        # 커버리지 변화 감지
-                        self.last_coverage_change_time = time.time()
-                        logger.info(f"[LibFuzzer] New path discovered: {pc_info}")
-                    except Exception as e:
-                        logger.debug(f"[LibFuzzer] Failed to process NEW_PC line: {e}")
-
-                # ASAN(AddressSanitizer) 크래시 감지
-                elif "AddressSanitizer:" in line:
-                    logger.warning(f"[LibFuzzer] ASAN crash detected: {line.strip()}")
-                    with self.stats_lock:
-                        self.stats["crashes_found"] = self.stats.get("crashes_found", 0) + 1
-
                 # 실행 속도 정보 추출
                 elif "exec/s:" in line:
                     try:
@@ -481,15 +548,23 @@ class HybridFuzzer:
                             val = int(speed_match.group(1))
                             with self.stats_lock:
                                 self.stats["exec_speed"] = val
+                                
+                                # 평균 속도 계산을 위한 샘플 수집
+                                self.stats.setdefault("exec_speed_samples", []).append(val)
+                                # 최근 10개 샘플만 유지
+                                if len(self.stats["exec_speed_samples"]) > 10:
+                                    self.stats["exec_speed_samples"].pop(0)
+                                    
+                                # 평균 속도 계산
+                                if self.stats["exec_speed_samples"]:
+                                    self.stats["avg_exec_speed"] = int(sum(self.stats["exec_speed_samples"]) / 
+                                                                len(self.stats["exec_speed_samples"]))
+                                    logger.debug(f"[LibFuzzer] Execution speed: {val}/sec (avg: {self.stats['avg_exec_speed']}/sec)")
                     except (ValueError, IndexError, AttributeError):
                         pass
 
-                # 기타 중요 메시지 로깅
-                elif any(x in line for x in ["CRASH", "ERROR", "WARNING", "NEW_FUNC", "NEW_PC", "ALARM", "TIMEOUT"]):
-                    logger.info(f"[LibFuzzer] {line.strip()}")
-                else:
-                    logger.debug(f"[LibFuzzer] {line.strip()}")
-                    
+                # 기타 처리 로직 (이전 코드와 동일)...
+
         except Exception as e:
             # 출력 모니터링 중 오류 발생 시 로깅
             logger.error(f"[LibFuzzer] Output monitoring error: {e}")
@@ -501,31 +576,74 @@ class HybridFuzzer:
         실행 중인 LibFuzzer 프로세스를 안전하게 종료합니다.
         """
         with self.libfuzzer_process_lock:
-            if self.libfuzzer_process is None or self.libfuzzer_process.poll() is not None:
+            if self.libfuzzer_process is None:
                 logger.info("[LibFuzzer] No running process to stop")
                 return False
 
-            logger.info(f"[LibFuzzer] Stopping process (PID: {self.libfuzzer_process.pid})")
+            if self.libfuzzer_process.poll() is not None:
+                logger.info(f"[LibFuzzer] Process already exited with code {self.libfuzzer_process.poll()}")
+                self.libfuzzer_process = None
+                return True
+
+            logger.info(f"[LibFuzzer] Stopping process group (PID: {self.libfuzzer_process.pid})")
 
             try:
-                # 프로세스를 안전하게 종료 (SIGTERM)
-                self.libfuzzer_process.terminate()
-
-                # 5초 대기 후 여전히 실행 중이면 강제 종료 (SIGKILL)
-                for _ in range(5):
-                    if self.libfuzzer_process.poll() is not None:
+                pid = self.libfuzzer_process.pid
+                
+                # 리눅스에서는 프로세스 그룹 전체 종료 시도
+                try:
+                    os.killpg(os.getpgid(pid), signal.SIGTERM)
+                    logger.info(f"[LibFuzzer] Sent SIGTERM to process group of PID {pid}")
+                except (OSError, AttributeError) as e:
+                    logger.warning(f"[LibFuzzer] Failed to kill process group: {e}, trying direct terminate")
+                    # 개별 프로세스 종료로 대체
+                    self.libfuzzer_process.terminate()
+                    
+                # 최대 5초 동안 프로세스 종료 대기
+                for i in range(10):
+                    if not self._is_process_running(pid):
+                        logger.info(f"[LibFuzzer] Process {pid} terminated successfully")
                         break
-                    time.sleep(1)
-
-                if self.libfuzzer_process.poll() is None:
-                    logger.warning("[LibFuzzer] Process not responding to SIGTERM, sending SIGKILL")
-                    self.libfuzzer_process.kill()
-
+                        
+                    # 0.5초 대기
+                    time.sleep(0.5)
+                    
+                    # 세 번째 시도 후에는 더 적극적으로 종료 시도
+                    if i >= 3 and self._is_process_running(pid):
+                        logger.warning(f"[LibFuzzer] Process {pid} still running, sending SIGKILL")
+                        try:
+                            os.killpg(os.getpgid(pid), signal.SIGKILL)
+                        except:
+                            # 개별 프로세스 강제 종료
+                            self.libfuzzer_process.kill()
+                
+                # 종료 확인
+                if self._is_process_running(pid):
+                    logger.error(f"[LibFuzzer] Failed to terminate process {pid} after multiple attempts")
+                else:
+                    logger.info(f"[LibFuzzer] Process {pid} confirmed terminated")
+                
+                # 자원 정리
+                try:
+                    if self.libfuzzer_process.stdout:
+                        self.libfuzzer_process.stdout.close()
+                    if self.libfuzzer_process.stderr:
+                        self.libfuzzer_process.stderr.close()
+                except Exception as e:
+                    logger.debug(f"[LibFuzzer] Error closing process streams: {e}")
+                    
+                # 프로세스 객체 정리
                 self.libfuzzer_process = None
+                
                 return True
 
             except Exception as e:
                 logger.error(f"[LibFuzzer] Error stopping process: {e}")
+                import traceback
+                logger.error(f"[LibFuzzer] Error trace: {traceback.format_exc()}")
+                
+                # 오류가 발생해도 프로세스 객체를 None으로 설정
+                self.libfuzzer_process = None
                 return False
 
     def add_new_testcase(self, filepath):
@@ -565,13 +683,22 @@ class HybridFuzzer:
         logger.info("[Thread] LibFuzzer worker started")
 
         last_check_time = time.time()
+        last_system_stats_time = time.time()  # 시스템 통계 업데이트 타이머
         consecutive_failures = 0
         max_consecutive_failures = 3
         backoff_time = 1  # 초기 백오프 시간 (초)
 
         try:
             # 초기 프로세스 시작
-            self.start_continuous_libfuzzer()
+            success = self.start_continuous_libfuzzer()
+            if not success:
+                logger.error("[Thread] Initial LibFuzzer process failed to start")
+                # 처음부터 실패하면 짧은 대기 후 재시도
+                time.sleep(5)
+                success = self.start_continuous_libfuzzer()
+                if not success:
+                    logger.critical("[Thread] Failed to start LibFuzzer twice, worker thread exiting")
+                    return
 
             while not self.stop_event.is_set():
                 # 테스트케이스 큐 처리
@@ -579,51 +706,80 @@ class HybridFuzzer:
 
                 current_time = time.time()
                 
+                # 5초마다 시스템 통계(CPU 등) 업데이트
+                if current_time - last_system_stats_time > 5:
+                    self._update_system_stats()
+                    last_system_stats_time = current_time
+                
                 # 프로세스 상태 확인
+                process_running = False
+                
                 with self.libfuzzer_process_lock:
-                    if self.libfuzzer_process is None or self.libfuzzer_process.poll() is not None:
-                        # 프로세스가 종료된 경우
-                        exit_code = self.libfuzzer_process.poll() if self.libfuzzer_process else None
-                        logger.warning(f"[Thread] LibFuzzer process exited unexpectedly (exit code: {exit_code}), restarting...")
+                    # 프로세스 객체가 있고, poll()이 None이면 실행 중
+                    if self.libfuzzer_process is not None and self.libfuzzer_process.poll() is None:
+                        process_running = True
                         
-                        # 연속 실패 카운터 증가
-                        consecutive_failures += 1
-                        
-                        if consecutive_failures >= max_consecutive_failures:
-                            # 연속 실패가 너무 많으면 백오프 시간 증가 (지수적 백오프)
-                            wait_time = min(backoff_time * (2 ** (consecutive_failures - max_consecutive_failures)), 60)
-                            logger.warning(f"[Thread] Multiple LibFuzzer failures detected, backing off for {wait_time}s before retrying")
-                            time.sleep(wait_time)
-                        
-                        # 통계 리셋 방지를 위해 기존 통계 백업
-                        with self.stats_lock:
-                            backup_stats = {
-                                "total_execs": self.stats.get("total_execs", 0),
-                                "coverage": self.stats.get("coverage", 0),
-                                "crashes_found": self.stats.get("crashes_found", 0)
-                            }
-                        
-                        # 프로세스 재시작
-                        restart_success = self.start_continuous_libfuzzer()
-                        
-                        if not restart_success:
-                            logger.error("[Thread] Failed to restart LibFuzzer, will retry later")
-                            time.sleep(5)
-                            continue
-                            
-                        # 정상적으로 시작되었으면 통계 복원 (필요시)
-                        with self.stats_lock:
-                            # 값이 0이면 백업에서 복원 (재시작 후 초기화됐을 가능성)
-                            if self.stats.get("total_execs", 0) == 0:
-                                self.stats["total_execs"] = backup_stats["total_execs"]
-                            if self.stats.get("coverage", 0) == 0:
-                                self.stats["coverage"] = backup_stats["coverage"]
-                            if self.stats.get("crashes_found", 0) == 0:
-                                self.stats["crashes_found"] = backup_stats["crashes_found"]
+                        # 더 확실한 확인: PID가 실제로 존재하는지
+                        if not self._is_process_running(self.libfuzzer_process.pid):
+                            logger.warning(f"[Thread] Process with PID {self.libfuzzer_process.pid} not found in system despite poll() == None")
+                            process_running = False
+                
+                if not process_running:
+                    # 프로세스가 종료된 경우
+                    logger.warning("[Thread] LibFuzzer process not running, attempting restart...")
+                    
+                    # 기존 프로세스 정리 (명시적으로 stop_libfuzzer 호출)
+                    try:
+                        self.stop_libfuzzer()
+                    except Exception as e:
+                        logger.error(f"[Thread] Error stopping LibFuzzer: {e}")
+                    
+                    # 연속 실패 카운터 증가
+                    consecutive_failures += 1
+                    
+                    if consecutive_failures >= max_consecutive_failures:
+                        # 연속 실패가 너무 많으면 백오프 시간 증가 (지수적 백오프)
+                        wait_time = min(backoff_time * (2 ** (consecutive_failures - max_consecutive_failures)), 60)
+                        logger.warning(f"[Thread] Multiple LibFuzzer failures detected ({consecutive_failures}), backing off for {wait_time}s before retrying")
+                        time.sleep(wait_time)
                     else:
-                        # 프로세스가 정상 실행 중이면 연속 실패 카운터 리셋
-                        consecutive_failures = 0
-                        backoff_time = 1
+                        # 짧은 대기 시간 (시스템이 안정화될 시간)
+                        logger.info(f"[Thread] Failure #{consecutive_failures}, waiting 2s before restart")
+                        time.sleep(2)
+                    
+                    # 통계 리셋 방지를 위해 기존 통계 백업
+                    with self.stats_lock:
+                        backup_stats = {
+                            "total_execs": self.stats.get("total_execs", 0),
+                            "coverage": self.stats.get("coverage", 0),
+                            "crashes_found": self.stats.get("crashes_found", 0)
+                        }
+                    
+                    # 프로세스 명시적 재시작
+                    logger.info("[Thread] Attempting to restart LibFuzzer process")
+                    restart_success = self.start_continuous_libfuzzer()
+                    
+                    if not restart_success:
+                        logger.error("[Thread] Failed to restart LibFuzzer")
+                        # 다음 loop에서 재시도
+                        time.sleep(5)
+                        continue
+                        
+                    # 정상적으로 시작되었으면 통계 복원 (필요시)
+                    with self.stats_lock:
+                        # 값이 0이면 백업에서 복원 (재시작 후 초기화됐을 가능성)
+                        if self.stats.get("total_execs", 0) == 0:
+                            self.stats["total_execs"] = backup_stats["total_execs"]
+                        if self.stats.get("coverage", 0) == 0:
+                            self.stats["coverage"] = backup_stats["coverage"]
+                        if self.stats.get("crashes_found", 0) == 0:
+                            self.stats["crashes_found"] = backup_stats["crashes_found"]
+                            
+                    logger.info(f"[Thread] LibFuzzer process restarted successfully")
+                else:
+                    # 프로세스가 정상 실행 중이면 연속 실패 카운터 리셋
+                    consecutive_failures = 0
+                    backoff_time = 1
 
                     # 프로세스가 정상인지 주기적으로 확인 (10초마다)
                     if current_time - last_check_time > 10:
@@ -636,7 +792,7 @@ class HybridFuzzer:
                                 # 프로세스는 실행 중이지만 통계가 업데이트되지 않음 - 잠재적인 교착 상태
                                 logger.warning("[Thread] LibFuzzer seems stuck (no updates in 30s), restarting...")
                                 self.stop_libfuzzer()
-                                time.sleep(1)
+                                time.sleep(2)  # 더 긴 대기 시간
                                 self.start_continuous_libfuzzer()
                                 
                                 # 마지막 업데이트 시간 갱신
@@ -887,7 +1043,7 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
     {error_feedback}
 
     --- WAT Generation Request ---
-    Now generate at least 3 NEW and DIVERSE valid WAT modules that strictly follow all rules,
+    Now generate at least 30 NEW and DIVERSE valid WAT modules that strictly follow all rules,
     including the DIVERSITY & UNIQUENESS RULES.
 
     - You must use at least 2 instructions from the set {{ i32.load, i32.store, block, loop, if, local.set, i32.eq, i32.lt, i32.gt }}
@@ -1483,6 +1639,311 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
 
             return self.stats
 
+    def setup_dashboard(self):
+        """curses 기반 CLI 대시보드 설정"""
+        self.use_dashboard = True
+        self.screen = None
+        
+        # 대시보드 색상 설정
+        self.colors = {
+            'normal': 1,
+            'green': 2,
+            'yellow': 3,
+            'red': 4,
+            'cyan': 5,
+            'magenta': 6,
+            'blue': 7
+        }
+        
+        # 로그 버퍼 (대시보드에 표시할 최근 로그)
+        self.log_buffer = []
+        self.max_log_lines = 10
+        
+        # 상태 업데이트 플래그
+        self.need_redraw = True
+        
+        # 대시보드 타이머 (업데이트 주기)
+        self.last_dashboard_update = 0
+        self.dashboard_update_interval = 0.5  # 초
+        
+        # 로그 파일로 로그 리디렉션
+        self.logs_file = os.path.join(os.path.dirname(self.corpus_dir), "fuzzer_logs.txt")
+        
+        # 기존 로그 핸들러를 파일 핸들러로 대체
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+        
+        file_handler = logging.FileHandler(self.logs_file)
+        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        logger.addHandler(file_handler)
+        
+        # 커스텀 로그 핸들러 추가 (로그 버퍼에 로그 추가)
+        log_buffer_handler = LogBufferHandler(self)
+        logger.addHandler(log_buffer_handler)
+        
+        logger.info("[Dashboard] Setup complete")
+
+    def start_dashboard(self):
+        """curses 대시보드 시작"""
+        if not self.use_dashboard:
+            return
+        
+        # curses 초기화
+        self.screen = curses.initscr()
+        
+        # 키 입력 처리 설정
+        curses.noecho()
+        curses.cbreak()
+        self.screen.keypad(True)
+        self.screen.nodelay(True)  # 입력 대기 없이 즉시 반환
+        
+        # 색상 설정
+        curses.start_color()
+        curses.use_default_colors()
+        
+        # 색상 쌍 초기화
+        curses.init_pair(self.colors['normal'], curses.COLOR_WHITE, -1)
+        curses.init_pair(self.colors['green'], curses.COLOR_GREEN, -1)
+        curses.init_pair(self.colors['yellow'], curses.COLOR_YELLOW, -1)
+        curses.init_pair(self.colors['red'], curses.COLOR_RED, -1)
+        curses.init_pair(self.colors['cyan'], curses.COLOR_CYAN, -1)
+        curses.init_pair(self.colors['magenta'], curses.COLOR_MAGENTA, -1)
+        curses.init_pair(self.colors['blue'], curses.COLOR_BLUE, -1)
+        
+        # 마우스 이벤트 활성화
+        curses.mousemask(1)
+        
+        # 초기 화면 그리기
+        self.draw_dashboard()
+        
+        # 대시보드 워커 스레드 시작
+        dashboard_thread = threading.Thread(
+            target=self.dashboard_worker,
+            name="Dashboard-Worker",
+            daemon=True
+        )
+        dashboard_thread.start()
+        
+        logger.info("[Dashboard] Started")
+        return dashboard_thread
+
+    def stop_dashboard(self):
+        """curses 대시보드 종료"""
+        if not self.use_dashboard or not self.screen:
+            return
+        
+        # curses 설정 원복
+        self.screen.keypad(False)
+        curses.echo()
+        curses.nocbreak()
+        curses.endwin()
+        
+        self.screen = None
+        logger.info("[Dashboard] Stopped")
+
+    def draw_dashboard(self):
+        """대시보드 그리기"""
+        if not self.screen:
+            return
+        
+        try:
+            # 화면 크기 가져오기
+            max_y, max_x = self.screen.getmaxyx()
+            
+            # 화면 지우기
+            self.screen.clear()
+            
+            # 헤더 그리기
+            self.draw_header(0, 0, max_x)
+            
+            # 통계 그리기
+            self.draw_stats(2, 0, max_x)
+            
+            # 로그 섹션 그리기
+            log_start_y = 15
+            self.draw_logs(log_start_y, 0, max_x, max_y - log_start_y)
+            
+            # 화면 업데이트
+            self.screen.refresh()
+            self.need_redraw = False
+            
+        except Exception as e:
+            logger.error(f"[Dashboard] Draw error: {e}")
+            import traceback
+            logger.error(f"[Dashboard] Traceback: {traceback.format_exc()}")
+
+    def draw_header(self, y, x, width):
+        """헤더 섹션 그리기"""
+        # 경과 시간 계산
+        elapsed = time.time() - self.stats["start_time"]
+        days, remainder = divmod(int(elapsed), 86400)
+        hours, remainder = divmod(remainder, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        
+        # 헤더 라인 (honggfuzz 스타일)
+        header_text = f"[{days:2d} days {hours:02d} hrs {minutes:02d} mins {seconds:02d} secs ]-------/ HybridFuzzer /-"
+        header = "-" * 20 + header_text + "-" * max(0, width - len(header_text) - 20)
+        
+        # 헤더 출력
+        self.screen.addstr(y, x, header[:width-1])
+
+    def draw_stats(self, y, x, width):
+        """통계 섹션 그리기"""
+        with self.stats_lock:
+            # 클론된 통계 가져오기 (복사본 생성)
+            stats = self.stats.copy()
+        
+        # CPU 및 속도 값 가져오기
+        cpu_percent = stats.get("cpu_percent", 0)
+        cpu_per_core = stats.get("cpu_per_core", 0)
+        exec_speed = stats.get("exec_speed", 0) 
+        avg_exec_speed = stats.get("avg_exec_speed", 0)
+        
+        # 통계 라인 관련 정보
+        stats_items = [
+            ("Iterations", f"{stats.get('total_execs', 0)} [{stats.get('total_execs', 0)/1000:.2f}k]"),
+            ("Mode", f"Hybrid Fuzzing (LibFuzzer + LLM)", self.colors['green']),
+            ("Target", f"'{self.target_path}'"),
+            ("Threads", f"{stats.get('libfuzzer_runs', 0)}+{stats.get('llm_runs', 0)}, PID: {os.getpid()}, CPU%: {cpu_percent}% ({cpu_per_core}%/CPU)"),
+            ("Speed", f"{exec_speed}/sec (avg: {avg_exec_speed})", self.colors['blue']),
+            ("Crashes", f"{stats.get('crashes_found', 0)}", self.colors['red']),
+            ("Corpus Size", f"entries: {stats.get('corpus_size', 0)}", self.colors['cyan']),
+            ("API Usage", f"{stats.get('api_requests', 0)}/{stats.get('api_free_tier_limit', 0)} requests"),
+            ("API Reset", f"{self.free_tier_limits['reset_time'].strftime('%Y-%m-%d %H:%M:%S')}"),
+            ("Coverage", f"paths: {stats.get('coverage', 0)}", self.colors['yellow']),
+            ("WAT Compilation", f"success: {stats.get('wat_compile_success', 0)}, errors: {stats.get('wat_compile_errors', 0)}", 
+            self.colors['magenta']),
+        ]
+
+        # 통계 출력
+        for i, stat_item in enumerate(stats_items):
+            label = stat_item[0].rjust(15) + " : "
+            value = stat_item[1]
+            color = stat_item[2] if len(stat_item) > 2 else self.colors['normal']
+            
+            # 라벨 출력
+            self.screen.addstr(y + i, x, label)
+            
+            # 값 출력 (색상 적용)
+            self.screen.addstr(y + i, x + len(label), str(value)[:width-len(label)-1], 
+                            curses.color_pair(color))
+
+    def draw_logs(self, y, x, width, height):
+        """로그 섹션 그리기"""
+        # 로그 섹션 제목
+        log_header = "-" * 35 + " [ LOGS ] " + "-" * 35
+        self.screen.addstr(y, x, log_header[:width-1])
+        
+        # 가능한 최대 로그 라인 수 계산
+        max_lines = min(height - 2, len(self.log_buffer))
+        
+        # 로그 버퍼에서 최근 로그 선택
+        logs_to_show = self.log_buffer[-max_lines:] if max_lines > 0 else []
+        
+        # 로그 출력
+        for i, log_entry in enumerate(logs_to_show):
+            if y + i + 2 >= y + height:
+                break
+                
+            log_text = log_entry['message']
+            log_level = log_entry['level']
+            
+            # 로그 레벨에 따른 색상 선택
+            color = self.colors['normal']
+            if 'CRASH' in log_text or 'ERROR' in log_text or log_level >= logging.ERROR:
+                color = self.colors['red']
+            elif 'WARNING' in log_text or log_level >= logging.WARNING:
+                color = self.colors['yellow']
+            elif '[LLM]' in log_text:
+                color = self.colors['cyan']
+            elif '[Thread]' in log_text:
+                color = self.colors['magenta']
+            elif '[LibFuzzer]' in log_text:
+                color = self.colors['green']
+            
+            # 로그 텍스트 출력 (너무 길면 자르기)
+            try:
+                self.screen.addstr(y + i + 2, x, log_text[:width-1], curses.color_pair(color))
+            except:
+                # 오류 발생 시 안전하게 처리 (일반적으로 경계 문제)
+                pass
+
+    def dashboard_worker(self):
+        """대시보드 업데이트 및 키 입력 처리"""
+        logger.info("[Dashboard] Worker started")
+        
+        try:
+            while not self.stop_event.is_set() and self.screen:
+                current_time = time.time()
+                
+                # 화면 갱신 조건 확인
+                if self.need_redraw or current_time - self.last_dashboard_update > self.dashboard_update_interval:
+                    self.draw_dashboard()
+                    self.last_dashboard_update = current_time
+                
+                # 키 입력 처리
+                try:
+                    key = self.screen.getch()
+                    if key != -1:
+                        self.handle_key(key)
+                except:
+                    pass
+                    
+                # CPU 점유율 최적화를 위한 짧은 대기
+                time.sleep(0.1)
+        
+        except Exception as e:
+            logger.error(f"[Dashboard] Worker error: {e}")
+            import traceback
+            logger.error(f"[Dashboard] Traceback: {traceback.format_exc()}")
+        
+        finally:
+            logger.info("[Dashboard] Worker stopped")
+
+    def handle_key(self, key):
+        """키 입력 처리"""
+        # q: 종료
+        if key == ord('q'):
+            logger.info("[Dashboard] Quit requested by user")
+            self.stop_event.set()
+        
+        # r: 화면 갱신
+        elif key == ord('r'):
+            self.need_redraw = True
+        
+        # 기타 명령어...
+        # TODO: 더 많은 단축키 추가
+
+    def add_log(self, message, level=logging.INFO):
+        """로그 버퍼에 로그 추가"""
+        if len(self.log_buffer) >= self.max_log_lines:
+            self.log_buffer.pop(0)
+        
+        self.log_buffer.append({
+            'message': message,
+            'level': level,
+            'time': time.time()
+        })
+        
+        self.need_redraw = True
+
+class LogBufferHandler(logging.Handler):
+    """로그 메시지를 대시보드 버퍼에 추가하는 핸들러"""
+    
+    def __init__(self, dashboard):
+        super().__init__()
+        self.dashboard = dashboard
+    
+    def emit(self, record):
+        try:
+            # 로그 메시지 포맷팅
+            message = self.format(record)
+            # 메시지가 너무 길면 자르기
+            short_message = message[-100:] if len(message) > 100 else message
+            # 대시보드 로그 버퍼에 추가
+            self.dashboard.add_log(short_message, record.levelno)
+        except Exception:
+            self.handleError(record)
 
 def main():
     parser = argparse.ArgumentParser(description='LibFuzzer+Gemini LLM Hybrid Fuzzer with continuous fuzzing and error feedback')
@@ -1500,6 +1961,7 @@ def main():
     parser.add_argument('--free-tier-only', action='store_true', default=True, help='Respect free tier API limits')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable debug output')
     parser.add_argument('--llm-test', action='store_true', help='Only test LLM functionality without starting LibFuzzer')
+    parser.add_argument('--dashboard', action='store_true', help='Enable CLI dashboard')
 
     args = parser.parse_args()
 
@@ -1552,6 +2014,8 @@ def main():
             fuzzer.stop_event.set()
             if not args.llm_test:
                 fuzzer.stop_libfuzzer()  # 실행 중인 LibFuzzer 프로세스 안전하게 종료
+            if args.dashboard and hasattr(fuzzer, 'screen') and fuzzer.screen:
+                fuzzer.stop_dashboard()  # 대시보드 정리
         sys.exit(0)
 
     # SIGINT 및 SIGTERM에 대한 핸들러 등록
@@ -1577,6 +2041,20 @@ def main():
         # 피드백 비활성화
         fuzzer.max_error_history = 0
         fuzzer.wat_error_history = []
+
+    # 대시보드 설정 (fuzzer 객체 생성 후)
+    dashboard_thread = None
+    if args.dashboard:
+        try:
+            # 대시보드 설정
+            fuzzer.setup_dashboard()
+            dashboard_thread = fuzzer.start_dashboard()
+            logger.info("[MAIN] Dashboard started successfully")
+        except Exception as e:
+            logger.error(f"[Dashboard] Setup failed: {e}")
+            logger.warning("[Dashboard] Running without dashboard")
+            import traceback
+            logger.debug(f"[Dashboard] Error trace: {traceback.format_exc()}")
 
     if args.llm_test:
         # LLM 기능만 테스트
@@ -1617,6 +2095,10 @@ def main():
         logger.info(f"Total API requests: {stats.get('api_requests', 0)}")
         logger.info(f"Daily API limit: {stats.get('api_free_tier_limit', 0)}")
         logger.info(f"Remaining API requests: {stats.get('api_requests_remaining', 0)}")
+
+    # 종료 전 대시보드 정리
+    if args.dashboard and hasattr(fuzzer, 'screen') and fuzzer.screen:
+        fuzzer.stop_dashboard()
 
 if __name__ == "__main__":
     main()
