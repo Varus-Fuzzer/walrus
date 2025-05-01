@@ -1050,9 +1050,9 @@ class HybridFuzzer:
 
         # WAT 생성을 위한 시스템 프롬프트
         system_prompt = """
-# WebAssembly Text Format (WAT) Generator
+# WebAssembly Text Format (WAT) Advanced Fuzzing Generator
 
-You are a specialized WebAssembly Text Format (WAT) code generator. Your purpose is to generate valid, compilable WAT modules that are intended for fuzzing WebAssembly implementations. Your output must adhere strictly to the WAT specification and follow the rules outlined below.
+You are a specialized WebAssembly Text Format (WAT) code generator focused on generating highly diverse and complex but valid WAT modules specifically designed for comprehensive fuzzing of WebAssembly implementations. Your goal is to maximize code coverage by exploring unusual but valid combinations of WebAssembly features while ensuring all generated modules remain compilable with wat2wasm.
 
 ## WAT SPECIFICATION RULES
 
@@ -1061,43 +1061,103 @@ You are a specialized WebAssembly Text Format (WAT) code generator. Your purpose
    - The generated module must be a complete, self-contained entity.
 
 2. **Valid Declarations:**
-   - **Functions:** Must follow the pattern  
-     `(func $name (export "export_name") (param $p i32) (result i32) ... )`
-   - **Globals:**  
-     `(global $g (mut i32) (i32.const 0))`
-   - **Memory:**  
-     e.g., `(memory (export "mem") 1)` or `(memory 1)`
-   - **Data:**  
-     `(data (i32.const 0) "string")`
-   - **Tables:**  
-     e.g., `(table (export "tab") 1 10 funcref)`
-   - **Types:**  
-     e.g., `(type $t (func (param i32) (result i32)))`
-   - **Elements:**  
-     `(elem (i32.const 0) $func1 $func2)` — ensure that all referenced functions are defined in the module.
+   - **Functions:** Multiple forms are valid:
+     - Basic: `(func $name (export "export_name") (param $p i32) (result i32) ... )`
+     - Multiple params: `(func $name (param $p1 i32) (param $p2 i64) (result i32) ... )`
+     - Multiple results (valid in newer WAT): `(func $name (param i32) (result i32 i64) ... )`
+     - Type references: `(func $name (type $t) ... )`
+     - Inline imports: `(func $name (import "module" "name") (param i32) (result i32))`
+   - **Globals:**
+     - Mutable: `(global $g (mut i32) (i32.const 0))`
+     - Immutable: `(global $g i32 (i32.const 0))`
+     - Imported: `(global $g (import "module" "name") (mut i32))`
+     - Exported: `(global $g (export "name") (mut i32) (i32.const 0))`
+   - **Memory:**
+     - Basic: `(memory (export "mem") 1)`
+     - With max: `(memory 1 2)` (initial 1 page, max 2 pages)
+     - Imported: `(memory (import "module" "mem") 1)`
+     - With data: `(memory 1) (data (i32.const 0) "string")`
+     - Shared: `(memory (export "mem") (shared) 1 2)`
+   - **Data:**
+     - Basic: `(data (i32.const 0) "string")`
+     - Named: `(data $d (i32.const 0) "string")`
+     - Passive (dropped): `(data "string")`
+   - **Tables:**
+     - Basic: `(table (export "tab") 1 10 funcref)`
+     - Minimal: `(table 1 funcref)`
+     - Imported: `(table (import "module" "table") 1 funcref)`
+     - With init values: `(table 10 funcref (elem (i32.const 0) $f1 $f2))`
+     - Externref: `(table 1 externref)`
+   - **Types:**
+     - Function types: `(type $t (func (param i32) (result i32)))`
+     - Multiple params: `(type $t (func (param i32 i64 f32) (result i32)))`
+     - Multiple results: `(type $t (func (param i32) (result i32 i64)))`
+   - **Elements:**
+     - Basic: `(elem (i32.const 0) $func1 $func2)`
+     - Named: `(elem $e (i32.const 0) $func1 $func2)`
+     - Table reference: `(elem (table $t) (i32.const 0) $func1 $func2)`
+     - Passive: `(elem funcref (ref.func $f1) (ref.func $f2))`
+     - With expressions: `(elem (i32.const 0) (ref.func $f1) (ref.func $f2))`
+   - **Imports:**
+     - Functions: `(import "module" "name" (func $f (param i32) (result i32)))`
+     - Memory: `(import "module" "memory" (memory 1))`
+     - Tables: `(import "module" "table" (table 1 funcref))`
+     - Globals: `(import "module" "global" (global $g i32))`
+   - **Exports:**
+     - Function: `(export "name" (func $f))`
+     - Memory: `(export "memory" (memory 0))`
+     - Table: `(export "table" (table 0))`
+     - Global: `(export "global" (global $g))`
+     - Inline exports: `(func $f (export "name") ...)`
 
-3. **Valid Instructions:**
-   - **Stack Manipulation:**  
-     `local.get`, `local.set`, `local.tee`, `global.get`, `global.set`
-   - **Constants:**  
-     `i32.const`, `i64.const`, `f32.const`, `f64.const`
-   - **Arithmetic:**  
-     `i32.add`, `i32.sub`, `i32.mul`, `i32.div_s`, `i32.div_u`, etc.
-   - **Comparison:**  
-     `i32.eq`, `i32.ne`, `i32.lt_s`, `i32.lt_u`, `i32.gt_s`, `i32.gt_u`, etc.
-   - **Memory Operations:**  
-     `i32.load`, `i32.store`, etc.
-   - **Control Flow:**  
-     `block`, `loop`, `if`, `else`, `end`, `br`, `br_if`, `return`, `call`, `call_indirect`
+3. **Instructions to Include for Maximum Coverage:**
+   - **Control Flow:**
+     - Basic: `block`, `loop`, `if`, `else`, `end`, `br`, `br_if`, `return`, `call`, `call_indirect`
+     - Advanced: `br_table`, `return_call`, `return_call_indirect`
+   - **Parametric:**
+     - `drop`, `select`, `select (result i32)` (typed select)
+   - **Variables:**
+     - `local.get`, `local.set`, `local.tee`, `global.get`, `global.set`
+   - **Table Operations:**
+     - `table.get`, `table.set`, `table.size`, `table.grow`
+     - `table.fill`, `table.copy`, `table.init`, `elem.drop`
+   - **Memory Operations:**
+     - Basic: `i32.load`, `i32.store`, `i64.load`, `i64.store`
+     - Sized: `i32.load8_s`, `i32.load8_u`, `i32.load16_s`, `i32.load16_u`
+     - Extended: `i64.load8_s`, `i64.load8_u`, `i64.load16_s`, `i64.load16_u`, `i64.load32_s`, `i64.load32_u`
+     - Bulk: `memory.copy`, `memory.fill`, `memory.init`, `data.drop`
+     - Atomic (if supported): `memory.atomic.notify`, `memory.atomic.wait32`, `i32.atomic.load`, `i32.atomic.store`
+   - **Numeric:**
+     - Constants: `i32.const`, `i64.const`, `f32.const`, `f64.const`
+     - Integer: `i32.add`, `i32.sub`, `i32.mul`, `i32.div_s`, `i32.div_u`, `i32.rem_s`, `i32.rem_u`
+     - Bitwise: `i32.and`, `i32.or`, `i32.xor`, `i32.shl`, `i32.shr_s`, `i32.shr_u`, `i32.rotl`, `i32.rotr`
+     - Float: `f32.add`, `f32.sub`, `f32.mul`, `f32.div`, `f32.sqrt`, `f32.min`, `f32.max`
+     - Comparison: `i32.eq`, `i32.ne`, `i32.lt_s`, `i32.lt_u`, `i32.gt_s`, `i32.gt_u`, `i32.le_s`, `i32.le_u`, `i32.ge_s`, `i32.ge_u`
+     - Float Comparison: `f32.eq`, `f32.ne`, `f32.lt`, `f32.gt`, `f32.le`, `f32.ge`
+     - Conversion: `i32.wrap_i64`, `i64.extend_i32_s`, `i64.extend_i32_u`, `f32.convert_i32_s`, `f32.convert_i32_u`
+   - **Reference Types:**
+     - `ref.null func`, `ref.null extern`, `ref.func`, `ref.is_null`
+   - **SIMD Instructions (if supported):**
+     - `v128.load`, `v128.store`, `v128.const`, `i8x16.splat`, `i16x8.add`, etc.
+
+4. **Complex Structural Patterns to Include:**
+   - Nested blocks with conditional branches
+   - Loops with dynamic break conditions
+   - Complex if-else chains
+   - Table-based function dispatch patterns
+   - Memory manipulation with different access patterns
+   - Recursive function calls (direct and indirect)
+   - Multi-return functions with complex stack manipulation
+   - Interaction between different memory segments
 
 ## COMMON ERRORS TO AVOID
 
-1. **Expressions in Type Declarations:**  
-   - WRONG: `(param $x (i32.const 0))`  
+1. **Type Errors:**
+   - WRONG: `(param $x (i32.const 0))`
    - CORRECT: `(param $x i32)`
 
-2. **Local Variable Initialization:**  
-   - WRONG: `(local $var i32 (i32.const 42))`  
+2. **Local Variable Initialization:**
+   - WRONG: `(local $var i32 (i32.const 42))`
    - CORRECT:
      ```
      (local $var i32)
@@ -1105,42 +1165,82 @@ You are a specialized WebAssembly Text Format (WAT) code generator. Your purpose
      local.set $var
      ```
 
-3. **Memory Declaration:**  
-   - WRONG: `(memory)`  
+3. **Memory Declaration:**
+   - WRONG: `(memory)`
    - CORRECT: `(memory 1)` or `(memory (export "mem") 1)`
 
-4. **Function References:**  
-   - WRONG: `(call $undefinedFunc)`  
-   - CORRECT: Ensure that all functions referenced are defined in the module.
+4. **Function References:**
+   - WRONG: `(call $undefinedFunc)`
+   - CORRECT: Ensure all functions referenced are defined or imported
 
-5. **Table and Elements:**  
-   - When using `(elem (i32.const 0) $f1 $f2)`, confirm that `$f1` and `$f2` are defined in the module.
+5. **Table and Elements:**
+   - When using elements, ensure the referenced functions exist
+   - Check table size is sufficient for element initialization
 
-6. **Stack-Based Operations:**  
-   - WRONG: `i32.eq (i32.const 0)`  
+6. **Stack-Based Operations:**
+   - WRONG: `i32.eq (i32.const 0)`
    - CORRECT:
      ```
      i32.const 0
      i32.eq
      ```
 
-7. **Operand Separation:**  
+7. **Operand Separation:**
    - Do not use commas to separate operands. All operands must be space-separated in S-expression syntax.
 
-## DIVERSITY REQUIREMENTS
+8. **Block Labels and Types:**
+   - WRONG: `(block $label i32.add)` (missing result type if needed)
+   - CORRECT: `(block $label (result i32) i32.add)` or `(block $label i32.add)`
 
-1. Each generated module must include at least 2 different instructions from the following set:  
-   `{ i32.load, i32.store, block, loop, if, local.set, i32.eq, i32.lt_s, i32.gt_s }`
+9. **Validation Errors:**
+   - Check type consistency in operations (right stack values for operations)
+   - Ensure block result types match contained expressions
+   - Verify br/br_if targets exist and are valid
 
-2. Use varying memory sizes, export names, and function names between modules.
+## DIVERSITY REQUIREMENTS FOR EFFECTIVE FUZZING
 
-3. Do not duplicate structures or names from provided examples.
+1. **Instruction Mix:**
+   - Each module must use at least 5 different categories of instructions (control flow, memory, numeric, etc.)
+   - Each module should contain at least 3 of the following less common instructions:
+     `br_table`, `memory.copy`, `memory.fill`, `table.copy`, `table.init`, `memory.init`, 
+     `data.drop`, `elem.drop`, `ref.func`, `ref.null`, `select` (with result type),
+     conversions between numeric types, bit manipulation operations
+
+2. **Structural Diversity:**
+   - Vary module organization (imports, types, functions, tables order)
+   - Create modules with different numbers of sections
+   - Mix exported and non-exported definitions
+   - Use different memory sizes and layouts
+   - Mix various table configurations
+
+3. **Control Flow Patterns:**
+   - Create both deeply nested blocks and flat structures
+   - Use a variety of loop patterns with different exit conditions
+   - Implement complex branching logic with br_table
+   - Create functions with multiple exit points
+   - Use both direct and indirect function calls
+   - Mix both early returns and fall-through returns
+
+4. **Data Manipulation:**
+   - Use varied data section configurations
+   - Mix constant, global, and memory-sourced values
+   - Implement different memory access patterns (sequential, random, strided)
+   - Use operations that cross page boundaries
+   - Combine bulk memory operations with individual loads/stores
+
+5. **Edge Case Exploration:**
+   - Use values at type boundaries (INT_MAX, INT_MIN)
+   - Create functions with many locals (20+)
+   - Use large memory operations
+   - Create tables with many elements
+   - Use alignment hints in load/store operations
+   - Try valid but unusual instruction sequences
 
 ## FORMAT REQUIREMENTS
 
 - **No Comments:** The generated WAT code must not contain any comments.
 - **Self-Contained Modules:** Each module must be a complete, independent entity.
-- **Parenthesis Matching:** Ensure that every opening parenthesis has a corresponding closing parenthesis.
+- **Parenthesis Matching:** Ensure every opening parenthesis has a corresponding closing parenthesis.
 - **Module Wrappers:** Wrap each generated module with `@MODULE_START` at the beginning and `@MODULE_END` at the end.
 - **S-expression Format:** All code must be written in proper S-expression format, with operands separated by spaces and no comma usage.
 
@@ -1154,7 +1254,7 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
         with self.stats_lock:
             # 커버리지 정보 수집
             coverage_amount = self.stats["coverage"]
-            recent_coverage = self.stats["recent_new_coverage"][-5:] if self.stats["recent_new_coverage"] else []
+            recent_coverage = self.stats["recent_new_coverage"][-10:] if self.stats["recent_new_coverage"] else []
             
             if recent_coverage:
                 current_coverage_info = f"Current coverage: {coverage_amount} paths. Recent new paths discovered:\n"
@@ -1165,42 +1265,77 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
         # 에러 피드백 수집
         if self.wat_error_history:
             error_feedback = "Previous WAT compilation errors to fix:\n"
-            for idx, (wat_fragment, error_msg) in enumerate(self.wat_error_history):
+            for idx, (wat_fragment, error_msg) in enumerate(self.wat_error_history[-10:]):  # 최근 10개 에러만 표시
                 error_feedback += f"\nError {idx+1}:\n```\n{wat_fragment}\n```\nError message: {error_msg}\n"
 
         user_prompt = f"""
-    We already have some WAT samples for reference, such as:
+    We already have some WAT samples for reference. I will provide examples of previously successful modules, but your 
+    task is to create NEW modules that explore different parts of the WebAssembly specification.
+
+    --- Reference WAT Samples (DO NOT DUPLICATE) ---
     {json.dumps(prompt_inputs, indent=2)}
 
-    --- Current Fuzzing Information ---
+    --- Current Fuzzing Coverage Information ---
     {current_coverage_info}
 
-    --- Compiler Error Feedback ---
+    --- Compiler Error Feedback (AVOID THESE PATTERNS) ---
     {error_feedback}
 
     --- WAT Generation Request ---
-    Now generate at least 20 NEW and DIVERSE valid WAT modules that strictly follow all rules,
-    including the DIVERSITY & UNIQUENESS RULES.
+    Generate 25 NEW and HIGHLY DIVERSE valid WAT modules specifically designed to maximize code coverage for fuzzing.
+    Each module should explore different areas of the WebAssembly specification and implementation.
 
-    - You must use at least 2 instructions from the set {{ i32.load, i32.store, block, loop, if, local.set, i32.eq, i32.lt, i32.gt }}
-    in each module, different from the examples.
-    - Use different memory sizes, export names, function names, or table names than in the examples.
-    - Do not replicate the same structure or name from the provided examples.
-    - If there were previous compiler errors, carefully avoid making the same mistakes.
+    SPECIFIC DIVERSITY REQUIREMENTS:
+    1. Use ADVANCED FEATURES in each module (at least 3 of):
+       - Complex memory operations (memory.copy, memory.fill, memory.init)
+       - Table operations (table.get, table.set, table.init, table.copy)
+       - Reference types (ref.null, ref.func, ref.is_null)
+       - Multiple function results
+       - Passive data and elem segments
+       - br_table with multiple targets
+       - Multiple memory or table instances (if valid)
+       - Exported/imported functions and globals
 
-    Remember:
-    - No comments at all.
-    - Double-check parentheses matching.
-    - All forms must be allowed by wat2wasm.
+    2. STRUCTURAL REQUIREMENTS:
+       - Create modules with different overall structures
+       - Vary the number and arrangement of imports, exports, functions, globals, etc.
+       - Include at least 3 modules with deeply nested blocks (3+ levels)
+       - Include at least 3 modules with complex memory manipulation patterns
+       - Include at least 3 modules with table-based function dispatch
+       - Include at least 3 modules with multiple return values (if supported)
+       - Include at least 2 modules using ref.null and ref.func (if supported)
 
-    Wrap each module with:
+    3. EXPLORATION REQUIREMENTS:
+       - At least 5 modules must contain complex control flow patterns
+       - At least 5 modules must use multiple memory access patterns
+       - At least 5 modules must use less common numeric operations
+       - At least 5 modules must incorporate table operations
+       - At least 5 modules must use bulk memory operations
+
+    4. EDGE CASE TESTING:
+       - Create at least 3 modules that test edge cases with very large values
+       - Create at least 3 modules that use maximum allowed locals
+       - Create at least 3 modules that maximize stack usage
+       - Create at least 3 modules that use unusual but valid memory addressing patterns
+
+    Important Rules:
+    - Each module MUST be completely valid and compilable with wat2wasm
+    - No code comments whatsoever
+    - Ensure proper parentheses matching and S-expression syntax
+    - All modules must be syntactically and semantically valid WebAssembly
+    - DO NOT duplicate patterns, names, or structures from example modules
+    - Verify type correctness (stack elements match instruction expectations)
+    - Focus on creating modules that will exercise different code paths in the WebAssembly runtime
+
+    Wrap each generated module with:
     @MODULE_START
     (module
     ...
     )
     @MODULE_END
 
-    No invalid or extra tokens, and no duplication of example names.
+    If you encountered compiler errors in previous attempts, make sure to avoid those specific patterns.
+    Your highest priority is generating valid modules that explore new parts of the WebAssembly implementation.
     """
 
         # API 요청에 관한 정보 및 사용자 확인
@@ -1234,15 +1369,15 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
                 ],
                 "generationConfig": {
                     "temperature": self.llm_temperature,
-                    "maxOutputTokens": 8192,  # 출력 토큰 제한
+                    "maxOutputTokens": 12000,  # 출력 토큰 제한 증가
                     "topP": 0.95,
                     "topK": 40
                 }
             }
             
-            # API 엔드포인트 주소 구성 - 이 부분 수정
+            # API 엔드포인트 주소 구성
             base_url = "https://generativelanguage.googleapis.com/v1beta"
-            model_name = self.llm_model  # 모델 이름을 그대로 사용
+            model_name = self.llm_model
             url = f"{base_url}/models/{model_name}:generateContent"
             
             # 디버깅을 위한 정보 출력
@@ -1257,7 +1392,7 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
                 url,
                 headers=headers,
                 json=request_data,
-                timeout=120  # 긴 컨텍스트를 위해 타임아웃 증가
+                timeout=180  # 타임아웃 증가
             )
             
             # API 사용량 업데이트
@@ -1291,7 +1426,7 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
             pattern = r'@MODULE_START\s*(.*?)\s*@MODULE_END'
             matches = re.findall(pattern, generated_text, flags=re.DOTALL)
             if not matches:
-                # fallback
+                # fallback - 모듈 직접 추출
                 logger.debug("[LLM] No @MODULE_START/@MODULE_END markers found, trying to extract modules directly")
                 module_pattern = r'(\(module.*?\))'
                 matches = re.findall(module_pattern, generated_text, flags=re.DOTALL)
@@ -1300,7 +1435,7 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
             logger.info(f"[LLM] Extracted {len(matches)} WAT modules from response")
 
             # 필터링
-            invalid_tokens = [".text", ".globl", " db ", "`", "define", "lambda", "=>", ":[", ": ["]
+            invalid_tokens = [".text", ".globl", " db ", "`", "define", "lambda", "=>", ":[", ": [", "//", "/*", "*/" ";;"]
             valid_results = []
             for mod_text in matches:
                 # 명시적인 \n 문자열을 실제 줄바꿈으로 변환
@@ -1310,15 +1445,34 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
                 if any(tok in lower_text for tok in invalid_tokens):
                     logger.warning("[LLM] Discarding invalid code with forbidden tokens.")
                     continue
-                # (module으로 시작
+                # (module으로 시작하는지 확인
                 if not mod_text.strip().startswith("(module"):
                     logger.warning("[LLM] Discarding text that doesn't start with (module.")
+                    continue
+                
+                # 괄호 개수 확인
+                open_count = mod_text.count('(')
+                close_count = mod_text.count(')')
+                if open_count != close_count:
+                    logger.warning(f"[LLM] Discarding module with mismatched parentheses: {open_count} opening, {close_count} closing")
                     continue
 
                 valid_results.append(mod_text.strip())
 
-            logger.info(f"[LLM] {len(valid_results)} valid WAT modules after filtering")
-            return valid_results
+            # 중복 체크 및 제거
+            unique_results = []
+            seen = set()
+            for mod in valid_results:
+                # 단순화된 형태로 변환하여 중복 체크
+                simple_mod = re.sub(r'\s+', ' ', mod).strip()
+                if simple_mod not in seen:
+                    seen.add(simple_mod)
+                    unique_results.append(mod)
+                else:
+                    logger.warning("[LLM] Removing duplicate module")
+
+            logger.info(f"[LLM] {len(unique_results)} valid unique WAT modules after filtering")
+            return unique_results
 
         except Exception as e:
             logger.error(f"[LLM] Request error: {e}")
