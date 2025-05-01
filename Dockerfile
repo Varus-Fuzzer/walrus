@@ -22,6 +22,7 @@ RUN apt-get -y update && \
 
 RUN pip3 install --no-cache-dir requests
 RUN pip3 install --no-cache-dir tiktoken
+RUN pip3 install --no-cache-dir psutil
 RUN pip install --no-cache-dir --upgrade google-generativeai filelock
 
 RUN wget https://apt.llvm.org/llvm.sh && \
