@@ -2515,20 +2515,40 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
     }
 
     /* --------- Step 3: Verification of module type after mutation --------- */
-        BW::WasmValidator v;
-        if (!v.validate(*module)) {
-            for (auto& fnPtr : module->functions) {
-                if (!fnPtr->body)
-                    continue;
-
-                if (auto* blk = fnPtr->body->dynCast<BW::Block>()) {
-                        if (!blk->list.empty() &&
-                             !blk->list[0]->dynCast<BW::Nop>()) {
-                             blk->list[0] = builder.makeNop();
-                        }
-                }
+    wasm::WasmValidator validator;
+    if (!validator.validate(*module)) {
+      for (auto& fnPtr : module->functions) {
+        auto* func = fnPtr.get();
+        if (!func->body) continue;
+        
+        // only look at functions whose body is a top-level Block
+        if (auto* blk = func->body->dynCast<wasm::Block>()) {
+          auto resultType = blk->type;
+          if (resultType != wasm::Type::none) {
+            bool bad =
+              blk->list.empty() ||
+              blk->list.back()->type != resultType;
+            if (bad) {
+              if (resultType.isNumber()) {
+                // i32/i64/f32/f64 → push a zero constant
+                blk->list.push_back(
+                  builder.makeConst(
+                    wasm::Literal::makeZero(resultType)
+                  )
+                );
+              } else if (resultType.isRef()) {
+                // funcref/externref/etc → push a ref.null
+                auto heap = resultType.getHeapType();
+                blk->list.push_back(
+                  builder.makeRefNull(heap)
+                );
+              }
+              // TODO: (we skip v128 and any other exotic types here)
             }
+          }
         }
+      }
+    }
 }
 
 //-----------------------------------------------------------------------------
