@@ -2329,7 +2329,7 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
             targetBlock = builder.makeBlock({fn->body});
             fn->body    = targetBlock;
         }
-        int pick = rng() % 7;
+        int pick = rng() % 8;
         BW::Expression* newInstr = nullptr;
 
         if (module->memories.empty()) {
@@ -2417,6 +2417,16 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 case 3: // elem.drop
                     newInstr = builder.makeElemDrop("e0");
                     break;
+                }
+                break;
+            }
+            case 7: { // atomic.wait / notify
+                auto* ptr = builder.makeConst(Literal(int32_t(rng()%64)));
+                auto* exp = builder.makeConst(Literal(int32_t(rng()%256)));
+                if (rng()&1) {
+                    newInstr = builder.makeAtomicWait(ptr, exp, nullptr, Type::i32);
+                } else {
+                  newInstr = builder.makeAtomicNotify(ptr, exp);
                 }
                 break;
             }
