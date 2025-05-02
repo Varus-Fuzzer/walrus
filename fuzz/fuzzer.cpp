@@ -2210,16 +2210,33 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
 
             /* --- Call ---------------------------------------------------- */
             else if (auto* call = e->dynCast<BW::Call>()) {
+                // grab the Function* we’re about to call
+                auto* origin = module->getFunction(call->target);
+                if (!origin) continue;
+
+                // collect all functions with the exact same FunctionType
+                std::vector<BW::Name> cands;
+                for(auto& fp : module->functions) {
+                    auto* fn = fp.get();
+                    if(fn->type == origin->type && fn->name != call ->target) {
+                        cands.push_back(fn->name);
+                    }
+                }
+                if(!cands.empty()) {
+                    call->target = cands[rng() % cands.size()];
+                }
+                
+                /*
                 if (module->functions.size() > 1) {
                     size_t idx;
                     do { idx = rng() % module->functions.size(); }
                     while (module->functions[idx]->name == call->target);
 
                     call->target = module->functions[idx]->name;
+                */
 #ifdef PRINT_LOG
                     std::cout << "  • Call   retarget → " << call->target.str << '\n';
 #endif
-                }
             }
 
             // --- RefNull ⇄ RefFunc ----------------------------------------
@@ -2300,12 +2317,18 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
 
             /* --- CallIndirect ------------------------------------------- */
             else if (auto* ci = e->dynCast<BW::CallIndirect>()) {
-                if (auto* k = ci->target->dynCast<BW::Const>()) {
-                    uint32_t v = k->value.geti32();
-                    k->value   = BW::Literal(uint32_t(v ^ 1u));
-#ifdef PRINT_LOG
-                    std::cout << "  • CallIndirect index toggled\n";
-#endif
+                // pick a random *valid* table slot
+                // we'll assume the first table exists and has an 'initial' size
+                if (!module->tables.empty()) {
+                    auto& tbl = *module->tables[0];
+                    uint32_t maxIndex = tbl.initial;
+                    if (maxIndex > 0) {
+                        uint32_t idx = rng() % maxIndex;
+                        ci->target = builder.makeConst( wasm::Literal(int32_t(idx)) );
+    #ifdef PRINT_LOG
+        std::cout << "  • CallIndirect retarget → slot " << idx << "\n";
+    #endif
+                   }
                 }
             }
 
