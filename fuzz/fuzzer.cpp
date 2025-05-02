@@ -2241,7 +2241,7 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
             targetBlock = builder.makeBlock({fn->body});
             fn->body    = targetBlock;
         }
-        int pick = rng() % 6;
+        int pick = rng() % 7;
         BW::Expression* newInstr = nullptr;
 
         if (module->memories.empty()) {
@@ -2290,6 +2290,46 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
             }
             case 5: { // formerly “SIMD demo” – disabled on current Binaryen
                 newInstr = builder.makeNop();
+                break;
+            }
+            case 6: { // table operation randomly insert
+                if (module->tables.empty()) {
+                    auto tbl = std::make_unique<wasm::Table>();
+                    tbl->name    = "t0";
+                    tbl->initial = 10;
+                    module->addTable(std::move(tbl));
+                }
+                
+                auto& tname = module->tables[0]->name;
+                int c = rng() % 4;
+                
+                switch (c) {
+                    case 0: // table.init
+                        // Suppose segment "e0" is pre-made
+                        newInstr = builder.makeTableInit(
+                                "e0",
+                                builder.makeConst(Literal(int32_t(rng() % 5))),
+                                builder.makeConst(Literal(int32_t(rng() % 5))),
+                                builder.makeConst(Literal(int32_t(4))),
+                                tname);
+                        break;
+                    case 1: // table.copy
+                        newInstr = builder.makeTableCopy(
+                                tname, tname,
+                                builder.makeConst(Literal(int32_t(rng() % 5))),
+                                builder.makeConst(Literal(int32_t(rng() % 5))),
+                                builder.makeConst(Literal(int32_t(4))));
+                        break;
+                case 2: // table.fill
+                    newInstr = builder.makeTableFill(
+                                tname,
+                                builder.makeConst(Literal(int32_t(rng() & 0xff))),
+                                builder.makeConst(Literal(int32_t(4))));
+                    break;
+                case 3: // elem.drop
+                    newInstr = builder.makeElemDrop("e0");
+                    break;
+                }
                 break;
             }
         }
