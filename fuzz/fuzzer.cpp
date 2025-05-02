@@ -1630,6 +1630,7 @@ BW::Module* parseWasmModuleFromBinary(const uint8_t* data, size_t size)
 
 
     BW::Module* module = new BW::Module();
+    
     try {
         // FeatureSet (Set essential functions)
         BW::FeatureSet features = BW::FeatureSet::All;
@@ -2370,6 +2371,10 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
             module->addMemory(std::move(mem));
         }
 
+        // pick a data‐segment name, if we actually have one
+        bool hasData = !module->dataSegments.empty();
+        BW::Name dataName = hasData ? module->dataSegments[0]->name : BW::Name();
+
         switch (pick) {
             case 0: { // memory.grow
                 auto* pages  = builder.makeConst(wasm::Literal(int32_t(1 + rng()%3)));
@@ -2421,9 +2426,6 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 }
                 auto& tname = module->tables[0]->name;
                 
-                // pick a data‐segment name, if we actually have one
-                bool hasData = !module->dataSegments.empty();
-                wasm::Name dataName = hasData ? module->dataSegments[0]->name : wasm::Name();
             
                 auto* destIdx = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
                 auto* srcIdx  = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
@@ -2431,7 +2433,9 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
             
                 switch (rng() % 4) {
                   case 0: // table.init, only if we have a segment
-                    newInstr = builder.makeTableInit(dataName, destIdx, srcIdx, len, tname);
+                    if (hasData) {
+                       newInstr = builder.makeTableInit(dataName, destIdx, srcIdx, len, tname);
+                    }
                     break;
                   case 1: // table.copy
                     newInstr = builder.makeTableCopy(destIdx, srcIdx, len, tname, tname);
@@ -2485,10 +2489,6 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
         std::rotate(targetBlock->list.begin(),
                     targetBlock->list.end() - 1,
                     targetBlock->list.end());   // move to front        
-    }
-
-    if (!module->features.has(wasm::FeatureSet::SIMD)) {
-        module->features.set(wasm::FeatureSet::SIMD);
     }
 
     /* --------- Step 3: Verification of module type after mutation --------- */
