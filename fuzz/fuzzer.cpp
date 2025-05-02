@@ -9,6 +9,7 @@
 #include <binaryen/src/wasm-binary.h>
 #include <binaryen/src/wasm-builder.h>
 #include <binaryen/src/wasm-validator.h>
+#include "binaryen/src/ir/utils.h" 
 #include <random>
 #include <vector>
 #include <algorithm>
@@ -2042,6 +2043,20 @@ static wasm::Name firstMemoryName(const wasm::Module& m) {
     return m.memories.empty() ? wasm::Name("memory") : m.memories[0]->name;
 }
 
+// Helper function: Find a block in the AST that contains the target expression.
+BW::Block* findParentBlock(BW::Expression* target, const std::vector<BW::Expression*>& exprs) {
+    for (auto* expr : exprs) {
+        if (auto* block = expr->dynCast<BW::Block>()) {
+            for (auto* child : block->list) {
+                if (child == target) {
+                    return block;
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
 // mutateInstructions  –  module-wide flat walker
 void mutateInstructions(BW::Module* module, std::mt19937& rng)
 {
@@ -2206,65 +2221,81 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 }
             }
 
-            /* --- RefNull / RefFunc ----------------------------- */
-            else if (auto* rn = e->dynCast<BW::RefNull>()) {
-                // ref.null → ref.func
-                if (rng() & 1) {
-                    auto* rf = builder.makeRefFunc("RefTestFunction");
-                    // Replace with the existing ref.null place
-                    *rn = *static_cast<BW::RefNull*>(rf); 
+            // --- RefNull ⇄ RefFunc ----------------------------------------
+            if (auto* rn = e->dynCast<wasm::RefNull>()) {
+                if ((rng() & 1) && !module->functions.empty()) {
+                    auto& funcs    = module->functions;
+                    wasm::Name fn  = funcs[rng() % funcs.size()]->name;
+                    auto* rf = builder.makeRefFunc(fn, wasm::HeapType(wasm::BinaryConsts::funcref));
+                    if (auto* parent = findParentBlock(rn, exprs)) {
+                        for (auto*& child : parent->list) {
+                            if (child == rn) { child = rf; break; }
+                        }
+                    } else {
+                        func->body = rf;
+                    }
                 }
             }
             
-            else if (auto* rf = e->dynCast<BW::RefFunc>()) {
-                // ref.func → ref.null
+            else if (auto* rf = e->dynCast<wasm::RefFunc>()) {
                 if (rng() & 1) {
                     auto* rn2 = builder.makeRefNull(rf->type);
-                    *rf = *static_cast<BW::RefFunc*>(rn2);
+                    if (auto* parent = findParentBlock(rf, exprs)) {
+                        for (auto*& child : parent->list) {
+                            if (child == rf) { child = rn2; break; }
+                        }
+                    } else {
+                        func->body = rn2;
+                    }
                 }
             }
 
-            /* --- Struct API ---------------------------------------------- */
-            else if (auto* sn = e->dynCast<BW::StructNew>()) {
-                // Try to randomly change the number or value of fields
-                size_t n = sn->numOperands();
-                
-                if (n > 0) {
-                    size_t i = rng() % n;
-                    // Replace with a new random constant of the same type
-                    auto* newVal = builder.makeConst(Literal(int32_t(rng()%100)));
-                    sn->setOperandAt(i, newVal);
-#ifdef PRINT_LOG
-                std::cout << "  • StructNew field@"<<i<<" mutated\n";
-#endif
+            
+            /* --- StructNew mutation ------------------------------------- */
+            else if (auto* sn = e->dynCast<wasm::StructNew>()) {
+                auto& ops = sn->operands;
+                if (!ops.empty()) {
+                    size_t i = rng() % ops.size();
+                    // same type random change const
+                    auto* newVal = builder.makeConst(wasm::Literal(int32_t(rng() % 100)));
+                    ops[i] = newVal;
+  #ifdef PRINT_LOG
+                  std::cout << "  • StructNew.fields["<<i<<"] mutated\n";
+  #endif
                 }
             }
-            else if (auto* sg = e->dynCast<BW::StructGet>()) {
-                // Try to change the index randomly (within possible range)
+              /* --- StructGet mutation ------------------------------------- */
+            else if (auto* sg = e->dynCast<wasm::StructGet>()) {
                 uint32_t oldIdx = sg->index;
-                sg->index = rng() % /* struct type field count */ 4;
-#ifdef PRINT_LOG
+                sg->index = rng() % /* struct field count */ 4;
+  #ifdef PRINT_LOG
                 std::cout << "  • StructGet index " << oldIdx
-                        << "→" << sg->index << "\n";
-#endif
+                          << " → " << sg->index << "\n";
+  #endif
             }
+  
 
-            /* --- Array API ----------------------------------------------- */
-            else if (auto* an = e->dynCast<BW::ArrayNew>()) {
-                auto* newSize = builder.makeConst(Literal(int32_t(rng()%11)));
-                an->setOperandAt(0, newSize);  // operand 0 = size
+            /* --- ArrayNew mutation -------------------------------------- */
+            else if (auto* an = e->dynCast<wasm::ArrayNew>()) {
+                auto* newSize = builder.makeConst(wasm::Literal(int32_t(rng() % 11)));
+                an->size = newSize;
 #ifdef PRINT_LOG
-            std::cout << "  • ArrayNew size → " << rng()%11 << "\n";
+    std::cout << "  • ArrayNew size → " << newSize->value.geti32() << "\n";
 #endif
             }
-            else if (auto* ag = e->dynCast<BW::ArrayGet>()) {
-                uint32_t oldIdx = ag->index->value.geti32();
-                ag->index = builder.makeConst(Literal(int32_t(rng()%8)));
-#ifdef PRINT_LOG
-        std::cout << "  • ArrayGet index " << oldIdx
-                << "→" << rng()%8 << "\n";
-#endif
+            
+            /* --- ArrayGet mutation -------------------------------------- */
+            else if (auto* ag = e->dynCast<wasm::ArrayGet>()) {
+                if (auto* idxC = ag->index->dynCast<wasm::Const>()) {
+                    uint32_t oldIdx = idxC->value.geti32();
+                    idxC->value = wasm::Literal(int32_t(rng() % 8));
+  #ifdef PRINT_LOG
+                  std::cout << "  • ArrayGet index " << oldIdx
+                            << " → " << idxC->value.geti32() << "\n";
+  #endif
+                }
             }
+  
 
             /* --- CallIndirect ------------------------------------------- */
             else if (auto* ci = e->dynCast<BW::CallIndirect>()) {
@@ -2369,7 +2400,7 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 Type nullExtRef(HeapType::noext, Nullable, Exact);  // null-externref
                 Type extRef   (HeapType::ext,   Nullable, Inexact); // normal externref
                 
-                auto* cond = builder.makeConst(Literal(int32_t(0)));
+                auto* cond = builder.makeConst(wasm::Literal(int32_t(0)));
                 auto* r1   = builder.makeRefNull(nullExtRef);
                 auto* r2   = builder.makeRefNull(nullExtRef);
                 auto* sel  = builder.makeSelect(cond, r1, r2);
@@ -2380,53 +2411,60 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 newInstr = builder.makeNop();
                 break;
             }
-            case 6: { // table operation randomly insert
+            case 6: { // --- table.init / copy / fill / drop ---
                 if (module->tables.empty()) {
-                    auto tbl = std::make_unique<wasm::Table>();
-                    tbl->name    = "t0";
-                    tbl->initial = 10;
-                    module->addTable(std::move(tbl));
+                  auto tbl = std::make_unique<wasm::Table>();
+                  tbl->name    = "t0";
+                  tbl->initial = 10;
+                  module->addTable(std::move(tbl));
                 }
-                
-                auto& tname = module->tables[0]->name;
-                int c = rng() % 4;
-                
-                switch (c) {
-                    case 0: // table.init
-                        // Suppose segment "e0" is pre-made
-                        newInstr = builder.makeTableInit(
-                                "e0",
-                                builder.makeConst(Literal(int32_t(rng() % 5))),
-                                builder.makeConst(Literal(int32_t(rng() % 5))),
-                                builder.makeConst(Literal(int32_t(4))),
-                                tname);
-                        break;
-                    case 1: // table.copy
-                        newInstr = builder.makeTableCopy(
-                                tname, tname,
-                                builder.makeConst(Literal(int32_t(rng() % 5))),
-                                builder.makeConst(Literal(int32_t(rng() % 5))),
-                                builder.makeConst(Literal(int32_t(4))));
-                        break;
-                case 2: // table.fill
-                    newInstr = builder.makeTableFill(
-                                tname,
-                                builder.makeConst(Literal(int32_t(rng() & 0xff))),
-                                builder.makeConst(Literal(int32_t(4))));
+
+                auto& t = module->tables[0]->name;
+                auto* di = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
+                auto* si = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
+                auto* ln = builder.makeConst(wasm::Literal(int32_t(1 + rng() % 4)));
+              
+                switch (rng() % 4) {
+                  case 0: // table.init
+                    newInstr = builder.makeTableInit("e0", di, si, ln, t);
                     break;
-                case 3: // elem.drop
-                    newInstr = builder.makeElemDrop("e0");
+                  case 1: // table.copy
+                    // (destIndex, srcIndex, len, destTable, srcTable)
+                    newInstr = builder.makeTableCopy(di, si, ln, t, t);
+                    break;
+                  case 2: // table.fill
+                    newInstr = builder.makeTableFill(
+                      t, di,
+                      builder.makeConst(wasm::Literal(int32_t(rng() & 0xff))),
+                      ln
+                    );
+                    break;
+                  case 3: // element-segment drop → DataDrop
+                    newInstr = builder.makeDataDrop("e0");
                     break;
                 }
                 break;
-            }
+            }              
             case 7: { // atomic.wait / notify
-                auto* ptr = builder.makeConst(Literal(int32_t(rng()%64)));
-                auto* exp = builder.makeConst(Literal(int32_t(rng()%256)));
+                auto* ptr = builder.makeConst(wasm::Literal(int32_t(rng()%64)));
+                auto* exp = builder.makeConst(wasm::Literal(int32_t(rng()%256)));
                 if (rng()&1) {
-                    newInstr = builder.makeAtomicWait(ptr, exp, nullptr, Type::i32);
+                    auto* zeroTimeout = builder.makeConst(wasm::Literal(int32_t(0)));
+                    newInstr = builder.makeAtomicWait(
+                      ptr,
+                      exp,
+                      zeroTimeout,
+                      BW::Type::i32,
+                      /* offset = */ 0,
+                      firstMemoryName(*module)
+                    );
                 } else {
-                  newInstr = builder.makeAtomicNotify(ptr, exp);
+                    newInstr = builder.makeAtomicNotify(
+                        ptr,
+                        exp,
+                        /* offset = */ 0,
+                        firstMemoryName(*module)
+                    );
                 }
                 break;
             }
@@ -2718,20 +2756,6 @@ void mutateSection(BW::Module* module, Store* store, std::mt19937& rng) {
       }
     }
   }
-
-// Helper function: Find a block in the AST that contains the target expression.
-BW::Block* findParentBlock(BW::Expression* target, const std::vector<BW::Expression*>& exprs) {
-    for (auto* expr : exprs) {
-        if (auto* block = expr->dynCast<BW::Block>()) {
-            for (auto* child : block->list) {
-                if (child == target) {
-                    return block;
-                }
-            }
-        }
-    }
-    return nullptr;
-}
 
 static BW::Function* pickRandomFunctionWithBody(BW::Module* module, std::mt19937& rng)
 {
