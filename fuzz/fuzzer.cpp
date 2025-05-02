@@ -2164,6 +2164,34 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
 #endif
             }
 
+            /* --- Atomic RMW / Cmpxchg ------------------------------------ */
+            else if (auto* armw = e->dynCast<BW::AtomicRMW>()) {
+                // mutation the number of bytes and offset at random
+                uint32_t oldBytes = armw->bytes, oldOffset = armw->offset;
+                uint32_t candBytes[] = {1,2,4,8};
+                armw->bytes  = candBytes[rng() % 4];
+                armw->offset = rng() % 16;
+#ifdef PRINT_LOG
+                std::cout << "  • AtomicRMW bytes " << oldBytes
+                        << "→" << armw->bytes
+                        << ", offset " << oldOffset
+                        << "→" << armw->offset << "\n";
+#endif
+            }
+            else if (auto* acx = e->dynCast<BW::AtomicCmpxchg>()) {       
+                // Replace the offset and byte-width of a compar-exchange
+                uint32_t oldBytes = acx->bytes, oldOffset = acx->offset;
+                uint32_t cand[] = {1,2,4,8};
+                acx->bytes  = cand[rng() % 4];
+                acx->offset = rng() % 16;
+#ifdef PRINT_LOG
+                std::cout << "  • AtomicCmpxchg bytes " << oldBytes
+                        << "→" << acx->bytes
+                        << ", offset " << oldOffset
+                        << "→" << acx->offset << "\n";
+#endif
+            }
+
             /* --- Call ---------------------------------------------------- */
             else if (auto* call = e->dynCast<BW::Call>()) {
                 if (module->functions.size() > 1) {
@@ -2194,6 +2222,48 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                     auto* rn2 = builder.makeRefNull(rf->type);
                     *rf = *static_cast<BW::RefFunc*>(rn2);
                 }
+            }
+
+            /* --- Struct API ---------------------------------------------- */
+            else if (auto* sn = e->dynCast<BW::StructNew>()) {
+                // Try to randomly change the number or value of fields
+                size_t n = sn->numOperands();
+                
+                if (n > 0) {
+                    size_t i = rng() % n;
+                    // Replace with a new random constant of the same type
+                    auto* newVal = builder.makeConst(Literal(int32_t(rng()%100)));
+                    sn->setOperandAt(i, newVal);
+#ifdef PRINT_LOG
+                std::cout << "  • StructNew field@"<<i<<" mutated\n";
+#endif
+                }
+            }
+            else if (auto* sg = e->dynCast<BW::StructGet>()) {
+                // Try to change the index randomly (within possible range)
+                uint32_t oldIdx = sg->index;
+                sg->index = rng() % /* struct type field count */ 4;
+#ifdef PRINT_LOG
+                std::cout << "  • StructGet index " << oldIdx
+                        << "→" << sg->index << "\n";
+#endif
+            }
+
+            /* --- Array API ----------------------------------------------- */
+            else if (auto* an = e->dynCast<BW::ArrayNew>()) {
+                auto* newSize = builder.makeConst(Literal(int32_t(rng()%11)));
+                an->setOperandAt(0, newSize);  // operand 0 = size
+#ifdef PRINT_LOG
+            std::cout << "  • ArrayNew size → " << rng()%11 << "\n";
+#endif
+            }
+            else if (auto* ag = e->dynCast<BW::ArrayGet>()) {
+                uint32_t oldIdx = ag->index->value.geti32();
+                ag->index = builder.makeConst(Literal(int32_t(rng()%8)));
+#ifdef PRINT_LOG
+        std::cout << "  • ArrayGet index " << oldIdx
+                << "→" << rng()%8 << "\n";
+#endif
             }
 
             /* --- CallIndirect ------------------------------------------- */
