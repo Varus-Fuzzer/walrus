@@ -497,6 +497,69 @@ class HybridFuzzer:
                                 pass
                     except ValueError:
                         pass
+                
+                # RELOAD 패턴 특별 처리: "#30973 RELOAD cov: 1294 ft: 2805 corp: 153/28Kb lim: 10240 exec/s: 424 rss: 452Mb"
+                elif "RELOAD" in line_strip and "cov:" in line_strip:
+                    try:
+                        # 실행 횟수 추출 - "#123" 부분 파싱
+                        exec_num_match = re.search(r'#(\d+)', line_strip)
+                        if exec_num_match:
+                            try:
+                                exec_num = int(exec_num_match.group(1))
+                                with self.stats_lock:
+                                    # 초기값이 0이거나 현재 값보다 큰 경우에만 업데이트
+                                    if self.stats.get("total_execs", 0) == 0 or exec_num > self.stats.get("total_execs", 0):
+                                        self.stats["total_execs"] = exec_num
+                                        logger.debug(f"[LibFuzzer] Updated execution count to {exec_num} from RELOAD line")
+                            except ValueError:
+                                pass
+                        
+                        # 커버리지 값 추출
+                        cov_match = re.search(r'cov:\s*(\d+)', line_strip)
+                        if cov_match:
+                            cov_val = int(cov_match.group(1))
+                            logger.debug(f"[LibFuzzer] RELOAD 라인에서 커버리지 발견: {cov_val}")
+                            with self.stats_lock:
+                                old_coverage = self.stats.get("coverage", 0)
+                                self.stats["coverage"] = cov_val
+                                if cov_val > old_coverage:
+                                    self.last_coverage = cov_val
+                                    self.last_coverage_change_time = time.time()
+                                    logger.info(f"[LibFuzzer] Coverage increased to {cov_val} paths")
+                                
+                        # 같은 라인에서 exec/s 값도 추출
+                        exec_speed_match = re.search(r'exec/s:\s*(\d+)', line_strip)
+                        if exec_speed_match:
+                            try:
+                                speed_val = int(exec_speed_match.group(1))
+                                with self.stats_lock:
+                                    self.stats["exec_speed"] = speed_val
+                                    
+                                    # 평균 속도 계산을 위한 샘플 수집
+                                    self.stats.setdefault("exec_speed_samples", []).append(speed_val)
+                                    # 최근 10개 샘플만 유지
+                                    if len(self.stats["exec_speed_samples"]) > 10:
+                                        self.stats["exec_speed_samples"].pop(0)
+                                        
+                                    # 평균 속도 계산
+                                    if self.stats["exec_speed_samples"]:
+                                        self.stats["avg_exec_speed"] = int(sum(self.stats["exec_speed_samples"]) / 
+                                                                len(self.stats["exec_speed_samples"]))
+                                        logger.debug(f"[LibFuzzer] Execution speed: {speed_val}/sec (avg: {self.stats['avg_exec_speed']}/sec)")
+                            except (ValueError, IndexError, AttributeError):
+                                pass
+                            
+                        # 코퍼스 크기 추출
+                        corp_match = re.search(r'corp:\s*(\d+)', line_strip)
+                        if corp_match:
+                            try:
+                                corpus_size = int(corp_match.group(1))
+                                with self.stats_lock:
+                                    self.stats["corpus_size"] = corpus_size
+                            except ValueError:
+                                pass
+                    except (ValueError, IndexError, AttributeError) as e:
+                        logger.debug(f"[LibFuzzer] Failed to parse RELOAD line: {e} in line: {line_strip}")
                         
                 # 크래시 발견 시 통계 업데이트
                 elif "stat::found_crash" in line or "stat::found_crash:" in line:
@@ -539,7 +602,7 @@ class HybridFuzzer:
                             val = int(line.split(":")[-1].strip())
                         elif "stat::executions:" in line:
                             val = int(line.split(":")[-1].strip())
-                        elif "exec/s:" in line and "pulse" not in line:  # pulse 라인과 구분
+                        elif "exec/s:" in line and "pulse" not in line and "RELOAD" not in line:  # pulse/RELOAD 라인과 구분
                             # 'exec/s:50 rss:' 같은 형식 처리
                             parts = line.split()
                             for i, part in enumerate(parts):
@@ -611,8 +674,8 @@ class HybridFuzzer:
                     except ValueError:
                         pass
 
-                # 일반적인 cov: 패턴 처리 (pulse 라인이 아닌 경우)
-                elif "cov:" in line and "pulse" not in line:
+                # 일반적인 cov: 패턴 처리 (pulse/RELOAD 라인이 아닌 경우)
+                elif "cov:" in line and "pulse" not in line and "RELOAD" not in line:
                     try:
                         cov_match = re.search(r'cov:\s*(\d+)', line)
                         if cov_match:
@@ -655,7 +718,7 @@ class HybridFuzzer:
                         self.stats["crashes_found"] = self.stats.get("crashes_found", 0) + 1
 
                 # 실행 속도 정보 추출 (pulse 라인이 아닌 경우)
-                elif "exec/s:" in line and "pulse" not in line:
+                elif "exec/s:" in line and "pulse" not in line and "RELOAD" not in line:
                     try:
                         # 예: "exec/s: 123 ..."
                         speed_match = re.search(r'exec/s:[\s]*(\d+)', line)
@@ -845,9 +908,35 @@ class HybridFuzzer:
                             process_running = False
                 
                 if not process_running:
-                    # 프로세스가 종료된 경우 처리 (기존 코드)
-                    # ...
-                    pass
+                    # 프로세스가 종료된 경우 처리
+                    logger.warning("[Thread] LibFuzzer process not running or terminated")
+                    
+                    # 프로세스 종료 정리
+                    self.stop_libfuzzer()  # 이미 종료된 경우에도 안전하게 정리
+                    
+                    # 연속 실패 카운터 증가
+                    consecutive_failures += 1
+                    
+                    if consecutive_failures > max_consecutive_failures:
+                        # 너무 많은 연속 실패 시 더 긴 대기 시간 적용
+                        logger.error(f"[Thread] Too many consecutive failures ({consecutive_failures}), increasing backoff time")
+                        backoff_time = min(60, backoff_time * 2)  # 최대 60초까지 기하급수적 백오프
+                    
+                    # 대기 시간 후 재시작
+                    wait_time = backoff_time
+                    logger.info(f"[Thread] Waiting {wait_time}s before restarting LibFuzzer")
+                    time.sleep(wait_time)
+                    
+                    # 재시작 시도
+                    logger.info("[Thread] Restarting LibFuzzer process")
+                    success = self.start_continuous_libfuzzer()
+                    
+                    if not success:
+                        logger.error("[Thread] Failed to restart LibFuzzer")
+                    else:
+                        logger.info("[Thread] LibFuzzer process restarted successfully")
+                        # 재시작 시에도 마지막 체크 시간 갱신
+                        last_check_time = current_time
                 else:
                     # 프로세스가 정상 실행 중이면 연속 실패 카운터 리셋
                     consecutive_failures = 0
@@ -865,7 +954,11 @@ class HybridFuzzer:
                                 logger.warning("[Thread] LibFuzzer seems stuck (no updates in 30s), restarting...")
                                 self.stop_libfuzzer()
                                 time.sleep(2)  # 더 긴 대기 시간
-                                self.start_continuous_libfuzzer()
+                                success = self.start_continuous_libfuzzer()
+                                if success:
+                                    logger.info("[Thread] LibFuzzer process restarted successfully after stall")
+                                else:
+                                    logger.error("[Thread] Failed to restart LibFuzzer after stall")
                                 
                                 # 마지막 업데이트 시간 갱신
                                 self.stats["last_stat_update"] = current_time
