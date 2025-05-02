@@ -1630,7 +1630,7 @@ BW::Module* parseWasmModuleFromBinary(const uint8_t* data, size_t size)
 
 
     BW::Module* module = new BW::Module();
-    
+
     try {
         // FeatureSet (Set essential functions)
         BW::FeatureSet features = BW::FeatureSet::All;
@@ -2372,8 +2372,8 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
         }
 
         // pick a data‐segment name, if we actually have one
-        bool hasData = !module->dataSegments.empty();
-        BW::Name dataName = hasData ? module->dataSegments[0]->name : BW::Name();
+        bool hasData = !module->elementSegments.empty();
+        BW::Name dataName = hasData ? module->elementSegments[0]->name : BW::Name();   
 
         switch (pick) {
             case 0: { // memory.grow
