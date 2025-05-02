@@ -2178,6 +2178,24 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 }
             }
 
+            /* --- RefNull / RefFunc ----------------------------- */
+            else if (auto* rn = e->dynCast<BW::RefNull>()) {
+                // ref.null → ref.func
+                if (rng() & 1) {
+                    auto* rf = builder.makeRefFunc("RefTestFunction");
+                    // Replace with the existing ref.null place
+                    *rn = *static_cast<BW::RefNull*>(rf); 
+                }
+            }
+            
+            else if (auto* rf = e->dynCast<BW::RefFunc>()) {
+                // ref.func → ref.null
+                if (rng() & 1) {
+                    auto* rn2 = builder.makeRefNull(rf->type);
+                    *rf = *static_cast<BW::RefFunc*>(rn2);
+                }
+            }
+
             /* --- CallIndirect ------------------------------------------- */
             else if (auto* ci = e->dynCast<BW::CallIndirect>()) {
                 if (auto* k = ci->target->dynCast<BW::Const>()) {
