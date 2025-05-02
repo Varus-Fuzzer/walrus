@@ -3233,9 +3233,8 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
     try {
         std::mt19937 rng(Seed);
         BW::Module* module = parseWasmModuleFromBinary(Data, Size);
-        module->features.set(wasm::FeatureSet::ReferenceTypes);
-        module->features.set(wasm::FeatureSet::BulkMemory);
-
+        module->features = wasm::FeatureSet::All;
+        
         /*
         if (!module) {
             static const uint8_t dummy_module[] = {
