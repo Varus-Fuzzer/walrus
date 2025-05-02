@@ -2411,40 +2411,48 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 newInstr = builder.makeNop();
                 break;
             }
-            case 6: { // --- table.init / copy / fill / drop ---
+            case 6: { // table.init / copy / fill / drop
+                // ensure there's at least one table
                 if (module->tables.empty()) {
-                  auto tbl = std::make_unique<wasm::Table>();
-                  tbl->name    = "t0";
-                  tbl->initial = 10;
-                  module->addTable(std::move(tbl));
+                    auto tbl = std::make_unique<wasm::Table>();
+                    tbl->name    = "t0";
+                    tbl->initial = 10;
+                    module->addTable(std::move(tbl));
                 }
-
-                auto& t = module->tables[0]->name;
-                auto* di = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
-                auto* si = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
-                auto* ln = builder.makeConst(wasm::Literal(int32_t(1 + rng() % 4)));
-              
+                auto& tname = module->tables[0]->name;
+                
+                // pick a data‐segment name, if we actually have one
+                bool hasData = !module->dataSegments.empty();
+                wasm::Name dataName = hasData ? module->dataSegments[0]->name : wasm::Name();
+            
+                auto* destIdx = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
+                auto* srcIdx  = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
+                auto* len     = builder.makeConst(wasm::Literal(int32_t(1 + rng() % 4)));
+            
                 switch (rng() % 4) {
-                  case 0: // table.init
-                    newInstr = builder.makeTableInit("e0", di, si, ln, t);
+                  case 0: // table.init, only if we have a segment
+                    newInstr = builder.makeTableInit(dataName, destIdx, srcIdx, len, tname);
                     break;
                   case 1: // table.copy
-                    // (destIndex, srcIndex, len, destTable, srcTable)
-                    newInstr = builder.makeTableCopy(di, si, ln, t, t);
+                    newInstr = builder.makeTableCopy(destIdx, srcIdx, len, tname, tname);
                     break;
                   case 2: // table.fill
                     newInstr = builder.makeTableFill(
-                      t, di,
+                      tname,
+                      destIdx,
                       builder.makeConst(wasm::Literal(int32_t(rng() & 0xff))),
-                      ln
+                      len
                     );
                     break;
-                  case 3: // element-segment drop → DataDrop
-                    newInstr = builder.makeDataDrop("e0");
+                  case 3: // data.drop (only if we have a real data‐segment)
+                    if (hasData) {
+                        newInstr = builder.makeDataDrop(dataName);
+                    }
                     break;
                 }
                 break;
-            }              
+            }
+                        
             case 7: { // atomic.wait / notify
                 auto* ptr = builder.makeConst(wasm::Literal(int32_t(rng()%64)));
                 auto* exp = builder.makeConst(wasm::Literal(int32_t(rng()%256)));
@@ -3225,6 +3233,9 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
     try {
         std::mt19937 rng(Seed);
         BW::Module* module = parseWasmModuleFromBinary(Data, Size);
+        module->features.set(wasm::FeatureSet::ReferenceTypes);
+        module->features.set(wasm::FeatureSet::BulkMemory);
+
         /*
         if (!module) {
             static const uint8_t dummy_module[] = {
