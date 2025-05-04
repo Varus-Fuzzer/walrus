@@ -313,7 +313,7 @@ class HybridFuzzer:
                 "-print_final_stats=1",
                 "-print_pcs=1",          # 커버리지 추적을 위해 PC 출력
                 "-print_corpus_stats=1", # 코퍼스 상태 출력
-                "-print_new_pcs=1"       #옵션 제거 (에러 발생 시)
+                "-print_new_pcs=1",       #옵션 제거 (에러 발생 시)
                 "-timeout=30",           # 시간 초과 설정 (10초)
                 "-rss_limit_mb=4096"     # 메모리 제한 (2GB)
             ]
