@@ -9,7 +9,7 @@
 #include <binaryen/src/wasm-binary.h>
 #include <binaryen/src/wasm-builder.h>
 #include <binaryen/src/wasm-validator.h>
-#include "binaryen/src/ir/utils.h" 
+#include "binaryen/src/ir/utils.h"
 #include <random>
 #include <vector>
 #include <algorithm>
@@ -59,7 +59,7 @@ struct ParseOptions {
 };
 
 static uint32_t s_JITFlags = 0;
-
+static bool enable_logging = false;
 using namespace Walrus;
 
 static void printI32(int32_t v)
@@ -1685,305 +1685,328 @@ inline Op getReplacementForOp(Op opcode, std::mt19937& rng)
     static std::vector<Op>
         i32Arith, i32Bits, i32Cmp, i32Unary,
         i64Arith, i64Bits, i64Cmp, i64Unary,
-        f32Arith, f32Cmp,  f32Unary,
-        f64Arith, f64Cmp,  f64Unary,
-        i8Arith ,i8Shift,i8Cmp ,i8Unary ,
-        i16Arith,i16Shift,i16Cmp,i16Unary,
-        i32xArith,i32xShift,i32xCmp,i32xUnary,
-        i64xArith,i64xShift,i64xCmp,i64xUnary,
-        f32xArith,f32xCmp ,f32xUnary,
-        f64xArith,f64xCmp ,f64xUnary,
+        f32Arith, f32Cmp, f32Unary,
+        f64Arith, f64Cmp, f64Unary,
+        i8Arith, i8Shift, i8Cmp, i8Unary,
+        i16Arith, i16Shift, i16Cmp, i16Unary,
+        i32xArith, i32xShift, i32xCmp, i32xUnary,
+        i64xArith, i64xShift, i64xCmp, i64xUnary,
+        f32xArith, f32xCmp, f32xUnary,
+        f64xArith, f64xCmp, f64xUnary,
         v128Logic,
         ctrlFlow, localGlobal, memoryOps, constOps, conversion, tableOps, refOps, atomicOps,
         directCalls, bulkMemoryOps, saturatingTrunc, simdConvert, moveConst, simdNarrow, simdLaneAccess, simdLaneLoadStore, simdMemoryOps, simdSplatShuffle;
 
-        if (!init) {
-   
-            /*──────────── scalar i32 ────────────*/
-            i32Arith = { BinaryenI32Add(), BinaryenI32Sub(), BinaryenI32Mul(),
-                         BinaryenI32DivS(), BinaryenI32DivU(),
-                         BinaryenI32RemS(), BinaryenI32RemU() };
-            i32Bits  = { BinaryenI32And(), BinaryenI32Or(),  BinaryenI32Xor(),
-                         BinaryenI32Shl(), BinaryenI32ShrS(), BinaryenI32ShrU(),
-                         BinaryenI32Rotl(), BinaryenI32Rotr() };
-            i32Cmp   = { BinaryenI32Eq(),  BinaryenI32Ne(),
-                         BinaryenI32LtS(), BinaryenI32LtU(), BinaryenI32LeS(), BinaryenI32LeU(),
-                         BinaryenI32GtS(), BinaryenI32GtU(), BinaryenI32GeS(), BinaryenI32GeU() };
-            i32Unary = { BinaryenI32Clz(), BinaryenI32Ctz(), BinaryenI32Popcnt(), BinaryenI32Eqz() };
-    
-            /*──────────── scalar i64 ────────────*/
-            i64Arith = { BinaryenI64Add(), BinaryenI64Sub(), BinaryenI64Mul(),
-                         BinaryenI64DivS(), BinaryenI64DivU(),
-                         BinaryenI64RemS(), BinaryenI64RemU() };
-            i64Bits  = { BinaryenI64And(), BinaryenI64Or(),  BinaryenI64Xor(),
-                         BinaryenI64Shl(), BinaryenI64ShrS(), BinaryenI64ShrU(),
-                         BinaryenI64Rotl(), BinaryenI64Rotr() };
-            i64Cmp   = { BinaryenI64Eq(),  BinaryenI64Ne(),
-                         BinaryenI64LtS(), BinaryenI64LtU(), BinaryenI64LeS(), BinaryenI64LeU(),
-                         BinaryenI64GtS(), BinaryenI64GtU(), BinaryenI64GeS(), BinaryenI64GeU() };
-            i64Unary = { BinaryenI64Clz(), BinaryenI64Ctz(), BinaryenI64Popcnt() };
-    
-            /*──────────── scalar f32 / f64 ──────*/
-            f32Arith = { BinaryenF32Add(), BinaryenF32Sub(), BinaryenF32Mul(), BinaryenF32Div(),
-                         BinaryenF32Min(), BinaryenF32Max(), BinaryenF32Copysign() }; 
-            f32Cmp   = { BinaryenF32Eq(),  BinaryenF32Ne(),
-                         BinaryenF32Lt(),  BinaryenF32Le(), BinaryenF32Gt(),  BinaryenF32Ge() };
-            f32Unary = { BinaryenF32Abs(), BinaryenF32Neg(), BinaryenF32Ceil(),   BinaryenF32Floor(),
-                         BinaryenF32Trunc(),BinaryenF32Nearest(), BinaryenF32Sqrt() };
-    
-            f64Arith = { BinaryenF64Add(), BinaryenF64Sub(), BinaryenF64Mul(), BinaryenF64Div(),
-                         BinaryenF64Min(), BinaryenF64Max(), BinaryenF64Copysign() }; 
-            f64Cmp   = { BinaryenF64Eq(),  BinaryenF64Ne(),
-                         BinaryenF64Lt(),  BinaryenF64Le(), BinaryenF64Gt(),  BinaryenF64Ge() };
-            f64Unary = { BinaryenF64Abs(), BinaryenF64Neg(), BinaryenF64Ceil(),   BinaryenF64Floor(),
-                         BinaryenF64Trunc(),BinaryenF64Nearest(), BinaryenF64Sqrt() };
-    
-            /*──────────── v128 logic ────────────*/
-            v128Logic = { BinaryenV128And(), BinaryenV128Or(),  BinaryenV128Xor(),
-                          BinaryenV128Andnot(), BinaryenV128BitSelect() };
-    
-            /*──────────── i8x16 ────────────────*/
-            i8Arith = { BinaryenI8X16Add(), BinaryenI8X16Sub(),
-                        BinaryenI8X16AddSatS(), BinaryenI8X16AddSatU(),
-                        BinaryenI8X16SubSatS(), BinaryenI8X16SubSatU(),
-                        BinaryenI8X16MinS(),    BinaryenI8X16MinU(),
-                        BinaryenI8X16MaxS(),    BinaryenI8X16MaxU(),
-                        BinaryenI8X16AvgrU() };
-            i8Shift = { BinaryenI8X16Shl(), BinaryenI8X16ShrS(), BinaryenI8X16ShrU() };
-            i8Cmp   = { BinaryenI8X16Eq(),  BinaryenI8X16Ne(),  BinaryenI8X16LtS(), BinaryenI8X16LtU(),
-                        BinaryenI8X16GtS(), BinaryenI8X16GtU(), BinaryenI8X16LeS(), BinaryenI8X16LeU(),
-                        BinaryenI8X16GeS(), BinaryenI8X16GeU() };
-            i8Unary = { BinaryenI8X16Abs(), BinaryenI8X16Neg(), BinaryenI8X16AllTrue(),
-                        BinaryenI8X16AllTrue(), BinaryenI8X16Bitmask(), BinaryenI8X16Popcnt() };
-    
-            /*──────────── i16x8 ────────────────*/
-            i16Arith = { BinaryenI16X8Add(), BinaryenI16X8Sub(), BinaryenI16X8Mul(),
-                         BinaryenI16X8AddSatS(), BinaryenI16X8AddSatU(),
-                         BinaryenI16X8SubSatS(), BinaryenI16X8SubSatU(),
-                         BinaryenI16X8MinS(),    BinaryenI16X8MinU(),
-                         BinaryenI16X8MaxS(),    BinaryenI16X8MaxU(),
-                         BinaryenI16X8AvgrU(),   BinaryenI16X8Q15mulrSatS() };       
-            i16Shift = { BinaryenI16X8Shl(), BinaryenI16X8ShrS(), BinaryenI16X8ShrU() };
-            i16Cmp   = { BinaryenI16X8Eq(),  BinaryenI16X8Ne(),  BinaryenI16X8LtS(), BinaryenI16X8LtU(),
-                         BinaryenI16X8GtS(), BinaryenI16X8GtU(), BinaryenI16X8LeS(), BinaryenI16X8LeU(),
-                         BinaryenI16X8GeS(), BinaryenI16X8GeU() };
-            i16Unary = { BinaryenI16X8Abs(), BinaryenI16X8Neg(), BinaryenI16X8AllTrue(),
-                         BinaryenI16X8AllTrue(), BinaryenI16X8Bitmask() };
-    
-            /*──────────── i32x4 ────────────────*/
-            i32xArith = { BinaryenI32X4Add(), BinaryenI32X4Sub(), BinaryenI32X4Mul(),
-                          BinaryenI32X4MinS(), BinaryenI32X4MinU(),
-                          BinaryenI32X4MaxS(), BinaryenI32X4MaxU(),
-                          BinaryenI32X4DotI16X8S() };
-            i32xShift = { BinaryenI32X4Shl(), BinaryenI32X4ShrS(), BinaryenI32X4ShrU() };
-            i32xCmp   = { BinaryenI32X4Eq(),  BinaryenI32X4Ne(),  BinaryenI32X4LtS(), BinaryenI32X4LtU(),
-                          BinaryenI32X4GtS(), BinaryenI32X4GtU(), BinaryenI32X4LeS(), BinaryenI32X4LeU(),
-                          BinaryenI32X4GeS(), BinaryenI32X4GeU() };
-            i32xUnary = { BinaryenI32X4Abs(), BinaryenI32X4Neg(), BinaryenI32X4AllTrue(),
-                          BinaryenI32X4AllTrue(), BinaryenI32X4Bitmask() };
-    
-            /*──────────── i64x2 ────────────────*/
-            i64xArith = { BinaryenI64X2Add(), BinaryenI64X2Sub(), BinaryenI64X2Mul() };
-            i64xShift = { BinaryenI64X2Shl(), BinaryenI64X2ShrS(), BinaryenI64X2ShrU() };
-            i64xCmp   = { BinaryenI64X2Eq(),  BinaryenI64X2Ne(),  BinaryenI64X2LtS(),
-                          BinaryenI64X2GtS(), BinaryenI64X2LeS(), BinaryenI64X2GeS() };
-            i64xUnary = { BinaryenI64X2Abs(), BinaryenI64X2Neg(), BinaryenI64X2AllTrue(),
-                          BinaryenI64X2AllTrue(), BinaryenI64X2Bitmask() };
-    
-            /*──────────── f32x4 / f64x2 ────────*/
-            f32xArith = { BinaryenF32X4Add(), BinaryenF32X4Sub(), BinaryenF32X4Mul(),
-                          BinaryenF32X4Div(), BinaryenF32X4Min(), BinaryenF32X4Max(),
-                          BinaryenF32X4PMin(),BinaryenF32X4PMax() };
-            f32xCmp   = { BinaryenF32X4Eq(),  BinaryenF32X4Ne(), BinaryenF32X4Lt(), BinaryenF32X4Gt(),
-                          BinaryenF32X4Le(),  BinaryenF32X4Ge() };
-            f32xUnary = { BinaryenF32X4Abs(), BinaryenF32X4Neg(), BinaryenF32X4Sqrt(),   BinaryenF32X4Ceil(),   BinaryenF32X4Floor(), BinaryenF32X4Trunc(),  BinaryenF32X4Nearest()};
-    
-            f64xArith = { BinaryenF64X2Add(), BinaryenF64X2Sub(), BinaryenF64X2Mul(),
-                          BinaryenF64X2Div(), BinaryenF64X2Min(), BinaryenF64X2Max(),
-                          BinaryenF64X2PMin(),BinaryenF64X2PMax() };
-            f64xCmp   = { BinaryenF64X2Eq(),  BinaryenF64X2Ne(), BinaryenF64X2Lt(), BinaryenF64X2Gt(),
-                          BinaryenF64X2Le(),  BinaryenF64X2Ge() };
-            f64xUnary = { BinaryenF64X2Abs(), BinaryenF64X2Neg(), BinaryenF64X2Sqrt(), BinaryenF64X2Ceil(),   BinaryenF64X2Floor(), BinaryenF64X2Trunc(),  BinaryenF64X2Nearest() };
+    if (!init) {
+        /*──────────── scalar i32 ────────────*/
+        i32Arith = { BinaryenI32Add(), BinaryenI32Sub(), BinaryenI32Mul(),
+                     BinaryenI32DivS(), BinaryenI32DivU(),
+                     BinaryenI32RemS(), BinaryenI32RemU() };
+        i32Bits = { BinaryenI32And(), BinaryenI32Or(), BinaryenI32Xor(),
+                    BinaryenI32Shl(), BinaryenI32ShrS(), BinaryenI32ShrU(),
+                    BinaryenI32Rotl(), BinaryenI32Rotr() };
+        i32Cmp = { BinaryenI32Eq(), BinaryenI32Ne(),
+                   BinaryenI32LtS(), BinaryenI32LtU(), BinaryenI32LeS(), BinaryenI32LeU(),
+                   BinaryenI32GtS(), BinaryenI32GtU(), BinaryenI32GeS(), BinaryenI32GeU() };
+        i32Unary = { BinaryenI32Clz(), BinaryenI32Ctz(), BinaryenI32Popcnt(), BinaryenI32Eqz() };
 
-            simdNarrow = { BinaryenI8X16NarrowI16X8S(), BinaryenI8X16NarrowI16X8U() };
+        /*──────────── scalar i64 ────────────*/
+        i64Arith = { BinaryenI64Add(), BinaryenI64Sub(), BinaryenI64Mul(),
+                     BinaryenI64DivS(), BinaryenI64DivU(),
+                     BinaryenI64RemS(), BinaryenI64RemU() };
+        i64Bits = { BinaryenI64And(), BinaryenI64Or(), BinaryenI64Xor(),
+                    BinaryenI64Shl(), BinaryenI64ShrS(), BinaryenI64ShrU(),
+                    BinaryenI64Rotl(), BinaryenI64Rotr() };
+        i64Cmp = { BinaryenI64Eq(), BinaryenI64Ne(),
+                   BinaryenI64LtS(), BinaryenI64LtU(), BinaryenI64LeS(), BinaryenI64LeU(),
+                   BinaryenI64GtS(), BinaryenI64GtU(), BinaryenI64GeS(), BinaryenI64GeU() };
+        i64Unary = { BinaryenI64Clz(), BinaryenI64Ctz(), BinaryenI64Popcnt() };
 
-            simdLaneLoadStore = { BinaryenV128Load8Lane(), BinaryenV128Load16Lane(), BinaryenV128Load32Lane(),BinaryenV128Load64Lane(), BinaryenV128Store8Lane(),BinaryenV128Store16Lane(), BinaryenV128Store32Lane(),BinaryenV128Store64Lane() };
+        /*──────────── scalar f32 / f64 ──────*/
+        f32Arith = { BinaryenF32Add(), BinaryenF32Sub(), BinaryenF32Mul(), BinaryenF32Div(),
+                     BinaryenF32Min(), BinaryenF32Max(), BinaryenF32Copysign() };
+        f32Cmp = { BinaryenF32Eq(), BinaryenF32Ne(),
+                   BinaryenF32Lt(), BinaryenF32Le(), BinaryenF32Gt(), BinaryenF32Ge() };
+        f32Unary = { BinaryenF32Abs(), BinaryenF32Neg(), BinaryenF32Ceil(), BinaryenF32Floor(),
+                     BinaryenF32Trunc(), BinaryenF32Nearest(), BinaryenF32Sqrt() };
 
-            simdSplatShuffle = { BinaryenI8X16Shuffle(), BinaryenI8X16Swizzle(), BinaryenI8X16Splat(), BinaryenI16X8Splat(), BinaryenI32X4Splat(), BinaryenI64X2Splat(), BinaryenF32X4Splat(), BinaryenF64X2Splat() };
+        f64Arith = { BinaryenF64Add(), BinaryenF64Sub(), BinaryenF64Mul(), BinaryenF64Div(),
+                     BinaryenF64Min(), BinaryenF64Max(), BinaryenF64Copysign() };
+        f64Cmp = { BinaryenF64Eq(), BinaryenF64Ne(),
+                   BinaryenF64Lt(), BinaryenF64Le(), BinaryenF64Gt(), BinaryenF64Ge() };
+        f64Unary = { BinaryenF64Abs(), BinaryenF64Neg(), BinaryenF64Ceil(), BinaryenF64Floor(),
+                     BinaryenF64Trunc(), BinaryenF64Nearest(), BinaryenF64Sqrt() };
 
-            simdMemoryOps = {
-                // full‐vector loads
-                BinaryenV128Load(),
-                BinaryenV128Load8X8S(), BinaryenV128Load8X8U(),
-                BinaryenV128Load16X4S(), BinaryenV128Load16X4U(),
-                BinaryenV128Load32X2S(), BinaryenV128Load32X2U(),
+        /*──────────── v128 logic ────────────*/
+        v128Logic = { BinaryenV128And(), BinaryenV128Or(), BinaryenV128Xor(),
+                      BinaryenV128Andnot(), BinaryenV128BitSelect() };
 
-                BinaryenV128Load8Splat(), BinaryenV128Load16Splat(),
-                BinaryenV128Load32Splat(), BinaryenV128Load64Splat(),
-                // zero‐extend loads
-                BinaryenV128Load32Zero(), BinaryenV128Load64Zero(),
-                // full‐vector store
-                BinaryenV128Store()
-              };
+        /*──────────── i8x16 ────────────────*/
+        i8Arith = { BinaryenI8X16Add(), BinaryenI8X16Sub(),
+                    BinaryenI8X16AddSatS(), BinaryenI8X16AddSatU(),
+                    BinaryenI8X16SubSatS(), BinaryenI8X16SubSatU(),
+                    BinaryenI8X16MinS(), BinaryenI8X16MinU(),
+                    BinaryenI8X16MaxS(), BinaryenI8X16MaxU(),
+                    BinaryenI8X16AvgrU() };
+        i8Shift = { BinaryenI8X16Shl(), BinaryenI8X16ShrS(), BinaryenI8X16ShrU() };
+        i8Cmp = { BinaryenI8X16Eq(), BinaryenI8X16Ne(), BinaryenI8X16LtS(), BinaryenI8X16LtU(),
+                  BinaryenI8X16GtS(), BinaryenI8X16GtU(), BinaryenI8X16LeS(), BinaryenI8X16LeU(),
+                  BinaryenI8X16GeS(), BinaryenI8X16GeU() };
+        i8Unary = { BinaryenI8X16Abs(), BinaryenI8X16Neg(), BinaryenI8X16AllTrue(),
+                    BinaryenI8X16AllTrue(), BinaryenI8X16Bitmask(), BinaryenI8X16Popcnt() };
 
-            simdLaneAccess = { BinaryenI8X16ExtractLaneS(), BinaryenI8X16ExtractLaneU(), BinaryenI8X16ReplaceLane(), BinaryenI16X8ExtractLaneS(), BinaryenI16X8ExtractLaneU(), BinaryenI16X8ReplaceLane(), BinaryenI32X4ExtractLane(),
-                               BinaryenI32X4ReplaceLane(), BinaryenI64X2ExtractLane(), BinaryenI64X2ReplaceLane(), BinaryenF32X4ExtractLane(), BinaryenF32X4ReplaceLane(), BinaryenF64X2ExtractLane(), BinaryenF64X2ReplaceLane() };
+        /*──────────── i16x8 ────────────────*/
+        i16Arith = { BinaryenI16X8Add(), BinaryenI16X8Sub(), BinaryenI16X8Mul(),
+                     BinaryenI16X8AddSatS(), BinaryenI16X8AddSatU(),
+                     BinaryenI16X8SubSatS(), BinaryenI16X8SubSatU(),
+                     BinaryenI16X8MinS(), BinaryenI16X8MinU(),
+                     BinaryenI16X8MaxS(), BinaryenI16X8MaxU(),
+                     BinaryenI16X8AvgrU(), BinaryenI16X8Q15mulrSatS() };
+        i16Shift = { BinaryenI16X8Shl(), BinaryenI16X8ShrS(), BinaryenI16X8ShrU() };
+        i16Cmp = { BinaryenI16X8Eq(), BinaryenI16X8Ne(), BinaryenI16X8LtS(), BinaryenI16X8LtU(),
+                   BinaryenI16X8GtS(), BinaryenI16X8GtU(), BinaryenI16X8LeS(), BinaryenI16X8LeU(),
+                   BinaryenI16X8GeS(), BinaryenI16X8GeU() };
+        i16Unary = { BinaryenI16X8Abs(), BinaryenI16X8Neg(), BinaryenI16X8AllTrue(),
+                     BinaryenI16X8AllTrue(), BinaryenI16X8Bitmask() };
 
-            /*──────────── control flow ────────────*/
-            ctrlFlow = { BinaryenUnreachable(), BinaryenNop(), BinaryenBlock(), BinaryenLoop(),
-                         BinaryenIf(), BinaryenElse(), BinaryenBr(), BinaryenBrIf(),
-                         BinaryenBrTable(), BinaryenReturn(), BinaryenDrop(), BinaryenSelect(),
-                         BinaryenSelectT(), BinaryenTry(), BinaryenCatch(), BinaryenThrow(),
-                         BinaryenRethrow(), BinaryenDelegate(), BinaryenCatchAll(),
-                         BinaryenReturnCall(), BinaryenReturnCallIndirect(), BinaryenCallRef() 
-            };
+        /*──────────── i32x4 ────────────────*/
+        i32xArith = { BinaryenI32X4Add(), BinaryenI32X4Sub(), BinaryenI32X4Mul(),
+                      BinaryenI32X4MinS(), BinaryenI32X4MinU(),
+                      BinaryenI32X4MaxS(), BinaryenI32X4MaxU(),
+                      BinaryenI32X4DotI16X8S() };
+        i32xShift = { BinaryenI32X4Shl(), BinaryenI32X4ShrS(), BinaryenI32X4ShrU() };
+        i32xCmp = { BinaryenI32X4Eq(), BinaryenI32X4Ne(), BinaryenI32X4LtS(), BinaryenI32X4LtU(),
+                    BinaryenI32X4GtS(), BinaryenI32X4GtU(), BinaryenI32X4LeS(), BinaryenI32X4LeU(),
+                    BinaryenI32X4GeS(), BinaryenI32X4GeU() };
+        i32xUnary = { BinaryenI32X4Abs(), BinaryenI32X4Neg(), BinaryenI32X4AllTrue(),
+                      BinaryenI32X4AllTrue(), BinaryenI32X4Bitmask() };
 
-            directCalls = {
-                BinaryenCall(), BinaryenCallIndirect(),
-                BinaryenReturnCall(), BinaryenReturnCallIndirect(),
-                BinaryenCallRef()
-            };
+        /*──────────── i64x2 ────────────────*/
+        i64xArith = { BinaryenI64X2Add(), BinaryenI64X2Sub(), BinaryenI64X2Mul() };
+        i64xShift = { BinaryenI64X2Shl(), BinaryenI64X2ShrS(), BinaryenI64X2ShrU() };
+        i64xCmp = { BinaryenI64X2Eq(), BinaryenI64X2Ne(), BinaryenI64X2LtS(),
+                    BinaryenI64X2GtS(), BinaryenI64X2LeS(), BinaryenI64X2GeS() };
+        i64xUnary = { BinaryenI64X2Abs(), BinaryenI64X2Neg(), BinaryenI64X2AllTrue(),
+                      BinaryenI64X2AllTrue(), BinaryenI64X2Bitmask() };
 
-            bulkMemoryOps = {
-                BinaryenMemoryInit(), BinaryenDataDrop(),
-                BinaryenMemoryCopy(), BinaryenMemoryFill(),
-                BinaryenTableInit(),  BinaryenElemDrop(),
-                BinaryenTableCopy()
-            };
+        /*──────────── f32x4 / f64x2 ────────*/
+        f32xArith = { BinaryenF32X4Add(), BinaryenF32X4Sub(), BinaryenF32X4Mul(),
+                      BinaryenF32X4Div(), BinaryenF32X4Min(), BinaryenF32X4Max(),
+                      BinaryenF32X4PMin(), BinaryenF32X4PMax() };
+        f32xCmp = { BinaryenF32X4Eq(), BinaryenF32X4Ne(), BinaryenF32X4Lt(), BinaryenF32X4Gt(),
+                    BinaryenF32X4Le(), BinaryenF32X4Ge() };
+        f32xUnary = { BinaryenF32X4Abs(), BinaryenF32X4Neg(), BinaryenF32X4Sqrt(), BinaryenF32X4Ceil(), BinaryenF32X4Floor(), BinaryenF32X4Trunc(), BinaryenF32X4Nearest() };
 
-            saturatingTrunc = {
-                BinaryenI32TruncSatF32S(), BinaryenI32TruncSatF32U(),
-                BinaryenI32TruncSatF64S(), BinaryenI32TruncSatF64U(),
-                BinaryenI64TruncSatF32S(), BinaryenI64TruncSatF32U(),
-                BinaryenI64TruncSatF64S(), BinaryenI64TruncSatF64U()
-            };
+        f64xArith = { BinaryenF64X2Add(), BinaryenF64X2Sub(), BinaryenF64X2Mul(),
+                      BinaryenF64X2Div(), BinaryenF64X2Min(), BinaryenF64X2Max(),
+                      BinaryenF64X2PMin(), BinaryenF64X2PMax() };
+        f64xCmp = { BinaryenF64X2Eq(), BinaryenF64X2Ne(), BinaryenF64X2Lt(), BinaryenF64X2Gt(),
+                    BinaryenF64X2Le(), BinaryenF64X2Ge() };
+        f64xUnary = { BinaryenF64X2Abs(), BinaryenF64X2Neg(), BinaryenF64X2Sqrt(), BinaryenF64X2Ceil(), BinaryenF64X2Floor(), BinaryenF64X2Trunc(), BinaryenF64X2Nearest() };
 
-            simdConvert = {
-                BinaryenF32X4DemoteF64X2Zero(),  BinaryenF64X2PromoteLowF32X4(),
-                BinaryenF32X4ConvertI32X4S(),    BinaryenF32X4ConvertI32X4U(),
-                BinaryenF64X2ConvertLowI32X4S(), BinaryenF64X2ConvertLowI32X4U()
-              };
+        simdNarrow = { BinaryenI8X16NarrowI16X8S(), BinaryenI8X16NarrowI16X8U() };
 
-            moveConst = {
-                BinaryenMoveI32(),  BinaryenMoveF32(),
-                BinaryenMoveI64(),  BinaryenMoveF64(),
-                BinaryenMoveV128(), BinaryenConst32(),
-                BinaryenConst64(), BinaryenV128Const()
-            };
-            
-            
-            /*──────────── locals & globals ────────────*/
-            localGlobal = { BinaryenLocalGet(), BinaryenLocalSet(), BinaryenLocalTee(),
-                            BinaryenGlobalGet(), BinaryenGlobalSet()
-            };
+        simdLaneLoadStore = { BinaryenV128Load8Lane(), BinaryenV128Load16Lane(), BinaryenV128Load32Lane(), BinaryenV128Load64Lane(), BinaryenV128Store8Lane(), BinaryenV128Store16Lane(), BinaryenV128Store32Lane(), BinaryenV128Store64Lane() };
 
-            /*──────────── memory operations ────────────*/
-            memoryOps = {
-                // aligned loads
-                BinaryenI32Load(), BinaryenI64Load(), BinaryenF32Load(), BinaryenF64Load(),
-                // sub-byte / half-word loads
-                BinaryenI32Load8S(), BinaryenI32Load8U(), BinaryenI32Load16S(), BinaryenI32Load16U(),
-                BinaryenI64Load8S(), BinaryenI64Load8U(), BinaryenI64Load16S(), BinaryenI64Load16U(),
-                BinaryenI64Load32S(), BinaryenI64Load32U(),
-                // aligned stores
-                BinaryenI32Store(), BinaryenI64Store(), BinaryenF32Store(), BinaryenF64Store(),
-                // sub-byte / half-word stores
-                BinaryenI32Store8(), BinaryenI32Store16(), BinaryenI64Store8(), BinaryenI64Store16(), BinaryenI64Store32(),
-                // memory management
-                BinaryenMemorySize(), BinaryenMemoryGrow()
-            };
+        simdSplatShuffle = { BinaryenI8X16Shuffle(), BinaryenI8X16Swizzle(), BinaryenI8X16Splat(), BinaryenI16X8Splat(), BinaryenI32X4Splat(), BinaryenI64X2Splat(), BinaryenF32X4Splat(), BinaryenF64X2Splat() };
 
-            /*──────────── constants ────────────*/
-            constOps = { BinaryenI32Const(), BinaryenI64Const(), BinaryenF32Const(), BinaryenF64Const()
-            };
+        simdMemoryOps = {
+            // full‐vector loads
+            BinaryenV128Load(),
+            BinaryenV128Load8X8S(), BinaryenV128Load8X8U(),
+            BinaryenV128Load16X4S(), BinaryenV128Load16X4U(),
+            BinaryenV128Load32X2S(), BinaryenV128Load32X2U(),
 
-            /*──────────── conversions ────────────*/
-            conversion = { BinaryenI32WrapI64(), BinaryenI32TruncF32S(), BinaryenI32TruncF32U(),
-                           BinaryenI32TruncF64S(), BinaryenI32TruncF64U(), BinaryenI64ExtendI32S(),    
-                           BinaryenI64ExtendI32U(), BinaryenI64TruncF32S(), BinaryenI64TruncF32U(),
-                           BinaryenI64TruncF64S(), BinaryenI64TruncF64U(), BinaryenF32ConvertI32S(),
-                           BinaryenF32ConvertI32U(), BinaryenF32ConvertI64S(), BinaryenF32ConvertI64U(),
-                           BinaryenF32DemoteF64(), BinaryenF64ConvertI32S(), BinaryenF64ConvertI32U(),
-                           BinaryenF64ConvertI64S(), BinaryenF64ConvertI64U(), BinaryenF64PromoteF32(),
-                           BinaryenI32ReinterpretF32(), BinaryenI64ReinterpretF64(),
-                           BinaryenF32ReinterpretI32(), BinaryenF64ReinterpretI64()
-            };  
+            BinaryenV128Load8Splat(), BinaryenV128Load16Splat(),
+            BinaryenV128Load32Splat(), BinaryenV128Load64Splat(),
+            // zero‐extend loads
+            BinaryenV128Load32Zero(), BinaryenV128Load64Zero(),
+            // full‐vector store
+            BinaryenV128Store()
+        };
 
-            /*──────────── table operations ────────────*/
-            tableOps = { BinaryenTableGet(), BinaryenTableSet(), BinaryenTableGrow(),
-                        BinaryenTableSize(), BinaryenTableFill(), BinaryenTableCopy()
-            };
+        simdLaneAccess = { BinaryenI8X16ExtractLaneS(), BinaryenI8X16ExtractLaneU(), BinaryenI8X16ReplaceLane(), BinaryenI16X8ExtractLaneS(), BinaryenI16X8ExtractLaneU(), BinaryenI16X8ReplaceLane(), BinaryenI32X4ExtractLane(),
+                           BinaryenI32X4ReplaceLane(), BinaryenI64X2ExtractLane(), BinaryenI64X2ReplaceLane(), BinaryenF32X4ExtractLane(), BinaryenF32X4ReplaceLane(), BinaryenF64X2ExtractLane(), BinaryenF64X2ReplaceLane() };
 
-            /*──────────── reference ops ────────────*/
-            refOps = { BinaryenRefNull(), BinaryenRefIsNull(), BinaryenRefFunc()
-            };
+        /*──────────── control flow ────────────*/
+        ctrlFlow = { BinaryenUnreachable(), BinaryenNop(), BinaryenBlock(), BinaryenLoop(),
+                     BinaryenIf(), BinaryenElse(), BinaryenBr(), BinaryenBrIf(),
+                     BinaryenBrTable(), BinaryenReturn(), BinaryenDrop(), BinaryenSelect(),
+                     BinaryenSelectT(), BinaryenTry(), BinaryenCatch(), BinaryenThrow(),
+                     BinaryenRethrow(), BinaryenDelegate(), BinaryenCatchAll(),
+                     BinaryenReturnCall(), BinaryenReturnCallIndirect(), BinaryenCallRef() };
 
-            /*──────────── atomic operations ────────────*/
-            atomicOps = {
-                // atomic loads
-                BinaryenI32AtomicLoad(), BinaryenI64AtomicLoad(),
-                BinaryenI32AtomicLoad8U(), BinaryenI32AtomicLoad16U(),
-                BinaryenI64AtomicLoad8U(), BinaryenI64AtomicLoad16U(), BinaryenI64AtomicLoad32U(),
-                // atomic stores
-                BinaryenI32AtomicStore(), BinaryenI64AtomicStore(),
-                BinaryenI32AtomicStore8(), BinaryenI32AtomicStore16(), BinaryenI64AtomicStore8(), BinaryenI64AtomicStore16(), BinaryenI64AtomicStore32(),
-                // fences & wait/notify
-                BinaryenAtomicFence(), BinaryenMemoryAtomicNotify(),
-                BinaryenMemoryAtomicWait32(), BinaryenMemoryAtomicWait64(),
-                // read-modify-write ops: add / sub
-                BinaryenI32AtomicRmwAdd(), BinaryenI64AtomicRmwAdd(),
-                BinaryenI32AtomicRmwSub(), BinaryenI64AtomicRmwSub(),
-                // byte/half-word RMW variants
-                BinaryenI32AtomicRmw8AddU(), BinaryenI32AtomicRmw16AddU(),
-                BinaryenI64AtomicRmw8AddU(), BinaryenI64AtomicRmw16AddU(), BinaryenI64AtomicRmw32AddU(),
-                BinaryenI32AtomicRmw8SubU(), BinaryenI32AtomicRmw16SubU(), BinaryenI64AtomicRmw8SubU(), BinaryenI64AtomicRmw16SubU(), BinaryenI64AtomicRmw32SubU(),
-                // bitwise RMW: and/or/xor
-                BinaryenI32AtomicRmwAnd(), BinaryenI64AtomicRmwAnd(),
-                BinaryenI32AtomicRmwOr(), BinaryenI64AtomicRmwOr(),
-                BinaryenI32AtomicRmwXor(), BinaryenI64AtomicRmwXor(),
-                // byte/half-word bitwise RMW variants
-                BinaryenI32AtomicRmw8AndU(), BinaryenI32AtomicRmw16AndU(), BinaryenI64AtomicRmw8AndU(), BinaryenI64AtomicRmw16AndU(), BinaryenI64AtomicRmw32AndU(),
-                BinaryenI32AtomicRmw8OrU(), BinaryenI32AtomicRmw16OrU(), BinaryenI64AtomicRmw8OrU(), BinaryenI64AtomicRmw16OrU(), BinaryenI64AtomicRmw32OrU(),
-                BinaryenI32AtomicRmw8XorU(), BinaryenI32AtomicRmw16XorU(), BinaryenI64AtomicRmw8XorU(), BinaryenI64AtomicRmw16XorU(), BinaryenI64AtomicRmw32XorU(),
-                // exchange & compare-exchange
-                BinaryenI32AtomicRmwXchg(), BinaryenI64AtomicRmwXchg(),
-                BinaryenI32AtomicRmw8XchgU(), BinaryenI32AtomicRmw16XchgU(), BinaryenI64AtomicRmw8XchgU(), BinaryenI64AtomicRmw16XchgU(), BinaryenI64AtomicRmw32XchgU(),
-                BinaryenI32AtomicRmwCmpxchg(), BinaryenI64AtomicRmwCmpxchg(),
-                BinaryenI32AtomicRmw8CmpxchgU(), BinaryenI32AtomicRmw16CmpxchgU(), BinaryenI64AtomicRmw8CmpxchgU(), BinaryenI64AtomicRmw16CmpxchgU(), BinaryenI64AtomicRmw32CmpxchgU()
-            };    
+        directCalls = {
+            BinaryenCall(), BinaryenCallIndirect(),
+            BinaryenReturnCall(), BinaryenReturnCallIndirect(),
+            BinaryenCallRef()
+        };
 
-            init = true;
+        bulkMemoryOps = {
+            BinaryenMemoryInit(), BinaryenDataDrop(),
+            BinaryenMemoryCopy(), BinaryenMemoryFill(),
+            BinaryenTableInit(), BinaryenElemDrop(),
+            BinaryenTableCopy()
+        };
+
+        saturatingTrunc = {
+            BinaryenI32TruncSatF32S(), BinaryenI32TruncSatF32U(),
+            BinaryenI32TruncSatF64S(), BinaryenI32TruncSatF64U(),
+            BinaryenI64TruncSatF32S(), BinaryenI64TruncSatF32U(),
+            BinaryenI64TruncSatF64S(), BinaryenI64TruncSatF64U()
+        };
+
+        simdConvert = {
+            BinaryenF32X4DemoteF64X2Zero(), BinaryenF64X2PromoteLowF32X4(),
+            BinaryenF32X4ConvertI32X4S(), BinaryenF32X4ConvertI32X4U(),
+            BinaryenF64X2ConvertLowI32X4S(), BinaryenF64X2ConvertLowI32X4U()
+        };
+
+        moveConst = {
+            BinaryenMoveI32(), BinaryenMoveF32(),
+            BinaryenMoveI64(), BinaryenMoveF64(),
+            BinaryenMoveV128(), BinaryenConst32(),
+            BinaryenConst64(), BinaryenV128Const()
+        };
+
+
+        /*──────────── locals & globals ────────────*/
+        localGlobal = { BinaryenLocalGet(), BinaryenLocalSet(), BinaryenLocalTee(),
+                        BinaryenGlobalGet(), BinaryenGlobalSet() };
+
+        /*──────────── memory operations ────────────*/
+        memoryOps = {
+            // aligned loads
+            BinaryenI32Load(), BinaryenI64Load(), BinaryenF32Load(), BinaryenF64Load(),
+            // sub-byte / half-word loads
+            BinaryenI32Load8S(), BinaryenI32Load8U(), BinaryenI32Load16S(), BinaryenI32Load16U(),
+            BinaryenI64Load8S(), BinaryenI64Load8U(), BinaryenI64Load16S(), BinaryenI64Load16U(),
+            BinaryenI64Load32S(), BinaryenI64Load32U(),
+            // aligned stores
+            BinaryenI32Store(), BinaryenI64Store(), BinaryenF32Store(), BinaryenF64Store(),
+            // sub-byte / half-word stores
+            BinaryenI32Store8(), BinaryenI32Store16(), BinaryenI64Store8(), BinaryenI64Store16(), BinaryenI64Store32(),
+            // memory management
+            BinaryenMemorySize(), BinaryenMemoryGrow()
+        };
+
+        /*──────────── constants ────────────*/
+        constOps = { BinaryenI32Const(), BinaryenI64Const(), BinaryenF32Const(), BinaryenF64Const() };
+
+        /*──────────── conversions ────────────*/
+        conversion = { BinaryenI32WrapI64(), BinaryenI32TruncF32S(), BinaryenI32TruncF32U(),
+                       BinaryenI32TruncF64S(), BinaryenI32TruncF64U(), BinaryenI64ExtendI32S(),
+                       BinaryenI64ExtendI32U(), BinaryenI64TruncF32S(), BinaryenI64TruncF32U(),
+                       BinaryenI64TruncF64S(), BinaryenI64TruncF64U(), BinaryenF32ConvertI32S(),
+                       BinaryenF32ConvertI32U(), BinaryenF32ConvertI64S(), BinaryenF32ConvertI64U(),
+                       BinaryenF32DemoteF64(), BinaryenF64ConvertI32S(), BinaryenF64ConvertI32U(),
+                       BinaryenF64ConvertI64S(), BinaryenF64ConvertI64U(), BinaryenF64PromoteF32(),
+                       BinaryenI32ReinterpretF32(), BinaryenI64ReinterpretF64(),
+                       BinaryenF32ReinterpretI32(), BinaryenF64ReinterpretI64() };
+
+        /*──────────── table operations ────────────*/
+        tableOps = { BinaryenTableGet(), BinaryenTableSet(), BinaryenTableGrow(),
+                     BinaryenTableSize(), BinaryenTableFill(), BinaryenTableCopy() };
+
+        /*──────────── reference ops ────────────*/
+        refOps = { BinaryenRefNull(), BinaryenRefIsNull(), BinaryenRefFunc() };
+
+        /*──────────── atomic operations ────────────*/
+        atomicOps = {
+            // atomic loads
+            BinaryenI32AtomicLoad(), BinaryenI64AtomicLoad(),
+            BinaryenI32AtomicLoad8U(), BinaryenI32AtomicLoad16U(),
+            BinaryenI64AtomicLoad8U(), BinaryenI64AtomicLoad16U(), BinaryenI64AtomicLoad32U(),
+            // atomic stores
+            BinaryenI32AtomicStore(), BinaryenI64AtomicStore(),
+            BinaryenI32AtomicStore8(), BinaryenI32AtomicStore16(), BinaryenI64AtomicStore8(), BinaryenI64AtomicStore16(), BinaryenI64AtomicStore32(),
+            // fences & wait/notify
+            BinaryenAtomicFence(), BinaryenMemoryAtomicNotify(),
+            BinaryenMemoryAtomicWait32(), BinaryenMemoryAtomicWait64(),
+            // read-modify-write ops: add / sub
+            BinaryenI32AtomicRmwAdd(), BinaryenI64AtomicRmwAdd(),
+            BinaryenI32AtomicRmwSub(), BinaryenI64AtomicRmwSub(),
+            // byte/half-word RMW variants
+            BinaryenI32AtomicRmw8AddU(), BinaryenI32AtomicRmw16AddU(),
+            BinaryenI64AtomicRmw8AddU(), BinaryenI64AtomicRmw16AddU(), BinaryenI64AtomicRmw32AddU(),
+            BinaryenI32AtomicRmw8SubU(), BinaryenI32AtomicRmw16SubU(), BinaryenI64AtomicRmw8SubU(), BinaryenI64AtomicRmw16SubU(), BinaryenI64AtomicRmw32SubU(),
+            // bitwise RMW: and/or/xor
+            BinaryenI32AtomicRmwAnd(), BinaryenI64AtomicRmwAnd(),
+            BinaryenI32AtomicRmwOr(), BinaryenI64AtomicRmwOr(),
+            BinaryenI32AtomicRmwXor(), BinaryenI64AtomicRmwXor(),
+            // byte/half-word bitwise RMW variants
+            BinaryenI32AtomicRmw8AndU(), BinaryenI32AtomicRmw16AndU(), BinaryenI64AtomicRmw8AndU(), BinaryenI64AtomicRmw16AndU(), BinaryenI64AtomicRmw32AndU(),
+            BinaryenI32AtomicRmw8OrU(), BinaryenI32AtomicRmw16OrU(), BinaryenI64AtomicRmw8OrU(), BinaryenI64AtomicRmw16OrU(), BinaryenI64AtomicRmw32OrU(),
+            BinaryenI32AtomicRmw8XorU(), BinaryenI32AtomicRmw16XorU(), BinaryenI64AtomicRmw8XorU(), BinaryenI64AtomicRmw16XorU(), BinaryenI64AtomicRmw32XorU(),
+            // exchange & compare-exchange
+            BinaryenI32AtomicRmwXchg(), BinaryenI64AtomicRmwXchg(),
+            BinaryenI32AtomicRmw8XchgU(), BinaryenI32AtomicRmw16XchgU(), BinaryenI64AtomicRmw8XchgU(), BinaryenI64AtomicRmw16XchgU(), BinaryenI64AtomicRmw32XchgU(),
+            BinaryenI32AtomicRmwCmpxchg(), BinaryenI64AtomicRmwCmpxchg(),
+            BinaryenI32AtomicRmw8CmpxchgU(), BinaryenI32AtomicRmw16CmpxchgU(), BinaryenI64AtomicRmw8CmpxchgU(), BinaryenI64AtomicRmw16CmpxchgU(), BinaryenI64AtomicRmw32CmpxchgU()
+        };
+
+        init = true;
     }
 
     using Vec = std::vector<Op>;
 
-    auto pick = [&](const Vec& tbl)->Op{
-        if (tbl.size()<2) return opcode;
-        std::uniform_int_distribution<size_t> d(0,tbl.size()-1);
+    auto pick = [&](const Vec& tbl) -> Op {
+        if (tbl.size() < 2)
+            return opcode;
+        std::uniform_int_distribution<size_t> d(0, tbl.size() - 1);
         Op alt;
-        do { alt = tbl[d(rng)]; } while (alt==opcode);
+        do {
+            alt = tbl[d(rng)];
+        } while (alt == opcode);
         return alt;
     };
 
-#define TRY(cat)  if (std::find(cat.begin(),cat.end(),opcode)!=cat.end()) \
-                     return pick(cat)
+#define TRY(cat)                                                \
+    if (std::find(cat.begin(), cat.end(), opcode) != cat.end()) \
+    return pick(cat)
 
     /* scalar */
-    TRY(i32Arith); TRY(i32Bits); TRY(i32Cmp); TRY(i32Unary);
-    TRY(i64Arith); TRY(i64Bits); TRY(i64Cmp); TRY(i64Unary);
-    TRY(f32Arith); TRY(f32Cmp);  TRY(f32Unary);
-    TRY(f64Arith); TRY(f64Cmp);  TRY(f64Unary);
+    TRY(i32Arith);
+    TRY(i32Bits);
+    TRY(i32Cmp);
+    TRY(i32Unary);
+    TRY(i64Arith);
+    TRY(i64Bits);
+    TRY(i64Cmp);
+    TRY(i64Unary);
+    TRY(f32Arith);
+    TRY(f32Cmp);
+    TRY(f32Unary);
+    TRY(f64Arith);
+    TRY(f64Cmp);
+    TRY(f64Unary);
 
     /* 128-bit SIMD */
     TRY(v128Logic);
 
-    TRY(i8Arith);  TRY(i8Shift);  TRY(i8Cmp);  TRY(i8Unary);
-    TRY(i16Arith); TRY(i16Shift); TRY(i16Cmp); TRY(i16Unary);
-    TRY(i32xArith);TRY(i32xShift);TRY(i32xCmp);TRY(i32xUnary);
-    TRY(i64xArith);TRY(i64xShift);TRY(i64xCmp);TRY(i64xUnary);
-    TRY(f32xArith);TRY(f32xCmp);  TRY(f32xUnary);
-    TRY(f64xArith);TRY(f64xCmp);  TRY(f64xUnary);
-    
+    TRY(i8Arith);
+    TRY(i8Shift);
+    TRY(i8Cmp);
+    TRY(i8Unary);
+    TRY(i16Arith);
+    TRY(i16Shift);
+    TRY(i16Cmp);
+    TRY(i16Unary);
+    TRY(i32xArith);
+    TRY(i32xShift);
+    TRY(i32xCmp);
+    TRY(i32xUnary);
+    TRY(i64xArith);
+    TRY(i64xShift);
+    TRY(i64xCmp);
+    TRY(i64xUnary);
+    TRY(f32xArith);
+    TRY(f32xCmp);
+    TRY(f32xUnary);
+    TRY(f64xArith);
+    TRY(f64xCmp);
+    TRY(f64xUnary);
+
     TRY(ctrlFlow);
     TRY(localGlobal);
     TRY(memoryOps);
@@ -2003,49 +2026,49 @@ inline Op getReplacementForOp(Op opcode, std::mt19937& rng)
     TRY(simdSplatShuffle);
     TRY(simdMemoryOps);
 #undef TRY
-    return opcode;        // fallback (unchanged)
+    return opcode; // fallback (unchanged)
 }
 
 
 inline bool hasBody(const wasm::Function* f) { return f && f->body; }
 
-using Index = uint32_t;                             // missing typedef on old Binaryen
+using Index = uint32_t; // missing typedef on old Binaryen
 
 static inline void mutateSingleConst(BW::Const* c, std::mt19937& rng)
 {
-    if (!c) return;
+    if (!c)
+        return;
 
-    int mode = rng() & 1;               /* 0 = flip, 1 = edge value */
+    int mode = rng() & 1; /* 0 = flip, 1 = edge value */
 
     if (c->type == BW::Type::i32) {
         int32_t v = c->value.geti32();
         int32_t nv = mode ? 0 : (v ^ (1u << (rng() % 32)));
         c->value = BW::Literal(nv);
-    }
-    else if (c->type == BW::Type::i64) {
+    } else if (c->type == BW::Type::i64) {
         int64_t v = c->value.geti64();
         int64_t nv = mode ? 0 : (v ^ (int64_t(1) << (rng() % 64)));
-        c->value = BW::Literal(nv);     /* unambiguous ctor: int64_t           */
-    }
-    else if (c->type == BW::Type::f32) {
-        float  v  = c->value.getf32();
-        float  nv = mode ? std::numeric_limits<float>::infinity() : -v;
-        c->value  = BW::Literal(nv);
-    }
-    else if (c->type == BW::Type::f64) {
-        double v  = c->value.getf64();
+        c->value = BW::Literal(nv); /* unambiguous ctor: int64_t           */
+    } else if (c->type == BW::Type::f32) {
+        float v = c->value.getf32();
+        float nv = mode ? std::numeric_limits<float>::infinity() : -v;
+        c->value = BW::Literal(nv);
+    } else if (c->type == BW::Type::f64) {
+        double v = c->value.getf64();
         double nv = mode ? std::numeric_limits<double>::quiet_NaN() : -v;
-        c->value  = BW::Literal(nv);
+        c->value = BW::Literal(nv);
     }
 }
 
 // Return the (first) memory name or the default “memory”.
-static wasm::Name firstMemoryName(const wasm::Module& m) {
+static wasm::Name firstMemoryName(const wasm::Module& m)
+{
     return m.memories.empty() ? wasm::Name("memory") : m.memories[0]->name;
 }
 
 // Helper function: Find a block in the AST that contains the target expression.
-BW::Block* findParentBlock(BW::Expression* target, const std::vector<BW::Expression*>& exprs) {
+BW::Block* findParentBlock(BW::Expression* target, const std::vector<BW::Expression*>& exprs)
+{
     for (auto* expr : exprs) {
         if (auto* block = expr->dynCast<BW::Block>()) {
             for (auto* child : block->list) {
@@ -2067,66 +2090,70 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
     /* — Commutative opcode set — */
     static const std::unordered_set<Op> kCommutative = {
         /* i32 */ BinaryenI32Add(), BinaryenI32Mul(), BinaryenI32And(),
-                 BinaryenI32Or(),  BinaryenI32Xor(),
+        BinaryenI32Or(), BinaryenI32Xor(),
         /* i64 */ BinaryenI64Add(), BinaryenI64Mul(), BinaryenI64And(),
-                 BinaryenI64Or(),  BinaryenI64Xor(),
+        BinaryenI64Or(), BinaryenI64Xor(),
         /* f32/f64 */ BinaryenF32Add(), BinaryenF32Mul(), BinaryenF32Min(),
-                     BinaryenF32Max(), BinaryenF64Add(), BinaryenF64Mul(),
-                     BinaryenF64Min(), BinaryenF64Max(),
-        /* v128 bit operation */ BinaryenV128And(), BinaryenV128Or(),  BinaryenV128Xor(),
-        /* i8x16 */ BinaryenI8X16Add(),      BinaryenI8X16AddSatS(),  BinaryenI8X16AddSatU(),
-                    BinaryenI8X16MinS(),     BinaryenI8X16MinU(),
-                    BinaryenI8X16MaxS(),     BinaryenI8X16MaxU(),
-        /* i16x8 */ BinaryenI16X8Add(),      BinaryenI16X8AddSatS(),  BinaryenI16X8AddSatU(),
-                    BinaryenI16X8Mul(),
-                    BinaryenI16X8MinS(),     BinaryenI16X8MinU(),
-                    BinaryenI16X8MaxS(),     BinaryenI16X8MaxU(),
-        /* i32x4 */ BinaryenI32X4Add(),      BinaryenI32X4Mul(),
-                    BinaryenI32X4MinS(),     BinaryenI32X4MinU(),
-                    BinaryenI32X4MaxS(),     BinaryenI32X4MaxU(),
-        /* i64x2 */ BinaryenI64X2Add(),      BinaryenI64X2Mul(),                            
-        /* f32x4 & f64x2 */ BinaryenF32X4Add(),      BinaryenF32X4Mul(),
-                    BinaryenF32X4Min(),      BinaryenF32X4Max(),
-                    BinaryenF64X2Add(),      BinaryenF64X2Mul(),
-                    BinaryenF64X2Min(),      BinaryenF64X2Max()
+        BinaryenF32Max(), BinaryenF64Add(), BinaryenF64Mul(),
+        BinaryenF64Min(), BinaryenF64Max(),
+        /* v128 bit operation */ BinaryenV128And(), BinaryenV128Or(), BinaryenV128Xor(),
+        /* i8x16 */ BinaryenI8X16Add(), BinaryenI8X16AddSatS(), BinaryenI8X16AddSatU(),
+        BinaryenI8X16MinS(), BinaryenI8X16MinU(),
+        BinaryenI8X16MaxS(), BinaryenI8X16MaxU(),
+        /* i16x8 */ BinaryenI16X8Add(), BinaryenI16X8AddSatS(), BinaryenI16X8AddSatU(),
+        BinaryenI16X8Mul(),
+        BinaryenI16X8MinS(), BinaryenI16X8MinU(),
+        BinaryenI16X8MaxS(), BinaryenI16X8MaxU(),
+        /* i32x4 */ BinaryenI32X4Add(), BinaryenI32X4Mul(),
+        BinaryenI32X4MinS(), BinaryenI32X4MinU(),
+        BinaryenI32X4MaxS(), BinaryenI32X4MaxU(),
+        /* i64x2 */ BinaryenI64X2Add(), BinaryenI64X2Mul(),
+        /* f32x4 & f64x2 */ BinaryenF32X4Add(), BinaryenF32X4Mul(),
+        BinaryenF32X4Min(), BinaryenF32X4Max(),
+        BinaryenF64X2Add(), BinaryenF64X2Mul(),
+        BinaryenF64X2Min(), BinaryenF64X2Max()
     };
 
     BW::Builder builder(*module);
 
     for (auto& fPtr : module->functions) {
         BW::Function* func = fPtr.get();
-        if(!func->body) continue;
-#ifdef PRINT_LOG
-        std::cout << "[mutate] ► " << func->name.str << '\n';
-#endif
+        if (!func->body)
+            continue;
+        if (enable_logging) {
+            std::cout << "[mutate] ► " << func->name.str << '\n';
+        }
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
 
-        for (BW::Expression* e : exprs)
-        {
+        for (BW::Expression* e : exprs) {
             /* --- Binary -------------------------------------------------- */
             if (auto* bin = e->dynCast<BW::Binary>()) {
                 Op oldOp = bin->op;
                 Op newOp = getReplacementForOp(oldOp, rng);
 
-                bool typeOK = true;      /* rough mask check                  */
- 
-                if(bin->left->type == BW::Type::i32) typeOK = (newOp & 0xC0u) == 0x40u;
-                else if (bin->left->type == BW::Type::i64) typeOK = (newOp & 0xC0u) == 0x80u;
-                else if (bin->left->type == BW::Type::f32) typeOK = (newOp & 0xE0u) == 0x90u;
-                else if (bin->left->type == BW::Type::f64) typeOK = (newOp & 0xE0u) == 0xA0u;
+                bool typeOK = true; /* rough mask check                  */
+
+                if (bin->left->type == BW::Type::i32)
+                    typeOK = (newOp & 0xC0u) == 0x40u;
+                else if (bin->left->type == BW::Type::i64)
+                    typeOK = (newOp & 0xC0u) == 0x80u;
+                else if (bin->left->type == BW::Type::f32)
+                    typeOK = (newOp & 0xE0u) == 0x90u;
+                else if (bin->left->type == BW::Type::f64)
+                    typeOK = (newOp & 0xE0u) == 0xA0u;
 
                 if (typeOK && newOp != oldOp) {
                     bin->op = static_cast<BW::BinaryOp>(newOp);
-#ifdef PRINT_LOG
-                    std::cout << "  • Binary " << oldOp << " → " << newOp << '\n';
-#endif
+                    if (enable_logging) {
+                        std::cout << "  • Binary " << oldOp << " → " << newOp << '\n';
+                    }
                 }
 
                 if (kCommutative.count(bin->op) && (rng() & 1)) {
                     std::swap(bin->left, bin->right);
-#ifdef PRINT_LOG
-                    std::cout << "    ↳ operands swapped\n";
-#endif
+                    if (enable_logging) {
+                        std::cout << "    ↳ operands swapped\n";
+                    }
                 }
             }
 
@@ -2135,9 +2162,9 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 Op cand = getReplacementForOp(un->op, rng);
                 if (cand != un->op) {
                     un->op = static_cast<BW::UnaryOp>(cand);
-#ifdef PRINT_LOG
-                    std::cout << "  • Unary  " << un->op << " → " << cand << '\n';
-#endif
+                    if (enable_logging) {
+                        std::cout << "  • Unary  " << un->op << " → " << cand << '\n';
+                    }
                 }
             }
 
@@ -2151,16 +2178,26 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 unsigned before = ld->bytes;
                 std::vector<unsigned> cand;
                 switch (ld->type.getBasic()) {
-                    case BW::Type::i32: cand = {1,2,4};      break;
-                    case BW::Type::i64: cand = {1,2,4,8};    break;
-                    case BW::Type::f32: cand = {4};          break;
-                    case BW::Type::f64: cand = {8};          break;
-                    default:             cand = {before};    break;
+                case BW::Type::i32:
+                    cand = { 1, 2, 4 };
+                    break;
+                case BW::Type::i64:
+                    cand = { 1, 2, 4, 8 };
+                    break;
+                case BW::Type::f32:
+                    cand = { 4 };
+                    break;
+                case BW::Type::f64:
+                    cand = { 8 };
+                    break;
+                default:
+                    cand = { before };
+                    break;
                 }
                 ld->bytes = ld->align = cand[rng() % cand.size()];
-#ifdef PRINT_LOG
-                std::cout << "  • Load   width " << before << " → " << ld->bytes << '\n';
-#endif
+                if (enable_logging) {
+                    std::cout << "  • Load   width " << before << " → " << ld->bytes << '\n';
+                }
             }
 
             /* --- Store --------------------------------------------------- */
@@ -2168,64 +2205,74 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 unsigned before = st->bytes;
                 std::vector<unsigned> cand;
                 switch (st->valueType.getBasic()) {
-                    case BW::Type::i32: cand = {1,2,4};      break;
-                    case BW::Type::i64: cand = {1,2,4,8};    break;
-                    case BW::Type::f32: cand = {4};          break;
-                    case BW::Type::f64: cand = {8};          break;
-                    default:             cand = {before};    break;
+                case BW::Type::i32:
+                    cand = { 1, 2, 4 };
+                    break;
+                case BW::Type::i64:
+                    cand = { 1, 2, 4, 8 };
+                    break;
+                case BW::Type::f32:
+                    cand = { 4 };
+                    break;
+                case BW::Type::f64:
+                    cand = { 8 };
+                    break;
+                default:
+                    cand = { before };
+                    break;
                 }
                 st->bytes = st->align = cand[rng() % cand.size()];
-#ifdef PRINT_LOG
-                std::cout << "  • Store  width " << before << " → " << st->bytes << '\n';
-#endif
+                if (enable_logging) {
+                    std::cout << "  • Store  width " << before << " → " << st->bytes << '\n';
+                }
             }
 
             /* --- Atomic RMW / Cmpxchg ------------------------------------ */
             else if (auto* armw = e->dynCast<BW::AtomicRMW>()) {
                 // mutation the number of bytes and offset at random
                 uint32_t oldBytes = armw->bytes, oldOffset = armw->offset;
-                uint32_t candBytes[] = {1,2,4,8};
-                armw->bytes  = candBytes[rng() % 4];
+                uint32_t candBytes[] = { 1, 2, 4, 8 };
+                armw->bytes = candBytes[rng() % 4];
                 armw->offset = rng() % 16;
-#ifdef PRINT_LOG
-                std::cout << "  • AtomicRMW bytes " << oldBytes
-                        << "→" << armw->bytes
-                        << ", offset " << oldOffset
-                        << "→" << armw->offset << "\n";
-#endif
-            }
-            else if (auto* acx = e->dynCast<BW::AtomicCmpxchg>()) {       
+                if (enable_logging) {
+                    std::cout << "  • AtomicRMW bytes " << oldBytes
+                              << "→" << armw->bytes
+                              << ", offset " << oldOffset
+                              << "→" << armw->offset << "\n";
+                }
+            } else if (auto* acx = e->dynCast<BW::AtomicCmpxchg>()) {
                 // Replace the offset and byte-width of a compar-exchange
                 uint32_t oldBytes = acx->bytes, oldOffset = acx->offset;
-                uint32_t cand[] = {1,2,4,8};
-                acx->bytes  = cand[rng() % 4];
+                uint32_t cand[] = { 1, 2, 4, 8 };
+                acx->bytes = cand[rng() % 4];
                 acx->offset = rng() % 16;
-#ifdef PRINT_LOG
-                std::cout << "  • AtomicCmpxchg bytes " << oldBytes
-                        << "→" << acx->bytes
-                        << ", offset " << oldOffset
-                        << "→" << acx->offset << "\n";
-#endif
+                if (enable_logging) {
+                    std::cout << "  • AtomicCmpxchg bytes " << oldBytes
+                              << "→" << acx->bytes
+                              << ", offset " << oldOffset
+                              << "→" << acx->offset << "\n";
+                }
             }
 
             /* --- Call ---------------------------------------------------- */
             else if (auto* call = e->dynCast<BW::Call>()) {
                 // grab the Function* we’re about to call
                 auto* origin = module->getFunction(call->target);
-                if (!origin) continue;
+                if (!origin)
+                    continue;
 
                 // collect all functions with the exact same FunctionType
                 std::vector<BW::Name> cands;
-                for(auto& fp : module->functions) {
+                for (auto& fp : module->functions) {
                     auto* fn = fp.get();
-                    if(fn->type == origin->type && fn->name != call ->target) {
+                    if (fn->type == origin->type && fn->name != call->target) {
                         cands.push_back(fn->name);
                     }
                 }
-                if(!cands.empty()) {
+                if (!cands.empty()) {
                     call->target = cands[rng() % cands.size()];
                 }
-                
+
                 /*
                 if (module->functions.size() > 1) {
                     size_t idx;
@@ -2234,33 +2281,39 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
 
                     call->target = module->functions[idx]->name;
                 */
-#ifdef PRINT_LOG
+                if (enable_logging) {
                     std::cout << "  • Call   retarget → " << call->target.str << '\n';
-#endif
+                }
             }
 
             // --- RefNull ⇄ RefFunc ----------------------------------------
             if (auto* rn = e->dynCast<wasm::RefNull>()) {
                 if ((rng() & 1) && !module->functions.empty()) {
-                    auto& funcs    = module->functions;
-                    wasm::Name fn  = funcs[rng() % funcs.size()]->name;
+                    auto& funcs = module->functions;
+                    wasm::Name fn = funcs[rng() % funcs.size()]->name;
                     auto* rf = builder.makeRefFunc(fn, wasm::HeapType(wasm::BinaryConsts::funcref));
                     if (auto* parent = findParentBlock(rn, exprs)) {
                         for (auto*& child : parent->list) {
-                            if (child == rn) { child = rf; break; }
+                            if (child == rn) {
+                                child = rf;
+                                break;
+                            }
                         }
                     } else {
                         func->body = rf;
                     }
                 }
             }
-            
+
             else if (auto* rf = e->dynCast<wasm::RefFunc>()) {
                 if (rng() & 1) {
                     auto* rn2 = builder.makeRefNull(rf->type);
                     if (auto* parent = findParentBlock(rf, exprs)) {
                         for (auto*& child : parent->list) {
-                            if (child == rf) { child = rn2; break; }
+                            if (child == rf) {
+                                child = rn2;
+                                break;
+                            }
                         }
                     } else {
                         func->body = rn2;
@@ -2268,7 +2321,7 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 }
             }
 
-            
+
             /* --- StructNew mutation ------------------------------------- */
             else if (auto* sn = e->dynCast<wasm::StructNew>()) {
                 auto& ops = sn->operands;
@@ -2277,43 +2330,43 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                     // same type random change const
                     auto* newVal = builder.makeConst(wasm::Literal(int32_t(rng() % 100)));
                     ops[i] = newVal;
-  #ifdef PRINT_LOG
-                  std::cout << "  • StructNew.fields["<<i<<"] mutated\n";
-  #endif
+                    if (enable_logging) {
+                        std::cout << "  • StructNew.fields[" << i << "] mutated\n";
+                    }
                 }
             }
-              /* --- StructGet mutation ------------------------------------- */
+            /* --- StructGet mutation ------------------------------------- */
             else if (auto* sg = e->dynCast<wasm::StructGet>()) {
                 uint32_t oldIdx = sg->index;
                 sg->index = rng() % /* struct field count */ 4;
-  #ifdef PRINT_LOG
-                std::cout << "  • StructGet index " << oldIdx
-                          << " → " << sg->index << "\n";
-  #endif
+                if (enable_logging) {
+                    std::cout << "  • StructGet index " << oldIdx
+                              << " → " << sg->index << "\n";
+                }
             }
-  
+
 
             /* --- ArrayNew mutation -------------------------------------- */
             else if (auto* an = e->dynCast<wasm::ArrayNew>()) {
                 auto* newSize = builder.makeConst(wasm::Literal(int32_t(rng() % 11)));
                 an->size = newSize;
-#ifdef PRINT_LOG
-    std::cout << "  • ArrayNew size → " << newSize->value.geti32() << "\n";
-#endif
+                if (enable_logging) {
+                    std::cout << "  • ArrayNew size → " << newSize->value.geti32() << "\n";
+                }
             }
-            
+
             /* --- ArrayGet mutation -------------------------------------- */
             else if (auto* ag = e->dynCast<wasm::ArrayGet>()) {
                 if (auto* idxC = ag->index->dynCast<wasm::Const>()) {
                     uint32_t oldIdx = idxC->value.geti32();
                     idxC->value = wasm::Literal(int32_t(rng() % 8));
-  #ifdef PRINT_LOG
-                  std::cout << "  • ArrayGet index " << oldIdx
-                            << " → " << idxC->value.geti32() << "\n";
-  #endif
+                    if (enable_logging) {
+                        std::cout << "  • ArrayGet index " << oldIdx
+                                  << " → " << idxC->value.geti32() << "\n";
+                    }
                 }
             }
-  
+
 
             /* --- CallIndirect ------------------------------------------- */
             else if (auto* ci = e->dynCast<BW::CallIndirect>()) {
@@ -2324,11 +2377,11 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                     uint32_t maxIndex = tbl.initial;
                     if (maxIndex > 0) {
                         uint32_t idx = rng() % maxIndex;
-                        ci->target = builder.makeConst( wasm::Literal(int32_t(idx)) );
-    #ifdef PRINT_LOG
-        std::cout << "  • CallIndirect retarget → slot " << idx << "\n";
-    #endif
-                   }
+                        ci->target = builder.makeConst(wasm::Literal(int32_t(idx)));
+                        if (enable_logging) {
+                            std::cout << "  • CallIndirect retarget → slot " << idx << "\n";
+                        }
+                    }
                 }
             }
 
@@ -2336,16 +2389,16 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
             else if (auto* sel = e->dynCast<BW::Select>()) {
                 if (rng() & 1) {
                     std::swap(sel->ifTrue, sel->ifFalse);
-#ifdef PRINT_LOG
-                    std::cout << "  • Select operands swapped\n";
-#endif
+                    if (enable_logging) {
+                        std::cout << "  • Select operands swapped\n";
+                    }
                 } else if (sel->condition->type == BW::Type::i32) {
                     sel->condition = builder.makeUnary(
                         static_cast<BW::UnaryOp>(BinaryenI32Eqz()),
                         sel->condition);
-#ifdef PRINT_LOG
-                    std::cout << "  • Select condition inverted (eqz)\n";
-#endif
+                    if (enable_logging) {
+                        std::cout << "  • Select condition inverted (eqz)\n";
+                    }
                 }
             }
 
@@ -2354,9 +2407,9 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                 if (rng() & 1) {
                     dp->value = builder.makeBlock(
                         { builder.makeNop(), dp->value });
-#ifdef PRINT_LOG
-                    std::cout << "  • Drop wrapped with Nop block\n";
-#endif
+                    if (enable_logging) {
+                        std::cout << "  • Drop wrapped with Nop block\n";
+                    }
                 }
             }
 
@@ -2364,10 +2417,10 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
             else if (auto* blk = e->dynCast<BW::Block>()) {
                 if (!blk->list.empty() && (rng() & 1)) {
                     size_t i = rng() % blk->list.size();
-                    blk->list.push_back(blk->list[i]);   /* shallow copy */
-#ifdef PRINT_LOG
-                    std::cout << "  • Block duplicated stmt @" << i << '\n';
-#endif
+                    blk->list.push_back(blk->list[i]); /* shallow copy */
+                    if (enable_logging) {
+                        std::cout << "  • Block duplicated stmt @" << i << '\n';
+                    }
                 }
             }
         }
@@ -2375,179 +2428,175 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
 
     for (auto& fnPtr : module->functions) {
         BW::Function* fn = fnPtr.get();
-        if (!fn->body) continue;
+        if (!fn->body)
+            continue;
 
-        if (rng()%5) continue;
+        if (rng() % 5)
+            continue;
 
         BW::Block* targetBlock = fn->body->dynCast<BW::Block>();
         if (!targetBlock) {
-            targetBlock = builder.makeBlock({fn->body});
-            fn->body    = targetBlock;
+            targetBlock = builder.makeBlock({ fn->body });
+            fn->body = targetBlock;
         }
         int pick = rng() % 8;
         BW::Expression* newInstr = nullptr;
 
         if (module->memories.empty()) {
             auto mem = std::make_unique<wasm::Memory>();
-            mem->name     = "memory";
-            mem->initial  = 1;          // one page is enough for fuzzing
+            mem->name = "memory";
+            mem->initial = 1; // one page is enough for fuzzing
             module->addMemory(std::move(mem));
         }
 
         // pick a data‐segment name, if we actually have one
         bool hasData = !module->elementSegments.empty();
-        BW::Name dataName = hasData ? module->elementSegments[0]->name : BW::Name();   
+        BW::Name dataName = hasData ? module->elementSegments[0]->name : BW::Name();
 
         switch (pick) {
-            case 0: { // memory.grow
-                auto* pages  = builder.makeConst(wasm::Literal(int32_t(1 + rng()%3)));
-                newInstr     = builder.makeMemoryGrow(pages, firstMemoryName(*module));
-                break;
+        case 0: { // memory.grow
+            auto* pages = builder.makeConst(wasm::Literal(int32_t(1 + rng() % 3)));
+            newInstr = builder.makeMemoryGrow(pages, firstMemoryName(*module));
+            break;
+        }
+        case 1: { // memory.size
+            newInstr = builder.makeMemorySize(firstMemoryName(*module));
+            break;
+        }
+        case 2: { // memory.fill
+            auto* dest = builder.makeConst(wasm::Literal(int32_t(rng() % 64)));
+            auto* val = builder.makeConst(wasm::Literal(int32_t(rng() % 256)));
+            auto* len = builder.makeConst(wasm::Literal(int32_t(8)));
+            newInstr = builder.makeMemoryFill(dest, val, len,
+                                              firstMemoryName(*module));
+            break;
+        }
+        case 3: { // ref.null + ref.is_null
+            using namespace wasm;
+            Type nullExtRef(HeapType::noext, Nullable, Exact); // null-externref
+            auto* refNull = builder.makeRefNull(nullExtRef);
+            newInstr = builder.makeRefIsNull(refNull);
+            break;
+        }
+        case 4: { // typed select (externref)
+            using namespace wasm;
+            Type nullExtRef(HeapType::noext, Nullable, Exact); // null-externref
+            Type extRef(HeapType::ext, Nullable, Inexact); // normal externref
+
+            auto* cond = builder.makeConst(wasm::Literal(int32_t(0)));
+            auto* r1 = builder.makeRefNull(nullExtRef);
+            auto* r2 = builder.makeRefNull(nullExtRef);
+            auto* sel = builder.makeSelect(cond, r1, r2);
+            sel->type = extRef; // result is a *regular* externref
+            break;
+        }
+        case 5: { // formerly “SIMD demo” – disabled on current Binaryen
+            newInstr = builder.makeNop();
+            break;
+        }
+        case 6: { // table.init / copy / fill / drop
+            // ensure there's at least one table
+            if (module->tables.empty()) {
+                auto tbl = std::make_unique<wasm::Table>();
+                tbl->name = "t0";
+                tbl->initial = 10;
+                module->addTable(std::move(tbl));
             }
-            case 1: { // memory.size
-                newInstr = builder.makeMemorySize(firstMemoryName(*module));
-                break;
-            }
-            case 2: { // memory.fill
-                auto* dest = builder.makeConst(wasm::Literal(int32_t(rng()%64)));
-                auto* val  = builder.makeConst(wasm::Literal(int32_t(rng()%256)));
-                auto* len  = builder.makeConst(wasm::Literal(int32_t(8)));
-                newInstr   = builder.makeMemoryFill(dest, val, len,
-                firstMemoryName(*module));
-                break;
-            }
-            case 3: { // ref.null + ref.is_null
-                using namespace wasm;
-                Type nullExtRef(HeapType::noext, Nullable, Exact);   // null-externref
-                auto* refNull = builder.makeRefNull(nullExtRef);
-                newInstr      = builder.makeRefIsNull(refNull);
-                break;
-            }
-            case 4: { // typed select (externref)
-                using namespace wasm;
-                Type nullExtRef(HeapType::noext, Nullable, Exact);  // null-externref
-                Type extRef   (HeapType::ext,   Nullable, Inexact); // normal externref
-                
-                auto* cond = builder.makeConst(wasm::Literal(int32_t(0)));
-                auto* r1   = builder.makeRefNull(nullExtRef);
-                auto* r2   = builder.makeRefNull(nullExtRef);
-                auto* sel  = builder.makeSelect(cond, r1, r2);
-                sel->type  = extRef;   // result is a *regular* externref
-                break;
-            }
-            case 5: { // formerly “SIMD demo” – disabled on current Binaryen
-                newInstr = builder.makeNop();
-                break;
-            }
-            case 6: { // table.init / copy / fill / drop
-                // ensure there's at least one table
-                if (module->tables.empty()) {
-                    auto tbl = std::make_unique<wasm::Table>();
-                    tbl->name    = "t0";
-                    tbl->initial = 10;
-                    module->addTable(std::move(tbl));
+            auto& tname = module->tables[0]->name;
+
+
+            auto* destIdx = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
+            auto* srcIdx = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
+            auto* len = builder.makeConst(wasm::Literal(int32_t(1 + rng() % 4)));
+
+            switch (rng() % 4) {
+            case 0: // table.init, only if we have a segment
+                if (hasData) {
+                    newInstr = builder.makeTableInit(dataName, destIdx, srcIdx, len, tname);
                 }
-                auto& tname = module->tables[0]->name;
-                
-            
-                auto* destIdx = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
-                auto* srcIdx  = builder.makeConst(wasm::Literal(int32_t(rng() % 5)));
-                auto* len     = builder.makeConst(wasm::Literal(int32_t(1 + rng() % 4)));
-            
-                switch (rng() % 4) {
-                  case 0: // table.init, only if we have a segment
-                    if (hasData) {
-                       newInstr = builder.makeTableInit(dataName, destIdx, srcIdx, len, tname);
-                    }
-                    break;
-                  case 1: // table.copy
-                    newInstr = builder.makeTableCopy(destIdx, srcIdx, len, tname, tname);
-                    break;
-                  case 2: // table.fill
-                    newInstr = builder.makeTableFill(
-                      tname,
-                      destIdx,
-                      builder.makeConst(wasm::Literal(int32_t(rng() & 0xff))),
-                      len
-                    );
-                    break;
-                  case 3: // data.drop (only if we have a real data‐segment)
-                    if (hasData) {
-                        newInstr = builder.makeDataDrop(dataName);
-                    }
-                    break;
+                break;
+            case 1: // table.copy
+                newInstr = builder.makeTableCopy(destIdx, srcIdx, len, tname, tname);
+                break;
+            case 2: // table.fill
+                newInstr = builder.makeTableFill(
+                    tname,
+                    destIdx,
+                    builder.makeConst(wasm::Literal(int32_t(rng() & 0xff))),
+                    len);
+                break;
+            case 3: // data.drop (only if we have a real data‐segment)
+                if (hasData) {
+                    newInstr = builder.makeDataDrop(dataName);
                 }
                 break;
             }
-                        
-            case 7: { // atomic.wait / notify
-                auto* ptr = builder.makeConst(wasm::Literal(int32_t(rng()%64)));
-                auto* exp = builder.makeConst(wasm::Literal(int32_t(rng()%256)));
-                if (rng()&1) {
-                    auto* zeroTimeout = builder.makeConst(wasm::Literal(int32_t(0)));
-                    newInstr = builder.makeAtomicWait(
-                      ptr,
-                      exp,
-                      zeroTimeout,
-                      BW::Type::i32,
-                      /* offset = */ 0,
-                      firstMemoryName(*module)
-                    );
-                } else {
-                    newInstr = builder.makeAtomicNotify(
-                        ptr,
-                        exp,
-                        /* offset = */ 0,
-                        firstMemoryName(*module)
-                    );
-                }
-                break;
-            }
+            break;
         }
 
-        if (!newInstr) continue;
+        case 7: { // atomic.wait / notify
+            auto* ptr = builder.makeConst(wasm::Literal(int32_t(rng() % 64)));
+            auto* exp = builder.makeConst(wasm::Literal(int32_t(rng() % 256)));
+            if (rng() & 1) {
+                auto* zeroTimeout = builder.makeConst(wasm::Literal(int32_t(0)));
+                newInstr = builder.makeAtomicWait(
+                    ptr,
+                    exp,
+                    zeroTimeout,
+                    BW::Type::i32,
+                    /* offset = */ 0,
+                    firstMemoryName(*module));
+            } else {
+                newInstr = builder.makeAtomicNotify(
+                    ptr,
+                    exp,
+                    /* offset = */ 0,
+                    firstMemoryName(*module));
+            }
+            break;
+        }
+        }
+
+        if (!newInstr)
+            continue;
 
         // Insert at the top of the block
         targetBlock->list.push_back(newInstr);
         std::rotate(targetBlock->list.begin(),
                     targetBlock->list.end() - 1,
-                    targetBlock->list.end());   // move to front        
+                    targetBlock->list.end()); // move to front
     }
 
     /* --------- Step 3: Verification of module type after mutation --------- */
     wasm::WasmValidator validator;
     if (!validator.validate(*module)) {
-      for (auto& fnPtr : module->functions) {
-        auto* func = fnPtr.get();
-        if (!func->body) continue;
-        
-        // only look at functions whose body is a top-level Block
-        if (auto* blk = func->body->dynCast<wasm::Block>()) {
-          auto resultType = blk->type;
-          if (resultType != wasm::Type::none) {
-            bool bad =
-              blk->list.empty() ||
-              blk->list.back()->type != resultType;
-            if (bad) {
-              if (resultType.isNumber()) {
-                // i32/i64/f32/f64 → push a zero constant
-                blk->list.push_back(
-                  builder.makeConst(
-                    wasm::Literal::makeZero(resultType)
-                  )
-                );
-              } else if (resultType.isRef()) {
-                // funcref/externref/etc → push a ref.null
-                auto heap = resultType.getHeapType();
-                blk->list.push_back(
-                  builder.makeRefNull(heap)
-                );
-              }
-              // TODO: (we skip v128 and any other exotic types here)
+        for (auto& fnPtr : module->functions) {
+            auto* func = fnPtr.get();
+            if (!func->body)
+                continue;
+
+            // only look at functions whose body is a top-level Block
+            if (auto* blk = func->body->dynCast<wasm::Block>()) {
+                auto resultType = blk->type;
+                if (resultType != wasm::Type::none) {
+                    bool bad = blk->list.empty() || blk->list.back()->type != resultType;
+                    if (bad) {
+                        if (resultType.isNumber()) {
+                            // i32/i64/f32/f64 → push a zero constant
+                            blk->list.push_back(
+                                builder.makeConst(
+                                    wasm::Literal::makeZero(resultType)));
+                        } else if (resultType.isRef()) {
+                            // funcref/externref/etc → push a ref.null
+                            auto heap = resultType.getHeapType();
+                            blk->list.push_back(
+                                builder.makeRefNull(heap));
+                        }
+                        // TODO: (we skip v128 and any other exotic types here)
+                    }
+                }
             }
-          }
         }
-      }
     }
 }
 
@@ -2556,20 +2605,21 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
 // randomly flip a bit or inject an extreme value.
 void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
 {
-    if (!module || module->functions.empty()) return;
-    #ifdef PRINT_LOG
-    std::cout << "[Custom Mutator] mutateConstantExpressions module with " << module->functions.size() << " functions\n";
-    #endif
+    if (!module || module->functions.empty())
+        return;
+    if (enable_logging) {
+        std::cout << "[Custom Mutator] mutateConstantExpressions module with " << module->functions.size() << " functions\n";
+    }
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
 
-        if (!hasBody(func))     
+        if (!hasBody(func))
             continue;
 
-        
-        #ifdef PRINT_LOG
-        std::cout << "[Custom Mutator] Processing functions: " << func->name.str << "\n";
-        #endif
+
+        if (enable_logging) {
+            std::cout << "[Custom Mutator] Processing functions: " << func->name.str << "\n";
+        }
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
         for (auto* expr : exprs) {
             if (auto* c = expr->dynCast<BW::Const>()) {
@@ -2580,21 +2630,21 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
                         int bit = rng() % 32;
                         int32_t newVal = oldVal ^ (1 << bit);
                         c->value = BW::Literal(newVal);
-                        #ifdef PRINT_LOG
-                        std::cout << "[Custom Mutator] Function " << func->name.str
-                            << ": i32 constant bit flip mutation - old value: " << oldVal
-                            << ", flipped bit: " << bit
-                            << ", new value: " << newVal << ".\n";
-                        #endif
+                        if (enable_logging) {
+                            std::cout << "[Custom Mutator] Function " << func->name.str
+                                      << ": i32 constant bit flip mutation - old value: " << oldVal
+                                      << ", flipped bit: " << bit
+                                      << ", new value: " << newVal << ".\n";
+                        }
                     } else {
                         std::vector<int32_t> candidates = { 0, -1,
                                                             std::numeric_limits<int32_t>::max(), std::numeric_limits<int32_t>::min() };
                         int32_t chosen = candidates[rng() % candidates.size()];
                         c->value = BW::Literal(chosen);
-                        #ifdef PRINT_LOG
-                        std::cout << "[Custom Mutator] Function " << func->name.str
-                                  << ": i32 constant extreme value injection - new value: " << chosen << ".\n";
-                        #endif
+                        if (enable_logging) {
+                            std::cout << "[Custom Mutator] Function " << func->name.str
+                                      << ": i32 constant extreme value injection - new value: " << chosen << ".\n";
+                        }
                     }
                 } else if (c->type == BW::Type::i64) {
                     if (choice == 0) {
@@ -2602,21 +2652,21 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
                         int bit = rng() % 64;
                         int64_t newVal = oldVal ^ (1LL << bit);
                         c->value = BW::Literal(newVal);
-                        #ifdef PRINT_LOG
-                        std::cout << "[Custom Mutator] Function " << func->name.str 
-                            << ": i64 constant bit flip mutation - old value: " << oldVal 
-                            << ", flipped bit: " << bit 
-                            << ", new value: " << newVal << ".\n";
-                        #endif
+                        if (enable_logging) {
+                            std::cout << "[Custom Mutator] Function " << func->name.str
+                                      << ": i64 constant bit flip mutation - old value: " << oldVal
+                                      << ", flipped bit: " << bit
+                                      << ", new value: " << newVal << ".\n";
+                        }
                     } else {
                         std::vector<int64_t> candidates = { 0LL, -1LL,
                                                             std::numeric_limits<int64_t>::max(), std::numeric_limits<int64_t>::min() };
                         int64_t chosen = candidates[rng() % candidates.size()];
                         c->value = BW::Literal(chosen);
-                        #ifdef PRINT_LOG
-                        std::cout << "[Custom Mutator] Function " << func->name.str 
-                                  << ": i64 constant extreme value injection - new value: " << chosen << ".\n";
-                        #endif
+                        if (enable_logging) {
+                            std::cout << "[Custom Mutator] Function " << func->name.str
+                                      << ": i64 constant extreme value injection - new value: " << chosen << ".\n";
+                        }
                     }
                 } else if (c->type == BW::Type::f32) {
                     if (choice == 0) {
@@ -2628,22 +2678,22 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
                         float newVal;
                         memcpy(&newVal, &bits, sizeof(newVal));
                         c->value = BW::Literal(newVal);
-                        #ifdef PRINT_LOG
-                        std::cout << "[Custom Mutator] Function " << func->name.str 
-                            << ": f32 constant bit flip mutation - old value: " << oldVal 
-                            << ", flipped bit: " << bit 
-                            << ", new value: " << newVal << ".\n";
-                        #endif
+                        if (enable_logging) {
+                            std::cout << "[Custom Mutator] Function " << func->name.str
+                                      << ": f32 constant bit flip mutation - old value: " << oldVal
+                                      << ", flipped bit: " << bit
+                                      << ", new value: " << newVal << ".\n";
+                        }
                     } else {
                         std::vector<float> candidates = { 0.0f, -0.0f,
                                                           std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(),
                                                           std::numeric_limits<float>::quiet_NaN() };
                         float chosen = candidates[rng() % candidates.size()];
                         c->value = BW::Literal(chosen);
-                        #ifdef PRINT_LOG
-                        std::cout << "[Custom Mutator] Function " << func->name.str 
-                                  << ": f32 constant extreme value injection - new value: " << chosen << ".\n";
-                        #endif
+                        if (enable_logging) {
+                            std::cout << "[Custom Mutator] Function " << func->name.str
+                                      << ": f32 constant extreme value injection - new value: " << chosen << ".\n";
+                        }
                     }
                 } else if (c->type == BW::Type::f64) {
                     if (choice == 0) {
@@ -2655,22 +2705,22 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
                         double newVal;
                         memcpy(&newVal, &bits, sizeof(newVal));
                         c->value = BW::Literal(newVal);
-                        #ifdef PRINT_LOG
-                        std::cout << "[Custom Mutator] Function " << func->name.str 
-                            << ": f64 constant bit flip mutation - old value: " << oldVal 
-                            << ", flipped bit: " << bit 
-                            << ", new value: " << newVal << ".\n";
-                        #endif
+                        if (enable_logging) {
+                            std::cout << "[Custom Mutator] Function " << func->name.str
+                                      << ": f64 constant bit flip mutation - old value: " << oldVal
+                                      << ", flipped bit: " << bit
+                                      << ", new value: " << newVal << ".\n";
+                        }
                     } else {
                         std::vector<double> candidates = { 0.0, -0.0,
                                                            std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(),
                                                            std::numeric_limits<double>::quiet_NaN() };
                         double chosen = candidates[rng() % candidates.size()];
                         c->value = BW::Literal(chosen);
-                        #ifdef PRINT_LOG
-                        std::cout << "[LOG] Function " << func->name.str 
-                                  << ": f64 constant extreme value injection - new value: " << chosen << ".\n";
-                        #endif
+                        if (enable_logging) {
+                            std::cout << "[LOG] Function " << func->name.str
+                                      << ": f64 constant extreme value injection - new value: " << chosen << ".\n";
+                        }
                     }
                 }
             }
@@ -2693,141 +2743,146 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
 // Revised mutateSection: Performs several section-level mutations on the module.
 // Strategies include: adding a new dummy function, cloning an existing function,
 // removing the last function, inserting a new global variable, and modifying a data segment.
-void mutateSection(BW::Module* module, Store* store, std::mt19937& rng) {
-    if (!module || module->functions.empty()) return;
-  
+void mutateSection(BW::Module* module, Store* store, std::mt19937& rng)
+{
+    if (!module || module->functions.empty())
+        return;
+
     int option = rng() % 5;
     BW::Builder builder(*module);
-  
+
     if (option == 0) {
-      // Option 0: Add a new dummy function.
-      #ifdef PRINT_LOG
-      std::cout << "[Custom Mutator] Section mutation: Adding new dummy function.\n";
-      #endif
-      BW::Function* newFunc = new BW::Function();
-      newFunc->name = BW::Name("fuzz_dummy");
+        // Option 0: Add a new dummy function.
+        if (enable_logging) {
+            std::cout << "[Custom Mutator] Section mutation: Adding new dummy function.\n";
+        }
+        BW::Function* newFunc = new BW::Function();
+        newFunc->name = BW::Name("fuzz_dummy");
 
-      // Copy the function type from an existing function.
-      newFunc->type = module->functions[0]->type;
-      
-      // Create a simple function body: drop a constant.
-      BW::Expression* constExpr = builder.makeConst(BW::Literal(int32_t(0)));
-      BW::Expression* dropExpr = builder.makeDrop(constExpr);
-      newFunc->body = dropExpr;
-      module->addFunction(newFunc);
-      #ifdef PRINT_LOG
-      std::cout << "[Custom Mutator] Section mutation: New function '"
-                << newFunc->name.str << "' added.\n";
-      #endif
+        // Copy the function type from an existing function.
+        newFunc->type = module->functions[0]->type;
+
+        // Create a simple function body: drop a constant.
+        BW::Expression* constExpr = builder.makeConst(BW::Literal(int32_t(0)));
+        BW::Expression* dropExpr = builder.makeDrop(constExpr);
+        newFunc->body = dropExpr;
+        module->addFunction(newFunc);
+        if (enable_logging) {
+            std::cout << "[Custom Mutator] Section mutation: New function '"
+                      << newFunc->name.str << "' added.\n";
+        }
     } else if (option == 1) {
-      // Option 1: Clone an existing function.
-      if (!module->functions.empty()) {
-        size_t idx = rng() % module->functions.size();
-        BW::Function* orig = module->functions[idx].get();
-        BW::Function* clone = new BW::Function(*orig);
+        // Option 1: Clone an existing function.
+        if (!module->functions.empty()) {
+            size_t idx = rng() % module->functions.size();
+            BW::Function* orig = module->functions[idx].get();
+            BW::Function* clone = new BW::Function(*orig);
 
-        // Append "_clone" to the original function's name.
-        clone->name = BW::Name(std::string(orig->name.str) + "_clone");
-        module->addFunction(clone);
-        #ifdef PRINT_LOG
-        std::cout << "[Custom Mutator] Section mutation: Cloned function '"
-                  << orig->name.str << "' to '" << clone->name.str << "'.\n";
-        #endif
-      }
+            // Append "_clone" to the original function's name.
+            clone->name = BW::Name(std::string(orig->name.str) + "_clone");
+            module->addFunction(clone);
+            if (enable_logging) {
+                std::cout << "[Custom Mutator] Section mutation: Cloned function '"
+                          << orig->name.str << "' to '" << clone->name.str << "'.\n";
+            }
+        }
     } else if (option == 2) {
-      // Option 2: Remove the last function.
-      if (!module->functions.empty()) {
-        std::string name = std::string(module->functions.back()->name.str);
-        module->removeFunction(name);
-        #ifdef PRINT_LOG
-        std::cout << "[Custom Mutator] Section mutation: Removed function '" << name << "'.\n";
-        #endif
-      }
+        // Option 2: Remove the last function.
+        if (!module->functions.empty()) {
+            std::string name = std::string(module->functions.back()->name.str);
+            module->removeFunction(name);
+            if (enable_logging) {
+                std::cout << "[Custom Mutator] Section mutation: Removed function '" << name << "'.\n";
+            }
+        }
     } else if (option == 3) {
-      // Option 3: Insert a new global variable.
-      #ifdef PRINT_LOG
-      std::cout << "[Custom Mutator] Section mutation: Adding new global variable.\n";
-      #endif
-      
-      /*
-      // Generate a random int32 value.
-      int32_t randVal = static_cast<int32_t>(rng());
-      
-      // Create a new global by constructing a unique_ptr to Global.
-      auto newGlobal = std::make_unique<BW::Global>();
-      
-      // Create a Type object from the uint32_t returned by BinaryenTypeInt32();
-      BW::Type int32Type(BinaryenTypeInt32());
+        // Option 3: Insert a new global variable.
+        if (enable_logging) {
+            std::cout << "[Custom Mutator] Section mutation: Adding new global variable.\n";
+        }
 
-      // Set the global's tyype.      
-      newGlobal->type = int32Type;
-      
-      // Mark the global as mutable.
-      newGlobal->mutable_ = true;
-      
-      // Initialize the global's value with a constant.
-      newGlobal->init = builder.makeConst(BW::Literal(int32_t(randVal)));
-      
-      // Set an export name for tracking.
-      newGlobal->name = BW::Name("fuzz_global");
-      
-      // Add the new global to the module.
-      module->addGlobal(std::move(newGlobal));
-      */
+        /*
+        // Generate a random int32 value.
+        int32_t randVal = static_cast<int32_t>(rng());
 
-      int32_t randVal = static_cast<int32_t>(rng());
+        // Create a new global by constructing a unique_ptr to Global.
+        auto newGlobal = std::make_unique<BW::Global>();
 
-      auto* newGlobal = new wasm::Global();
-      newGlobal->name = BW::Name("fuzz_global");
-      newGlobal->mutable_ = true;
-      newGlobal->type = wasm::Type::i32;
-      newGlobal->init = builder.makeConst(BW::Literal(randVal));
-      module->addGlobal(newGlobal);    
-      #ifdef PRINT_LOG
-      std::cout << "[Custom Mutator] Section mutation: New global variable 'fuzz_global' added with initial value "
-                << randVal << ".\n";
-      #endif
+        // Create a Type object from the uint32_t returned by BinaryenTypeInt32();
+        BW::Type int32Type(BinaryenTypeInt32());
+
+        // Set the global's tyype.
+        newGlobal->type = int32Type;
+
+        // Mark the global as mutable.
+        newGlobal->mutable_ = true;
+
+        // Initialize the global's value with a constant.
+        newGlobal->init = builder.makeConst(BW::Literal(int32_t(randVal)));
+
+        // Set an export name for tracking.
+        newGlobal->name = BW::Name("fuzz_global");
+
+        // Add the new global to the module.
+        module->addGlobal(std::move(newGlobal));
+        */
+
+        int32_t randVal = static_cast<int32_t>(rng());
+
+        auto* newGlobal = new wasm::Global();
+        newGlobal->name = BW::Name("fuzz_global");
+        newGlobal->mutable_ = true;
+        newGlobal->type = wasm::Type::i32;
+        newGlobal->init = builder.makeConst(BW::Literal(randVal));
+        module->addGlobal(newGlobal);
+        if (enable_logging) {
+            std::cout << "[Custom Mutator] Section mutation: New global variable 'fuzz_global' added with initial value "
+                      << randVal << ".\n";
+        }
     } else if (option == 4) {
-      // Option 4: Modify the data section.
-      if (!module->dataSegments.empty()) {
-        #ifdef PRINT_LOG
-        std::cout << "[Custom Mutator] Section mutation: Modifying a data segment.\n";
-        #endif
-        size_t idx = rng() % module->dataSegments.size();
-        auto& dataSeg = module->dataSegments[idx];
-        const char extra[] = "FUZZ";
-        dataSeg->data.insert(dataSeg->data.end(), extra, extra + sizeof(extra) - 1);
-        #ifdef PRINT_LOG
-        std::cout << "[Custom Mutator] Section mutation: Appended 'FUZZ' to data segment " << idx << ".\n";
-        #endif
-      } else {
-        #ifdef PRINT_LOG
-        std::cout << "[Custom Mutator] Section mutation: No data segments available to modify.\n";
-        #endif
-      }
+        // Option 4: Modify the data section.
+        if (!module->dataSegments.empty()) {
+            if (enable_logging) {
+                std::cout << "[Custom Mutator] Section mutation: Modifying a data segment.\n";
+            }
+            size_t idx = rng() % module->dataSegments.size();
+            auto& dataSeg = module->dataSegments[idx];
+            const char extra[] = "FUZZ";
+            dataSeg->data.insert(dataSeg->data.end(), extra, extra + sizeof(extra) - 1);
+            if (enable_logging) {
+                std::cout << "[Custom Mutator] Section mutation: Appended 'FUZZ' to data segment " << idx << ".\n";
+            }
+        } else {
+            if (enable_logging) {
+                std::cout << "[Custom Mutator] Section mutation: No data segments available to modify.\n";
+            }
+        }
     }
-  }
+}
 
 static BW::Function* pickRandomFunctionWithBody(BW::Module* module, std::mt19937& rng)
 {
-    if (!module || module->functions.empty()) return nullptr;
+    if (!module || module->functions.empty())
+        return nullptr;
 
     /* Randomize up to 8 attempts, then search linearly with fallback */
     for (int tries = 0; tries < 8; ++tries) {
         BW::Function* cand = module->functions[rng() % module->functions.size()].get();
-        if (cand && cand->body) return cand;
+        if (cand && cand->body)
+            return cand;
     }
-    
+
     for (auto& f : module->functions)
-        if (f->body) return f.get();
-    
+        if (f->body)
+            return f.get();
+
     return nullptr;
 }
 
 
 //-----------------------------------------------------------------------------
-// Semantic Mutation: Insert dead code into a function's body or apply equivalent 
-// transformations without changing the program semantics. This increases the 
+// Semantic Mutation: Insert dead code into a function's body or apply equivalent
+// transformations without changing the program semantics. This increases the
 // coverage by generating diverse code structures.
 // Strategies include:
 // - Inserting an if(false){...} block (dead code)
@@ -2837,158 +2892,162 @@ static BW::Function* pickRandomFunctionWithBody(BW::Module* module, std::mt19937
 // - Inserting an if(false){unreachable} block
 void mutateSemantic(BW::Module* module, std::mt19937& rng)
 {
-    if (!module || module->functions.empty()) return;
+    if (!module || module->functions.empty())
+        return;
 
     BW::Function* func = pickRandomFunctionWithBody(module, rng);
-    if (!func) return;   
+    if (!func)
+        return;
 
-    
-    #ifdef PRINT_LOG
+
+    if (enable_logging) {
         std::cout << "[Custom Mutator] Semantic mutation: Processing function '"
-              << func->name.str << "'.\n";
-    #endif
+                  << func->name.str << "'.\n";
+    }
 
     BW::Builder builder(*module);
 
     // Choose among 5 semantic-preserving mutation strategies.
     int option = rng() % 4;
     switch (option) {
-        case 0: {
-            // Option 0: Insert dead code with an if(false){...} block.
-            BW::Expression* falseConst = builder.makeConst(BW::Literal(int32_t(0)));
-            BW::Expression* nopExpr = builder.makeNop();
-            BW::Expression* ifBlock = builder.makeBlock({ nopExpr });
-            BW::Expression* ifExpr = builder.makeIf(falseConst, ifBlock);
-            // Insert the if-block at the beginning of the function body.
+    case 0: {
+        // Option 0: Insert dead code with an if(false){...} block.
+        BW::Expression* falseConst = builder.makeConst(BW::Literal(int32_t(0)));
+        BW::Expression* nopExpr = builder.makeNop();
+        BW::Expression* ifBlock = builder.makeBlock({ nopExpr });
+        BW::Expression* ifExpr = builder.makeIf(falseConst, ifBlock);
+        // Insert the if-block at the beginning of the function body.
+        if (auto* block = func->body->dynCast<BW::Block>()) {
+            block->list.push_back(ifExpr);
+            if (block->list.size() > 1) {
+                std::swap(block->list[0], block->list.back());
+            }
+        } else {
+            func->body = builder.makeBlock({ ifExpr, func->body });
+        }
+        if (enable_logging) {
+            std::cout << "[Custom Mutator] Inserted if(false) dead code block.\n";
+        }
+        break;
+    }
+    /*
+    case 1: {
+        // Option 1: Insert a drop instruction wrapping a no-op arithmetic expression.
+        // BW::Expression* zero = builder.makeConst(BW::Literal(int32_t(0)));
+        const uint8_t simdZeros[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        BW::Expression* zero = builder.makeConst(BW::Literal(simdZeros));
+        BW::Expression* addExpr = builder.makeBinary(static_cast<BW::BinaryOp>(BinaryenI32Add()), zero, zero);
+        BW::Expression* dropExpr = builder.makeDrop(addExpr);
+
+        BW::Type bodyType = func->body->type;
+        bool isSafeToInsertDrop = (bodyType == BW::Type::none);
+
+        if (isSafeToInsertDrop) {
             if (auto* block = func->body->dynCast<BW::Block>()) {
-                block->list.push_back(ifExpr);
+                block->list.push_back(dropExpr);
                 if (block->list.size() > 1) {
                     std::swap(block->list[0], block->list.back());
                 }
             } else {
-                func->body = builder.makeBlock({ ifExpr, func->body });
+                func->body = builder.makeBlock({ dropExpr, func->body });
             }
-            #ifdef PRINT_LOG
-            std::cout << "[Custom Mutator] Inserted if(false) dead code block.\n";
-            #endif
-            break;
         }
-        /*
-        case 1: {
-            // Option 1: Insert a drop instruction wrapping a no-op arithmetic expression.
-            // BW::Expression* zero = builder.makeConst(BW::Literal(int32_t(0)));
-            const uint8_t simdZeros[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-            BW::Expression* zero = builder.makeConst(BW::Literal(simdZeros));
-            BW::Expression* addExpr = builder.makeBinary(static_cast<BW::BinaryOp>(BinaryenI32Add()), zero, zero);
-            BW::Expression* dropExpr = builder.makeDrop(addExpr);
-            
-            BW::Type bodyType = func->body->type;
-            bool isSafeToInsertDrop = (bodyType == BW::Type::none);
-
-            if (isSafeToInsertDrop) {
-                if (auto* block = func->body->dynCast<BW::Block>()) {
-                    block->list.push_back(dropExpr);
-                    if (block->list.size() > 1) {
-                        std::swap(block->list[0], block->list.back());
-                    }
-                } else {
-                    func->body = builder.makeBlock({ dropExpr, func->body });
-                }
-            }
-            // #ifdef PRINT_LOG
-            std::cout << "[Custom Mutator] Inserted drop of no-op arithmetic expression.\n";
-            // #endif
-            break;
-        }
-        */
-        case 1: {
-            // Option 2: Transform an i32.add into an equivalent form: (x + 0) + y.
-            std::vector<BW::Expression*> binExprs = collectExpressions(func->body);
-            bool transformed = false;
-            for (auto* expr : binExprs) {
-                if (auto* binary = expr->dynCast<BW::Binary>()) {
-                    if (binary->op == BinaryenI32Add()) {
-                        BW::Expression* zero = builder.makeConst(BW::Literal(int32_t(0)));
-                        BW::Expression* newLeft = builder.makeBinary(static_cast<BW::BinaryOp>(BinaryenI32Add()), binary->left, zero);
-                        binary->left = newLeft;
-                        #ifdef PRINT_LOG
+        // if (enable_logging) {
+        std::cout << "[Custom Mutator] Inserted drop of no-op arithmetic expression.\n";
+        // #endif
+        break;
+    }
+    */
+    case 1: {
+        // Option 2: Transform an i32.add into an equivalent form: (x + 0) + y.
+        std::vector<BW::Expression*> binExprs = collectExpressions(func->body);
+        bool transformed = false;
+        for (auto* expr : binExprs) {
+            if (auto* binary = expr->dynCast<BW::Binary>()) {
+                if (binary->op == BinaryenI32Add()) {
+                    BW::Expression* zero = builder.makeConst(BW::Literal(int32_t(0)));
+                    BW::Expression* newLeft = builder.makeBinary(static_cast<BW::BinaryOp>(BinaryenI32Add()), binary->left, zero);
+                    binary->left = newLeft;
+                    if (enable_logging) {
                         std::cout << "[Custom Mutator] Transformed i32.add to equivalent form (x+0+y).\n";
-                        #endif
-                        transformed = true;
-                        break; // Apply transformation once per function.
                     }
+                    transformed = true;
+                    break; // Apply transformation once per function.
                 }
             }
-            if (!transformed) {
-                #ifdef PRINT_LOG
-                std::cout << "[Custom Mutator] No suitable binary arithmetic expression found for transformation.\n";
-                #endif
-            }
-            break;
         }
-        case 2: {
-            // Option 3: Duplicate an instruction to alter internal structure.
-            std::vector<BW::Expression*> allExprs = collectExpressions(func->body);
-            bool duplicated = false;
-            for (auto* expr : allExprs) {
-                if (auto* binary = expr->dynCast<BW::Binary>()) {
-                    BW::Block* parentBlock = findParentBlock(binary, allExprs);
-                    if (parentBlock) {
-                        parentBlock->list.push_back(binary);
-                        #ifdef PRINT_LOG
+        if (!transformed) {
+            if (enable_logging) {
+                std::cout << "[Custom Mutator] No suitable binary arithmetic expression found for transformation.\n";
+            }
+        }
+        break;
+    }
+    case 2: {
+        // Option 3: Duplicate an instruction to alter internal structure.
+        std::vector<BW::Expression*> allExprs = collectExpressions(func->body);
+        bool duplicated = false;
+        for (auto* expr : allExprs) {
+            if (auto* binary = expr->dynCast<BW::Binary>()) {
+                BW::Block* parentBlock = findParentBlock(binary, allExprs);
+                if (parentBlock) {
+                    parentBlock->list.push_back(binary);
+                    if (enable_logging) {
                         std::cout << "[Custom Mutator] Duplicated a binary expression in function '"
                                   << func->name.str << "'.\n";
-                        #endif
-                        duplicated = true;
-                        break;
                     }
+                    duplicated = true;
+                    break;
                 }
             }
-            if (!duplicated) {
-                #ifdef PRINT_LOG
+        }
+        if (!duplicated) {
+            if (enable_logging) {
                 std::cout << "[Custom Mutator] No expression found for duplication in function '"
                           << func->name.str << "'.\n";
-                #endif
             }
-            break;
         }
-        case 3: {
-            // Option 4: Insert an unreachable instruction inside an if(false){...} block.
-            BW::Expression* falseConst = builder.makeConst(BW::Literal(int32_t(0)));
-            BW::Expression* unreachableExpr = builder.makeUnreachable();
-            BW::Expression* ifBlock = builder.makeBlock({ unreachableExpr });
-            BW::Expression* ifExpr = builder.makeIf(falseConst, ifBlock);
-            if (auto* block = func->body->dynCast<BW::Block>()) {
-                block->list.push_back(ifExpr);
-                if (block->list.size() > 1) {
-                    std::swap(block->list[0], block->list.back());
-                }
-            } else {
-                func->body = builder.makeBlock({ ifExpr, func->body });
-            }
-            #ifdef PRINT_LOG
-            std::cout << "[Custom Mutator] Inserted if(false) block containing unreachable code.\n";
-            #endif
-            break;
-        }
-        default:
-            break;
+        break;
     }
-    #ifdef PRINT_LOG
-    std::cout << "[Custom Mutator] Semantic mutation: Completed processing function '"
-              << func->name.str << "'.\n";
-    #endif
+    case 3: {
+        // Option 4: Insert an unreachable instruction inside an if(false){...} block.
+        BW::Expression* falseConst = builder.makeConst(BW::Literal(int32_t(0)));
+        BW::Expression* unreachableExpr = builder.makeUnreachable();
+        BW::Expression* ifBlock = builder.makeBlock({ unreachableExpr });
+        BW::Expression* ifExpr = builder.makeIf(falseConst, ifBlock);
+        if (auto* block = func->body->dynCast<BW::Block>()) {
+            block->list.push_back(ifExpr);
+            if (block->list.size() > 1) {
+                std::swap(block->list[0], block->list.back());
+            }
+        } else {
+            func->body = builder.makeBlock({ ifExpr, func->body });
+        }
+        if (enable_logging) {
+            std::cout << "[Custom Mutator] Inserted if(false) block containing unreachable code.\n";
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    if (enable_logging) {
+        std::cout << "[Custom Mutator] Semantic mutation: Completed processing function '"
+                  << func->name.str << "'.\n";
+    }
 }
 
-static BW::Block* ensureBlock(BW::Builder& B, BW::Expression*& body) {
-    if (auto* blk = body->dynCast<BW::Block>()) return blk;
+static BW::Block* ensureBlock(BW::Builder& B, BW::Expression*& body)
+{
+    if (auto* blk = body->dynCast<BW::Block>())
+        return blk;
     body = B.makeBlock({ body });
-    return body->dynCast<BW::Block>();   // now definitely a block
+    return body->dynCast<BW::Block>(); // now definitely a block
 }
 
 static inline void prepend(ArenaVector<BW::Expression*>& vec, BW::Expression* expr)
 {
-    vec.push_back(expr);                      // 1. append
+    vec.push_back(expr); // 1. append
     std::rotate(vec.begin(), vec.end() - 1, vec.end()); // 2. rotate last → front
 }
 
@@ -2996,32 +3055,33 @@ static inline void prepend(ArenaVector<BW::Expression*>& vec, BW::Expression* ex
 // Control-Flow Mutation: Modify branch conditions in control expressions.
 void mutateControlFlow(BW::Module* module, std::mt19937& rng)
 {
-    if (!module || module->functions.empty()) return;
+    if (!module || module->functions.empty())
+        return;
 
     BW::Builder builder(*module);
 
     for (auto& fptr : module->functions) {
         BW::Function* func = fptr.get();
-        if (!hasBody(func)) continue;
+        if (!hasBody(func))
+            continue;
 
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
         bool mutated = false;
 
         for (auto* expr : exprs) {
-
             /* ───────────────── Break / br_if ───────────────── */
             if (auto* br = expr->dynCast<BW::Break>()) {
                 if (br->condition) {
                     switch (rng() % 3) {
-                    case 0:  // toggle
+                    case 0: // toggle
                         br->condition = builder.makeUnary(
                             static_cast<BW::UnaryOp>(BinaryenI32Eqz()),
                             br->condition);
                         break;
-                    case 1:  // remove
+                    case 1: // remove
                         br->condition = builder.makeNop();
                         break;
-                    case 2:  // constant
+                    case 2: // constant
                         br->condition = builder.makeConst(
                             BW::Literal(int32_t(rng() & 1)));
                         break;
@@ -3030,7 +3090,7 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
 
                 if (!(br->name == BW::Name()) && (rng() & 1)) {
                     std::string old = std::string(br->name.str);
-                    br->name        = BW::Name(old + "_mut");
+                    br->name = BW::Name(old + "_mut");
                 }
                 mutated = true;
             }
@@ -3041,22 +3101,22 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
                 BW::Block* body = ensureBlock(builder, loop->body);
 
                 switch (style) {
-                case 0: {  // early break
+                case 0: { // early break
                     auto* brk = builder.makeBreak(
                         BW::Name(), nullptr,
                         builder.makeConst(BW::Literal(int32_t(1))));
                     prepend(body->list, brk);
                     break;
                 }
-                case 1: {  // if(cond) break;
-                    auto* cond  = builder.makeConst(
+                case 1: { // if(cond) break;
+                    auto* cond = builder.makeConst(
                         BW::Literal(int32_t(rng() & 1)));
                     auto* ifBrk = builder.makeIf(
                         cond, builder.makeBreak(loop->name));
                     prepend(body->list, ifBrk);
                     break;
                 }
-                case 2: {  // wrap with outer loop
+                case 2: { // wrap with outer loop
                     auto* outer = builder.makeLoop(
                         BW::Name(std::string(loop->name.str) + "_wrap"),
                         loop);
@@ -3069,7 +3129,7 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
 
             /* ───────────────── If / Else ───────────────── */
             else if (auto* iff = expr->dynCast<BW::If>()) {
-                if (iff->ifFalse && (rng() & 1)) {           // swap then/else
+                if (iff->ifFalse && (rng() & 1)) { // swap then/else
                     std::swap(iff->ifTrue, iff->ifFalse);
                     iff->condition = builder.makeUnary(
                         static_cast<BW::UnaryOp>(BinaryenI32Eqz()),
@@ -3093,11 +3153,11 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
             }
         } // for-expr
 
-#ifdef PRINT_LOG
-        if (!mutated)
-            std::cout << "[mutateCF] nothing changed in "
-                      << func->name.str << '\n';
-#endif
+        if (enable_logging) {
+            if (!mutated)
+                std::cout << "[mutateCF] nothing changed in "
+                          << func->name.str << '\n';
+        }
     } // for-function
 }
 
@@ -3108,15 +3168,16 @@ void mutateControlFlow(BW::Module* module, std::mt19937& rng)
 // 5. Vulnerability Injection: Because the target of call_indirect must be Expression*, it generates a constant expression.
 void injectVulnerability(BW::Module* module, std::mt19937& rng)
 {
-    if (!module || module->functions.empty()) return;
-    #ifdef PRINT_LOG
-    std::cout << "[Custom Mutator] Starting vulnerability injection.\n";
-    #endif
+    if (!module || module->functions.empty())
+        return;
+    if (enable_logging) {
+        std::cout << "[Custom Mutator] Starting vulnerability injection.\n";
+    }
     // Iterate over each function.
     for (auto& funcPtr : module->functions) {
         BW::Function* func = funcPtr.get();
-        
-        if (!hasBody(func))     
+
+        if (!hasBody(func))
             continue;
 
         std::vector<BW::Expression*> exprs = collectExpressions(func->body);
@@ -3132,8 +3193,8 @@ void injectVulnerability(BW::Module* module, std::mt19937& rng)
             BW::Expression* recCall = builder.makeCall(func->name, std::vector<BW::Expression*>(), noneType, false);
 
             BW::Block* blk = ensureBlock(builder, func->body);
-            prepend(blk->list, recCall);   
-        
+            prepend(blk->list, recCall);
+
             // Insert the recursive call at the beginning of the function body.
             if (auto* block = func->body->dynCast<BW::Block>()) {
                 // Since ArenaVector may not support insert(), push_back then swap with the first element.
@@ -3144,10 +3205,10 @@ void injectVulnerability(BW::Module* module, std::mt19937& rng)
             } else {
                 func->body = builder.makeBlock({ recCall, func->body });
             }
-            #ifdef PRINT_LOG
-            std::cout << "[Custom Mutator] Function '" << func->name.str
-                      << "': Inserted recursive call to provoke stack overflow.\n";
-            #endif
+            if (enable_logging) {
+                std::cout << "[Custom Mutator] Function '" << func->name.str
+                          << "': Inserted recursive call to provoke stack overflow.\n";
+            }
         }
 
         // Process each expression in the function.
@@ -3157,31 +3218,31 @@ void injectVulnerability(BW::Module* module, std::mt19937& rng)
                 int option = rng() % 2;
                 if (option == 0) {
                     load->offset = 0xFFFFFFFF;
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str
-                              << "': Set memory load offset to 0xFFFFFFFF.\n";
-                    #endif
+                    if (enable_logging) {
+                        std::cout << "[Custom Mutator] Function '" << func->name.str
+                                  << "': Set memory load offset to 0xFFFFFFFF.\n";
+                    }
                 } else {
                     load->offset = 0xFFFFFFF0;
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str
-                              << "': Set memory load offset to 0xFFFFFFF0.\n";
-                    #endif
+                    if (enable_logging) {
+                        std::cout << "[Custom Mutator] Function '" << func->name.str
+                                  << "': Set memory load offset to 0xFFFFFFF0.\n";
+                    }
                 }
             } else if (auto* store = expr->dynCast<BW::Store>()) {
                 int option = rng() % 2;
                 if (option == 0) {
                     store->offset = 0xFFFFFFFF;
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str
-                              << "': Set memory store offset to 0xFFFFFFFF.\n";
-                    #endif
+                    if (enable_logging) {
+                        std::cout << "[Custom Mutator] Function '" << func->name.str
+                                  << "': Set memory store offset to 0xFFFFFFFF.\n";
+                    }
                 } else {
                     store->offset = 0xFFFFFFF0;
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str
-                              << "': Set memory store offset to 0xFFFFFFF0.\n";
-                    #endif
+                    if (enable_logging) {
+                        std::cout << "[Custom Mutator] Function '" << func->name.str
+                                  << "': Set memory store offset to 0xFFFFFFF0.\n";
+                    }
                 }
             }
             // --- CallIndirect Vulnerability ---
@@ -3191,32 +3252,40 @@ void injectVulnerability(BW::Module* module, std::mt19937& rng)
                     // Use an out-of-bound index.
                     callIndirect->target = BW::Builder(*module).makeConst(
                         BW::Literal((uint32_t)0xFFFFFFFF));
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str
-                              << "': Set call_indirect target to 0xFFFFFFFF (invalid index).\n";
-                    #endif
+                    if (enable_logging) {
+                        std::cout << "[Custom Mutator] Function '" << func->name.str
+                                  << "': Set call_indirect target to 0xFFFFFFFF (invalid index).\n";
+                    }
                 } else if (option == 1) {
                     // Use zero as target.
                     callIndirect->target = BW::Builder(*module).makeConst(
                         BW::Literal((uint32_t)0));
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str
-                              << "': Set call_indirect target to 0.\n";
-                    #endif
+                    if (enable_logging) {
+                        std::cout << "[Custom Mutator] Function '" << func->name.str
+                                  << "': Set call_indirect target to 0.\n";
+                    }
                 } else {
                     // Leave it unchanged.
-                    #ifdef PRINT_LOG
-                    std::cout << "[Custom Mutator] Function '" << func->name.str
-                              << "': Left call_indirect target unchanged.\n";
-                    #endif
+                    if (enable_logging) {
+                        std::cout << "[Custom Mutator] Function '" << func->name.str
+                                  << "': Left call_indirect target unchanged.\n";
+                    }
                 }
             }
         }
     }
 }
 
-
-// libFuzzer Entry point
+extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
+{
+    for (int i = 0; i < *argc; ++i) {
+        if (std::strcmp((*argv)[i], "--enable-logging") == 0) {
+            enable_logging = true;
+            break;
+        }
+    }
+    return 0;
+}
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size)
 {
     try {
@@ -3231,11 +3300,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size)
         delete store;
         delete engine;
         return 0;
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         // leabe or ignore logs in case of exceptions and return original data
         fprintf(stderr, "[fuzz] std::exception: %s\n", e.what());
         return Size;
-    } catch ( ... ) {
+    } catch (...) {
         // handling all kinds of exceptions
         // abort(); // fuzzer recognize exception as crash
         fprintf(stderr, "[fuzz] LLVMFuzzerTestOneInput: unknown exception thrown\n");
@@ -3255,14 +3324,14 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
         // fprintf(stderr, "custom mutator cov test Size: %ld", Size);
         static const uint8_t dummy_module[] = {
             0x00, 0x61, 0x73, 0x6d, // "\0asm" magic number
-            0x01, 0x00, 0x00, 0x00,   // WASM version 1
+            0x01, 0x00, 0x00, 0x00, // WASM version 1
             // Type Section (ID=1):
-            0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 
+            0x01, 0x04, 0x01, 0x60, 0x00, 0x00,
             // Function Section (ID=3):
             0x03, 0x02, 0x01, 0x00,
             // Code Section (ID=10):
-            0x0A, 0x04, 0x01,       // code section header: length=4, count=1
-            0x02, 0x00, 0x0B        // body size=2, local decl count=0, end opcode (0x0B)
+            0x0A, 0x04, 0x01, // code section header: length=4, count=1
+            0x02, 0x00, 0x0B // body size=2, local decl count=0, end opcode (0x0B)
         };
 
         size_t dummySize = sizeof(dummy_module);
@@ -3277,14 +3346,14 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
         std::mt19937 rng(Seed);
         BW::Module* module = parseWasmModuleFromBinary(Data, Size);
         module->features = wasm::FeatureSet::All;
-        
+
         /*
         if (!module) {
             static const uint8_t dummy_module[] = {
                 // WASM magic & version:
                 0x00, 0x61, 0x73, 0x6d,  0x01, 0x00, 0x00, 0x00,
                 // Type Section (ID=1):
-                0x01, 0x04, 0x01, 0x60, 0x00, 0x00, 
+                0x01, 0x04, 0x01, 0x60, 0x00, 0x00,
                 // Function Section (ID=3):
                 0x03, 0x02, 0x01, 0x00,
                 // Code Section (ID=10):
@@ -3338,9 +3407,9 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
 
         // Validate the mutated module using the static validate function.
         if (!BW::WasmValidator().validate(*module)) {
-            #ifdef PRINT_LOG
-            fprintf(stderr, "[Validator] Warning: mutated module did not pass validation, but returning it anyway.\n");
-            #endif
+            if (enable_logging) {
+                fprintf(stderr, "[Validator] Warning: mutated module did not pass validation, but returning it anyway.\n");
+            }
             delete module;
             return Size; // Return original input if mutation is invalid.
         }
@@ -3358,7 +3427,7 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
         delete dummyStore;
         delete dummyEngine;
         return newSize;
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         fprintf(stderr, "[fuzz] std::exception: %s\n", e.what());
         return Size;
     } catch (...) {
