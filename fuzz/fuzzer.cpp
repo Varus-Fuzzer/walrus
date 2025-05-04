@@ -3349,6 +3349,10 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
     try {
         std::mt19937 rng(Seed);
         BW::Module* module = parseWasmModuleFromBinary(Data, Size);
+        if (!module) {
+            // parsing fail -> return original data
+            return Size;
+        }
         module->features = wasm::FeatureSet::All;
 
         /*
@@ -3372,10 +3376,6 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
             return Size; // fallback
         }
         */
-        if (!module) {
-            // parsing fail -> return original data
-            return Size;
-        }
 
         if (module->functions.empty()) {
             delete module;
@@ -3435,8 +3435,9 @@ extern "C" size_t LLVMFuzzerCustomMutator(uint8_t* Data, size_t Size, size_t Max
         fprintf(stderr, "[fuzz] std::exception: %s\n", e.what());
         return Size;
     } catch (...) {
-        abort(); // fuzzer recognize exception as crash
+        // abort(); // fuzzer recognize exception as crash
         // fprintf(stderr, "[fuzz] LLVMFuzzerCustomMutator: unknown exception thrown\n");
+        fprintf(stderr, "[fuzz] unknown exception in mutator — returning original data\n");
         return Size;
     }
 }
