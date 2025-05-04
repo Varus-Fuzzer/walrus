@@ -3283,9 +3283,13 @@ extern "C" int LLVMFuzzerInitialize(int* argc, char*** argv)
             enable_logging = true;
             break;
         }
+        if (std::strcmp((*argv)[i], "--enable-jit") == 0) {
+            s_JITFlags |= JITFlagValue::useJIT;
+        }
     }
     return 0;
 }
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size)
 {
     try {
