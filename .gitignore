@@ -21,3 +21,4 @@ node_modules
 /test/wasmBenchmarker/emsdk
 /out/*
 /output/*
+/corpus

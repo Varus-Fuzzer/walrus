@@ -2723,6 +2723,31 @@ void mutateConstantExpressions(BW::Module* module, std::mt19937& rng)
                         }
                     }
                 }
+                /*────────── SIMD v128 ──────────*/
+                else if (c->type == BW::Type::v128) {
+                    uint8_t bytes[16];
+
+                    if (choice == 0) {                // bit‑flip
+                        memset(bytes, 0, 16);
+                        int bit = rng() % 128;
+                        bytes[bit / 8] ^= uint8_t(1u << (bit % 8));
+                    } else {                          // more extreme patterns
+                        static const uint8_t patterns[][16] = {
+                            {0},                                         // all‑zero
+                            {0xFF},                                      // all‑ff
+                            {0,1,2,3,4,5,6,7, 7,6,5,4,3,2,1,0},          // saw‑tooth
+                            {0,0,0,0, 0,0,0,0, 0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff}
+                        };
+                        memcpy(bytes, patterns[rng() % 4], 16);
+                    }
+
+                    c->value = BW::Literal(bytes);
+
+                    if (enable_logging) {
+                        std::cout << "[Mutator] " << func->name.str
+                                << ": v128 const mutated\n";
+                    }
+                } 
             }
         }
     }
