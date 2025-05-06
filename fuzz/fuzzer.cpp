@@ -2060,10 +2060,39 @@ static inline void mutateSingleConst(BW::Const* c, std::mt19937& rng)
     }
 }
 
+/*
 // Return the (first) memory name or the default “memory”.
 static wasm::Name firstMemoryName(const wasm::Module& m)
 {
     return m.memories.empty() ? wasm::Name("memory") : m.memories[0]->name;
+}
+*/
+
+static inline wasm::Name pickRandomMemoryName(wasm::Module& m, std::mt19937& rng, bool needShared = false) {
+    std::vector<wasm::Memory*> pool;
+    for (auto& memPtr : m.memories) { // <-- auto&
+        wasm::Memory* mem = memPtr.get(); // <-- raw ptr
+        if (!needShared || mem->shared) {
+            pool.push_back(mem);
+        }
+    }
+
+    if (!pool.empty()) {
+        return pool[rng() % pool.size()]->name;
+    }
+
+    bool makeShared = needShared &&
+    std::none_of(m.memories.begin(), m.memories.end(), [](const std::unique_ptr<wasm::Memory>& p){ return p->shared; });
+
+    auto mem = std::make_unique<wasm::Memory>();
+    mem->name    = wasm::Name(makeShared ? "mem_shared" + std::to_string(m.memories.size()) : ("mem" + std::to_string(m.memories.size())));
+    mem->initial = 1;
+    mem->max     = makeShared ? 4 : 0;
+    mem->shared  = makeShared;
+
+    wasm::Name ret = mem->name;
+    m.addMemory(std::move(mem));
+    return ret;
 }
 
 // Helper function: Find a block in the AST that contains the target expression.
@@ -2175,6 +2204,7 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
 
             /* --- Load ---------------------------------------------------- */
             else if (auto* ld = e->dynCast<BW::Load>()) {
+                ld->memory = pickRandomMemoryName(*module, rng);
                 unsigned before = ld->bytes;
                 std::vector<unsigned> cand;
                 switch (ld->type.getBasic()) {
@@ -2202,6 +2232,7 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
 
             /* --- Store --------------------------------------------------- */
             else if (auto* st = e->dynCast<BW::Store>()) {
+                st->memory = pickRandomMemoryName(*module, rng);
                 unsigned before = st->bytes;
                 std::vector<unsigned> cand;
                 switch (st->valueType.getBasic()) {
@@ -2229,6 +2260,7 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
 
             /* --- Atomic RMW / Cmpxchg ------------------------------------ */
             else if (auto* armw = e->dynCast<BW::AtomicRMW>()) {
+                armw->memory = pickRandomMemoryName(*module, rng, true);
                 // mutation the number of bytes and offset at random
                 uint32_t oldBytes = armw->bytes, oldOffset = armw->offset;
                 uint32_t candBytes[] = { 1, 2, 4, 8 };
@@ -2241,6 +2273,7 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                               << "→" << armw->offset << "\n";
                 }
             } else if (auto* acx = e->dynCast<BW::AtomicCmpxchg>()) {
+                acx->memory = pickRandomMemoryName(*module, rng, true);
                 // Replace the offset and byte-width of a compar-exchange
                 uint32_t oldBytes = acx->bytes, oldOffset = acx->offset;
                 uint32_t cand[] = { 1, 2, 4, 8 };
@@ -2442,12 +2475,14 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
         int pick = rng() % 8;
         BW::Expression* newInstr = nullptr;
 
+        /*
         if (module->memories.empty()) {
             auto mem = std::make_unique<wasm::Memory>();
-            mem->name = "memory";
+            mem->name = "mem0";
             mem->initial = 1; // one page is enough for fuzzing
             module->addMemory(std::move(mem));
         }
+        */
 
         // pick a data‐segment name, if we actually have one
         bool hasData = !module->elementSegments.empty();
@@ -2456,19 +2491,18 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
         switch (pick) {
         case 0: { // memory.grow
             auto* pages = builder.makeConst(wasm::Literal(int32_t(1 + rng() % 3)));
-            newInstr = builder.makeMemoryGrow(pages, firstMemoryName(*module));
+            newInstr = builder.makeMemoryGrow(pages, pickRandomMemoryName(*module, rng));
             break;
         }
         case 1: { // memory.size
-            newInstr = builder.makeMemorySize(firstMemoryName(*module));
+            newInstr = builder.makeMemorySize(pickRandomMemoryName(*module, rng));
             break;
         }
         case 2: { // memory.fill
             auto* dest = builder.makeConst(wasm::Literal(int32_t(rng() % 64)));
             auto* val = builder.makeConst(wasm::Literal(int32_t(rng() % 256)));
             auto* len = builder.makeConst(wasm::Literal(int32_t(8)));
-            newInstr = builder.makeMemoryFill(dest, val, len,
-                                              firstMemoryName(*module));
+            newInstr = builder.makeMemoryFill(dest, val, len, pickRandomMemoryName(*module, rng));
             break;
         }
         case 3: { // ref.null + ref.is_null
@@ -2545,13 +2579,13 @@ void mutateInstructions(BW::Module* module, std::mt19937& rng)
                     zeroTimeout,
                     BW::Type::i32,
                     /* offset = */ 0,
-                    firstMemoryName(*module));
+                    pickRandomMemoryName(*module, rng, true));
             } else {
                 newInstr = builder.makeAtomicNotify(
                     ptr,
                     exp,
                     /* offset = */ 0,
-                    firstMemoryName(*module));
+                    pickRandomMemoryName(*module, rng, true));
             }
             break;
         }
