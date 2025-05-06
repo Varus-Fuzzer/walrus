@@ -2773,7 +2773,7 @@ void mutateSection(BW::Module* module, Store* store, std::mt19937& rng)
     if (!module || module->functions.empty())
         return;
 
-    int option = rng() % 5;
+    int option = rng() % 6;
     BW::Builder builder(*module);
 
     if (option == 0) {
@@ -2881,6 +2881,18 @@ void mutateSection(BW::Module* module, Store* store, std::mt19937& rng)
             if (enable_logging) {
                 std::cout << "[Custom Mutator] Section mutation: No data segments available to modify.\n";
             }
+        }
+    } else if (option == 5) {
+        auto mem = std::make_unique<wasm::Memory>();
+        mem->name     = wasm::Name("mem" + std::to_string(module->memories.size()));
+        mem->initial  = 1 + rng() % 4;    // 1~4 page
+        mem->max      = mem->initial + rng() % 4;
+        mem->shared   = true;
+        module->addMemory(std::move(mem));
+        
+        if (enable_logging) {
+            std::cout << "[mutateSection] added extra memory: "
+                  << module->memories.back()->name << '\n';
         }
     }
 }
