@@ -1001,6 +1001,7 @@ def main():
         if fuzzer and not fuzzer.stop_event.is_set():
             fuzzer.stop_event.set()
             fuzzer.stop_libfuzzer()  # 실행 중인 LibFuzzer 프로세스 안전하게 종료
+        os.system("reset")
         sys.exit(0)
 
     # SIGINT 및 SIGTERM에 대한 핸들러 등록
