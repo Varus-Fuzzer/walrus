@@ -56,5 +56,7 @@ RUN cmake -H. -Bout/release/x64 \
     -DENABLE_PRINT_LOG=OFF
 RUN ninja -Cout/release/x64
 
+RUN export ASAN_OPTIONS=detect_leaks=0
+
 # WORKDIR out/release/x64
 # CMD['./fuzzer', '-max_len=999999999', '-workers=10', '-print_final_stats=1', '-jobs=4', 'etc']
