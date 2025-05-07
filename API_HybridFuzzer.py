@@ -44,6 +44,7 @@ class HybridFuzzer:
     ):
         self.target_path = os.path.abspath(target_path)
         self.corpus_dir = os.path.abspath(corpus_dir)
+        self.wat_dir = os.path.join(os.path.dirname(self.corpus_dir), "wat_files")
         self.crashes_dir = os.path.join(os.path.dirname(self.corpus_dir), "crashes")
         self.libfuzzer_options = libfuzzer_options or {}
         self.llm_model = llm_model
@@ -88,6 +89,7 @@ class HybridFuzzer:
 
         os.makedirs(self.corpus_dir, exist_ok=True)
         os.makedirs(self.crashes_dir, exist_ok=True)
+        os.makedirs(self.wat_dir, exist_ok=True)
 
         # Gemini API 키 확인
         if not self.gemini_api_key:
@@ -222,7 +224,7 @@ class HybridFuzzer:
                 url,
                 headers=headers,
                 json=data,
-                timeout=10  # 타임아웃 증가
+                timeout=20  # 타임아웃 증가
             )
             
             # 응답 상태 코드 확인
@@ -313,8 +315,8 @@ class HybridFuzzer:
                 "-print_final_stats=1",
                 "-print_pcs=1",          # 커버리지 추적을 위해 PC 출력
                 "-print_corpus_stats=1", # 코퍼스 상태 출력
-                "-timeout=30",           # 시간 초과 설정 (10초)
-                "-rss_limit_mb=4096"     # 메모리 제한 (2GB)
+                "-timeout=180",           # 시간 초과 설정 
+                "-rss_limit_mb=4096"     # 메모리 제한
             ]
 
             # 사용자 정의 옵션 추가
@@ -1575,98 +1577,91 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
         
     def save_inputs_to_corpus(self, wat_modules: list) -> int:
         """
-        LLM이 생성한 WAT 모듈을 코퍼스 디렉토리에 저장합니다.
-        wat2wasm가 사용 가능한 경우, 컴파일하여 .wasm으로 변환합니다.
-        컴파일이 성공하고 중복이 아닌 경우에만 유지합니다.
-        
-        컴파일 오류가 발생하면 해당 오류를 저장하고 나중에 LLM에게 피드백합니다.
+        LLM이 생성한 WAT 모듈을 저장한다.
+        • .wat  →  self.wat_dir  (corpus와 같은 레벨의 wat_files 폴더)
+        • .wasm →  self.corpus_dir (기존 위치 유지)
+
+        wat2wasm이 있으면 컴파일 후 .wasm만 코퍼스에 남기고, 없으면 .wat도 그대로 fuzzing 대상이 된다.
+        중복 방지를 위해 wat_dir 과 corpus_dir 모두의 해시를 비교한다.
         """
         saved = 0
         wat2wasm_available = self._check_wat2wasm()
 
-        # 기존 corpus 파일의 해시 목록 수집 (중복 방지용)
+        # ── 1. 이미 존재하는 해시 수집 ────────────────────────────
         existing_hashes = set()
+
+        #   1-1) 이미 저장된 wasm
         for fname in os.listdir(self.corpus_dir):
             path = os.path.join(self.corpus_dir, fname)
             try:
                 with open(path, "rb") as f:
-                    data = f.read()
-                existing_hashes.add(hashlib.sha256(data).hexdigest())
+                    existing_hashes.add(hashlib.sha256(f.read()).hexdigest())
             except Exception as e:
                 logger.warning(f"[Corpus] Failed to hash existing file: {path}, error: {e}")
 
+        #   1-2) 이미 저장된 wat
+        for fname in os.listdir(self.wat_dir):
+            path = os.path.join(self.wat_dir, fname)
+            try:
+                with open(path, "rb") as f:
+                    existing_hashes.add(hashlib.sha256(f.read()).hexdigest())
+            except Exception as e:
+                logger.warning(f"[Corpus] Failed to hash existing wat: {path}, error: {e}")
+
+        # ── 2. 새로 생성된 모듈 처리 ─────────────────────────────
         for idx, wat_text in enumerate(wat_modules):
-            # 전체 WAT 텍스트 로깅 (이전에는 일부만 표시)
-            logger.info(f"[LLM] WAT Module #{idx+1}:\n{wat_text}")
-            
-            wat_hash = hashlib.sha256(wat_text.encode('utf-8')).hexdigest()
+            wat_hash = hashlib.sha256(wat_text.encode("utf-8")).hexdigest()
             if wat_hash in existing_hashes:
-                logger.debug("[LLM] Skipping duplicate WAT input (hash match with corpus).")
+                logger.debug("[LLM] Duplicate WAT skipped (hash match).")
                 continue
 
             timestamp = int(time.time() * 1000)
             base_name = f"llm_generated_{timestamp}_{idx}"
-            wat_file = f"{os.path.join(self.corpus_dir, base_name)}.wat"
 
+            #   2-1) WAT 저장: wat_dir
+            wat_file = os.path.join(self.wat_dir, f"{base_name}.wat")
             with open(wat_file, "w") as f:
                 f.write(wat_text)
 
+            #   2-2) WASM 변환 ─ 성공 시 corpus_dir 에 저장
             if wat2wasm_available:
                 try:
                     wasm_file = os.path.join(self.corpus_dir, base_name)
                     cmd = ["wat2wasm", wat_file, "-o", wasm_file, "--no-check"]
                     proc = subprocess.run(cmd, capture_output=True, timeout=5)
-                    
+
                     if proc.returncode == 0:
-                        # 컴파일 성공
-                        logger.info(f"[LLM] Successfully compiled WAT to WASM: {base_name}")
-                        # WAT 파일 삭제하지 않고 보존
-                        # os.remove(wat_file)  # 이 줄 제거
+                        logger.info(f"[LLM] Compiled WAT → WASM: {base_name}")
                         self.add_new_testcase(wasm_file)
                         saved += 1
-                        
-                        # 새롭게 저장된 바이너리 파일도 해시에 추가
+
+                        # 새 WASM 해시 등록
                         with open(wasm_file, "rb") as f:
-                            new_hash = hashlib.sha256(f.read()).hexdigest()
-                            existing_hashes.add(new_hash)
-                        
-                        # 성공 통계 업데이트
+                            existing_hashes.add(hashlib.sha256(f.read()).hexdigest())
+
                         with self.stats_lock:
                             self.stats["wat_compile_success"] = self.stats.get("wat_compile_success", 0) + 1
                     else:
-                        # 컴파일 실패 - 에러 정보 저장
-                        error_output = proc.stderr.decode('utf-8', 'replace')
-                        logger.warning(f"[LLM] wat2wasm failed => discarding. stderr:\n{error_output}")
-                        
-                        # 에러 피드백 저장 (최대 몇 개만)
-                        error_preview = self._extract_error_preview(wat_text, error_output)
-                        self._add_error_feedback(error_preview, error_output)
-                        
-                        # 실패 통계 업데이트
+                        error_msg = proc.stderr.decode("utf-8", "replace")
+                        logger.warning(f"[LLM] wat2wasm failed:\n{error_msg}")
+
+                        # 에러 피드백 기록
+                        self._add_error_feedback(self._extract_error_preview(wat_text, error_msg), error_msg)
                         with self.stats_lock:
                             self.stats["wat_compile_errors"] = self.stats.get("wat_compile_errors", 0) + 1
-                                
-                        # 에러 피드백 관련 추가 디버깅을 위해 WAT 파일 임시 보존 (옵션)
-                        error_dir = os.path.join(os.path.dirname(self.corpus_dir), "wat_errors")
-                        os.makedirs(error_dir, exist_ok=True)
-                        error_file = os.path.join(error_dir, f"error_{timestamp}_{idx}.wat")
-                        try:
-                            # 오류 파일과 메시지를 함께 저장
-                            with open(error_file, "w") as f:
-                                f.write(f"// ERROR: {error_output.strip()}\n\n")
-                                f.write(wat_text)
-                            logger.debug(f"[LLM] Saved WAT with error to: {error_file}")
-                        except Exception as e:
-                            logger.debug(f"[LLM] Failed to save error WAT: {e}")
-                        
+
                 except Exception as e:
                     logger.error(f"[LLM] wat2wasm conversion error: {e}")
+
             else:
-                logger.warning("[LLM] wat2wasm not installed => keeping .wat file as is")
-                # WAT 파일을 유지
+                # wat2wasm 없음 – .wat 그대로 fuzzing 대상
+                logger.warning("[LLM] wat2wasm not found; keeping .wat for fuzzing")
+                self.add_new_testcase(wat_file)
+                saved += 1
 
         return saved
-        
+
+
     def _extract_error_preview(self, wat_text: str, error_output: str) -> str:
         """
         오류가 발생한 WAT 코드에서 관련 부분을 추출합니다.
