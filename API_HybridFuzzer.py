@@ -1291,6 +1291,15 @@ You are a specialized WebAssembly Text Format (WAT) code generator focused on ge
    - Ensure block result types match contained expressions
    - Verify br/br_if targets exist and are valid
 
+10. **Missing Required Operands:**
+    - ➤ Every instruction that expects an *immediate operand* (index, type, alignment, offset, etc.) **must** provide it.
+      Examples:
+        - CORRECT: `(call_indirect (type $t0) (local.get $idx))`
+        - CORRECT: `(table.copy (table $t1) (table $t2) (i32.const 0) (i32.const 5) (i32.const 3))`
+        - WRONG  : `(call_indirect)`  ⟵  missing type & index
+      This rule applies universally to **all** such instructions (`call_indirect`, `return_call_indirect`, `table.get/set/copy/init`, `memory.init`, etc.).
+
+
 ## DIVERSITY REQUIREMENTS FOR EFFECTIVE FUZZING
 
 1. **Instruction Mix:**
@@ -1627,7 +1636,7 @@ Your outputs must be compilable with the `wat2wasm` tool without errors.
             if wat2wasm_available:
                 try:
                     wasm_file = os.path.join(self.corpus_dir, base_name)
-                    cmd = ["wat2wasm", wat_file, "-o", wasm_file, "--no-check"]
+                    cmd = ["wat2wasm", wat_file, "-o", wasm_file, "--no-check", "--enable-all"]
                     proc = subprocess.run(cmd, capture_output=True, timeout=5)
 
                     if proc.returncode == 0:
